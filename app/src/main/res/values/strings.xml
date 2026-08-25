@@ -1,0 +1,72 @@
+<resources>
+    <string name="app_name">Ronda</string>
+
+    <!-- ===================== Home / Explorar ===================== -->
+    <string name="home_titulo">Ronda</string>
+    <string name="home_subtitulo">Comprá y vendé cerca tuyo</string>
+    <string name="home_buscar_hint">Buscar por título o descripción</string>
+    <string name="home_limpiar_busqueda">Limpiar búsqueda</string>
+
+    <!-- Botón que abre el bottom sheet. La segunda versión muestra cuántos filtros hay activos. -->
+    <string name="home_filtros">Filtros</string>
+    <string name="home_filtros_con_contador">Filtros (%1$d)</string>
+
+    <!-- Cantidad de resultados. Es un plural para que diga "1 publicación" y no "1 publicaciones". -->
+    <plurals name="home_resultados">
+        <item quantity="one">%1$d publicación</item>
+        <item quantity="other">%1$d publicaciones</item>
+    </plurals>
+
+    <!-- ===================== Item de la lista ===================== -->
+    <string name="item_foto_descripcion">Foto de la publicación</string>
+    <!-- Renglón inferior de la tarjeta: "Palermo · hace 2 h" -->
+    <string name="item_zona_y_fecha">%1$s · %2$s</string>
+    <string name="publicado_recien">recién publicado</string>
+
+    <!-- ===================== Estados de la pantalla ===================== -->
+    <string name="vacio_titulo">No encontramos publicaciones</string>
+    <string name="vacio_mensaje">Probá con otras palabras o quitá algunos filtros.</string>
+    <string name="vacio_limpiar_filtros">Limpiar filtros</string>
+    <string name="error_titulo">No pudimos cargar las publicaciones</string>
+    <string name="error_mensaje">Revisá tu conexión e intentá de nuevo.</string>
+    <string name="error_reintentar">Reintentar</string>
+
+    <!-- ===================== Bottom sheet de filtros ===================== -->
+    <string name="filtros_titulo">Filtros</string>
+    <string name="filtros_precio">Rango de precio</string>
+    <string name="filtros_precio_desde">Desde</string>
+    <string name="filtros_precio_hasta">Hasta</string>
+    <string name="filtros_precio_invalido">El mínimo no puede ser mayor que el máximo</string>
+    <string name="filtros_estado">Estado del artículo</string>
+    <string name="filtros_cercania">Cercanía</string>
+    <string name="filtros_cercania_ayuda">Tu zona actual es %1$s</string>
+    <string name="filtros_limpiar">Limpiar</string>
+    <string name="filtros_aplicar">Aplicar</string>
+
+    <!-- ===================== Enums del dominio ===================== -->
+    <string name="estado_nuevo">Nuevo</string>
+    <string name="estado_como_nuevo">Como nuevo</string>
+    <string name="estado_usado">Usado</string>
+
+    <string name="categoria_todas">Todas</string>
+    <string name="categoria_tecnologia">Tecnología</string>
+    <string name="categoria_hogar">Hogar</string>
+    <string name="categoria_indumentaria">Indumentaria</string>
+    <string name="categoria_deportes">Deportes</string>
+    <string name="categoria_libros">Libros</string>
+    <string name="categoria_instrumentos">Instrumentos</string>
+    <string name="categoria_bebes">Bebés</string>
+    <string name="categoria_otros">Otros</string>
+
+    <string name="orden_recientes">Más recientes</string>
+    <string name="orden_precio_menor">Menor precio</string>
+    <string name="orden_precio_mayor">Mayor precio</string>
+
+    <string name="cercania_todas">Todas las zonas</string>
+    <string name="cercania_mi_zona">Solo mi zona</string>
+    <string name="cercania_zonas_cercanas">Zonas cercanas</string>
+
+    <!-- ===================== Pendiente de otros puntos ===================== -->
+    <!-- Se usa hasta que el Punto 4 (Detalle de publicación) exista como destino del nav_graph. -->
+    <string name="detalle_proximamente">Detalle de \"%1$s\" — disponible al implementar el Punto 4</string>
+</resources>

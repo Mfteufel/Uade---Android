@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Paleta de Ronda en modo oscuro.
+
+    Mismos nombres que values/colors.xml. Android elige automáticamente este
+    archivo cuando el sistema está en modo oscuro, así que el tema (themes.xml)
+    no necesita saber nada del modo: siempre referencia @color/ronda_*.
+
+    Regla de Material 3 para el modo oscuro: el color de marca se aclara (el verde
+    oscuro no contrasta contra fondo negro) y los "on*" se oscurecen.
+-->
+<resources>
+    <color name="ronda_primary">#98D7B2</color>
+    <color name="ronda_on_primary">#00391F</color>
+    <color name="ronda_primary_container">#14512F</color>
+    <color name="ronda_on_primary_container">#B3F0CE</color>
+
+    <color name="ronda_secondary">#B5CCBB</color>
+    <color name="ronda_on_secondary">#213528</color>
+    <color name="ronda_secondary_container">#374B3E</color>
+    <color name="ronda_on_secondary_container">#D0E8D6</color>
+
+    <color name="ronda_tertiary">#A3CDDA</color>
+    <color name="ronda_on_tertiary">#033640</color>
+    <color name="ronda_tertiary_container">#1F4C57</color>
+    <color name="ronda_on_tertiary_container">#BFE9F8</color>
+
+    <color name="ronda_error">#FFB4AB</color>
+    <color name="ronda_on_error">#690005</color>
+    <color name="ronda_error_container">#93000A</color>
+    <color name="ronda_on_error_container">#FFDAD6</color>
+
+    <color name="ronda_background">#101411</color>
+    <color name="ronda_on_background">#E0E4DF</color>
+    <color name="ronda_surface">#101411</color>
+    <color name="ronda_on_surface">#E0E4DF</color>
+    <color name="ronda_surface_variant">#414942</color>
+    <color name="ronda_on_surface_variant">#C0C9C0</color>
+
+    <color name="ronda_outline">#8B938B</color>
+    <color name="ronda_outline_variant">#414942</color>
+
+    <color name="ronda_surface_container_lowest">#0B0F0C</color>
+    <color name="ronda_surface_container_low">#191C19</color>
+    <color name="ronda_surface_container">#1D211E</color>
+    <color name="ronda_surface_container_high">#272B28</color>
+    <color name="ronda_surface_container_highest">#323633</color>
+
+    <color name="ronda_inverse_surface">#E0E4DF</color>
+    <color name="ronda_inverse_on_surface">#2E312E</color>
+    <color name="ronda_inverse_primary">#2E6B4F</color>
+</resources>

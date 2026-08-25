@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Layout de la única Activity de la app (Single Activity Architecture).
+
+    No tiene UI propia más allá del contenedor: todas las pantallas de Ronda son
+    Fragments que el NavController va reemplazando adentro del NavHostFragment.
+
+    El ConstraintLayout externo existe para poder aplicarle el padding de las
+    barras del sistema (ver MainActivity): así ninguna pantalla queda tapada por
+    la barra de estado o la de navegación.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <!--
+        defaultNavHost="true" hace que el botón "atrás" del sistema lo maneje el
+        NavController (y no la Activity), que es lo que queremos con Navigation.
+    -->
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/nav_host_fragment"
+        android:name="androidx.navigation.fragment.NavHostFragment"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:defaultNavHost="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:navGraph="@navigation/nav_graph" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
