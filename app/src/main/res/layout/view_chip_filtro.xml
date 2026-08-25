@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Plantilla de un chip de filtro.
+
+    Los chips de categoría, orden y estado se crean en tiempo de ejecución a
+    partir de los enums del modelo, y no escritos uno por uno en el XML: así,
+    cuando se agrega un valor al enum, la UI se actualiza sola.
+
+    Este archivo existe porque hacer `new Chip(context)` en Java ignora el estilo
+    de Material. Inflando esta plantilla el chip nace con el estilo correcto.
+-->
+<com.google.android.material.chip.Chip
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/Widget.Material3.Chip.Filter"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content" />

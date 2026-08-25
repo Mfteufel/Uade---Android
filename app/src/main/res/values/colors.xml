@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Paleta de Ronda en modo claro.
+
+    Los nombres son semánticos (rol dentro del tema), no descriptivos: se llama
+    ronda_primary y no ronda_verde, porque en modo oscuro el mismo rol cambia de
+    tono. La variante oscura vive en values-night/colors.xml con exactamente los
+    mismos nombres, así el tema es uno solo y no hay que duplicarlo.
+-->
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- Color de marca: el verde de Ronda -->
+    <color name="ronda_primary">#2E6B4F</color>
+    <color name="ronda_on_primary">#FFFFFF</color>
+    <color name="ronda_primary_container">#B3F0CE</color>
+    <color name="ronda_on_primary_container">#00210F</color>
+
+    <color name="ronda_secondary">#4E6355</color>
+    <color name="ronda_on_secondary">#FFFFFF</color>
+    <color name="ronda_secondary_container">#D0E8D6</color>
+    <color name="ronda_on_secondary_container">#0C1F14</color>
+
+    <color name="ronda_tertiary">#3B6470</color>
+    <color name="ronda_on_tertiary">#FFFFFF</color>
+    <color name="ronda_tertiary_container">#BFE9F8</color>
+    <color name="ronda_on_tertiary_container">#001F27</color>
+
+    <color name="ronda_error">#BA1A1A</color>
+    <color name="ronda_on_error">#FFFFFF</color>
+    <color name="ronda_error_container">#FFDAD6</color>
+    <color name="ronda_on_error_container">#410002</color>
+
+    <color name="ronda_background">#F7FBF6</color>
+    <color name="ronda_on_background">#191C1A</color>
+    <color name="ronda_surface">#F7FBF6</color>
+    <color name="ronda_on_surface">#191C1A</color>
+    <color name="ronda_surface_variant">#DCE5DC</color>
+    <color name="ronda_on_surface_variant">#414942</color>
+
+    <color name="ronda_outline">#717972</color>
+    <color name="ronda_outline_variant">#C0C9C0</color>
+
+    <!-- Niveles de superficie de Material 3: tarjetas, hojas y barras se apoyan en éstos -->
+    <color name="ronda_surface_container_lowest">#FFFFFF</color>
+    <color name="ronda_surface_container_low">#F1F5F0</color>
+    <color name="ronda_surface_container">#EBEFEA</color>
+    <color name="ronda_surface_container_high">#E6EAE4</color>
+    <color name="ronda_surface_container_highest">#E0E4DF</color>
+
+    <color name="ronda_inverse_surface">#2E312E</color>
+    <color name="ronda_inverse_on_surface">#EFF1ED</color>
+    <color name="ronda_inverse_primary">#98D7B2</color>
+</resources>

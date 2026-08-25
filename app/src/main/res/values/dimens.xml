@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Medidas compartidas. Centralizarlas evita que cada layout invente su propio
+    margen y que la pantalla quede desalineada.
+-->
+<resources>
+    <!-- Margen lateral estándar de la pantalla -->
+    <dimen name="espaciado_pantalla">16dp</dimen>
+    <dimen name="espaciado_chico">8dp</dimen>
+    <dimen name="espaciado_mediano">12dp</dimen>
+
+    <!-- Alto de la miniatura en la tarjeta de publicación -->
+    <dimen name="item_foto_alto">96dp</dimen>
+    <dimen name="item_foto_ancho">96dp</dimen>
+
+    <!-- Espacio extra al final de la lista para que la última tarjeta no quede pegada al borde -->
+    <dimen name="lista_padding_inferior">24dp</dimen>
+</resources>

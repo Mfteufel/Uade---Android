@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Fondo de la etiqueta de estado (Nuevo / Como nuevo / Usado) en cada tarjeta.
+
+    Se resuelve con un TextView + este shape en lugar de un Chip de Material:
+    dentro de un RecyclerView conviene el View más liviano posible, porque se
+    infla una vez por ítem visible.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="?attr/colorSecondaryContainer" />
+    <corners android:radius="8dp" />
+</shape>

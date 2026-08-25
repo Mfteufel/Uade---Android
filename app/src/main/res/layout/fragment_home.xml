@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Pantalla Home / Explorar publicaciones (Punto 3 del TPO).
+
+    De arriba hacia abajo:
+      1. Toolbar con la identidad de Ronda.
+      2. Buscador por texto libre (título y descripción).
+      3. Chips de categoría (selección única, incluye "Todas").
+      4. Botón que abre el bottom sheet de filtros + chips de ordenamiento.
+      5. Contador de resultados.
+      6. Contenedor de contenido, que muestra una sola cosa a la vez:
+         la lista, el estado vacío, el estado de error o el spinner de carga.
+
+    El root es un CoordinatorLayout para que los Snackbar se posicionen bien.
+-->
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/contenedorHome"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface"
+    tools:context=".ui.home.HomeFragment">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- ============ 1. Encabezado ============ -->
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:subtitle="@string/home_subtitulo"
+            app:title="@string/home_titulo"
+            app:titleCentered="false"
+            app:titleTextAppearance="@style/TextAppearance.Material3.HeadlineSmall" />
+
+        <!-- ============ 2. Buscador ============ -->
+        <!--
+            endIconMode="clear_text" agrega solo la cruz para limpiar el texto:
+            no hay que programarla, la maneja el propio TextInputLayout.
+        -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/inputBuscar"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+            android:hint="@string/home_buscar_hint"
+            app:endIconContentDescription="@string/home_limpiar_busqueda"
+            app:endIconMode="clear_text"
+            app:startIconDrawable="@drawable/ic_buscar">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/campoBuscar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:imeOptions="actionSearch"
+                android:inputType="text"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- ============ 3. Categorías ============ -->
+        <!--
+            HorizontalScrollView porque las categorías no entran en el ancho de la
+            pantalla y no queremos que se apilen en varias filas.
+        -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/espaciado_mediano"
+            android:paddingHorizontal="@dimen/espaciado_pantalla"
+            android:clipToPadding="false"
+            android:scrollbars="none">
+
+            <!-- Los chips se crean en tiempo de ejecución a partir del enum Categoria -->
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/grupoCategorias"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:selectionRequired="true"
+                app:singleLine="true"
+                app:singleSelection="true" />
+        </HorizontalScrollView>
+
+        <!-- ============ 4. Filtros + ordenamiento ============ -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/espaciado_chico"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/espaciado_pantalla"
+            android:paddingEnd="0dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/botonFiltros"
+                style="@style/Widget.Material3.Button.OutlinedButton.Icon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/home_filtros"
+                app:icon="@drawable/ic_filtros" />
+
+            <HorizontalScrollView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:clipToPadding="false"
+                android:paddingHorizontal="@dimen/espaciado_chico"
+                android:scrollbars="none">
+
+                <!-- Los chips se crean a partir del enum OrdenPublicaciones -->
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/grupoOrden"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:selectionRequired="true"
+                    app:singleLine="true"
+                    app:singleSelection="true" />
+            </HorizontalScrollView>
+        </LinearLayout>
+
+        <!-- ============ 5. Contador de resultados ============ -->
+        <TextView
+            android:id="@+id/textoResultados"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+            android:layout_marginTop="@dimen/espaciado_chico"
+            android:textAppearance="?attr/textAppearanceLabelLarge"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            tools:text="28 publicaciones" />
+
+        <!-- ============ 6. Contenido ============ -->
+        <!--
+            Los cuatro hijos se superponen y el Fragment muestra solo uno por vez
+            (ver HomeFragment.mostrarEstado...). Es más simple de razonar que ir
+            agregando y sacando vistas del árbol.
+        -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/listaPublicaciones"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingTop="@dimen/espaciado_chico"
+                android:paddingBottom="@dimen/lista_padding_inferior"
+                tools:itemCount="4"
+                tools:listitem="@layout/item_publicacion" />
+
+            <!-- Spinner de la primera carga (o de una recarga por cambio de filtro) -->
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/progresoInicial"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:indeterminate="true"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <!-- Estado vacío: la búsqueda no devolvió resultados -->
+            <LinearLayout
+                android:id="@+id/estadoVacio"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:paddingHorizontal="32dp"
+                android:visibility="gone"
+                tools:visibility="gone">
+
+                <ImageView
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
+                    android:alpha="0.4"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_buscar" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaciado_pantalla"
+                    android:gravity="center"
+                    android:text="@string/vacio_titulo"
+                    android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaciado_chico"
+                    android:gravity="center"
+                    android:text="@string/vacio_mensaje"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botonLimpiarFiltros"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaciado_chico"
+                    android:text="@string/vacio_limpiar_filtros" />
+            </LinearLayout>
+
+            <!-- Estado de error: falló la consulta al repositorio -->
+            <LinearLayout
+                android:id="@+id/estadoError"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:paddingHorizontal="32dp"
+                android:visibility="gone"
+                tools:visibility="gone">
+
+                <ImageView
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_error" />
+
+                <TextView
+                    android:id="@+id/textoError"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaciado_pantalla"
+                    android:gravity="center"
+                    android:text="@string/error_titulo"
+                    android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaciado_chico"
+                    android:gravity="center"
+                    android:text="@string/error_mensaje"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botonReintentar"
+                    style="@style/Widget.Material3.Button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaciado_pantalla"
+                    android:text="@string/error_reintentar" />
+            </LinearLayout>
+
+            <!-- Barra de carga de la paginación: aparece al pedir la página siguiente -->
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/progresoPaginacion"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:indeterminate="true"
+                android:visibility="gone"
+                tools:visibility="gone" />
+        </FrameLayout>
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
