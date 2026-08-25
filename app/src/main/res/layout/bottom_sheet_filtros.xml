@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Hoja de filtros avanzados del Home (Punto 3: "filtros combinados").
+
+    Acá viven los filtros que ocupan más espacio del que hay en la pantalla
+    principal: rango de precio, estado del artículo y cercanía. La búsqueda por
+    texto y la categoría quedan afuera a propósito, porque en el Home tienen su
+    propio control siempre visible.
+
+    Va en un NestedScrollView para que en pantallas chicas (o con el teclado
+    abierto) se pueda scrollear y no queden botones inalcanzables.
+-->
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/espaciado_pantalla"
+        android:paddingBottom="@dimen/espaciado_pantalla">
+
+        <!-- Manija de arrastre: le avisa al usuario que la hoja se puede deslizar -->
+        <com.google.android.material.bottomsheet.BottomSheetDragHandleView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/filtros_titulo"
+            android:textAppearance="?attr/textAppearanceHeadlineSmall" />
+
+        <!-- ============ Rango de precio ============ -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/espaciado_pantalla"
+            android:text="@string/filtros_precio"
+            android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+        <!-- baselineAligned="false": los dos campos ya tienen el mismo alto, así que
+             alinear por línea base solo agrega una pasada de medición de más. -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/espaciado_chico"
+            android:baselineAligned="false"
+            android:orientation="horizontal">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/inputPrecioDesde"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="@string/filtros_precio_desde"
+                app:prefixText="$">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/campoPrecioDesde"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/inputPrecioHasta"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/espaciado_mediano"
+                android:layout_weight="1"
+                android:hint="@string/filtros_precio_hasta"
+                app:prefixText="$">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/campoPrecioHasta"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:imeOptions="actionDone"
+                    android:inputType="number"
+                    android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+        </LinearLayout>
+
+        <!-- Aviso de rango inválido (mínimo mayor que máximo). Oculto hasta que haga falta. -->
+        <TextView
+            android:id="@+id/textoPrecioInvalido"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/filtros_precio_invalido"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorError"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <!-- ============ Estado del artículo ============ -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/espaciado_pantalla"
+            android:text="@string/filtros_estado"
+            android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+        <!-- Selección múltiple: se pueden combinar, por ejemplo, "Nuevo" y "Como nuevo" -->
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/grupoEstados"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/espaciado_chico"
+            app:singleSelection="false" />
+
+        <!-- ============ Cercanía ============ -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/espaciado_pantalla"
+            android:text="@string/filtros_cercania"
+            android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+        <TextView
+            android:id="@+id/textoZonaUsuario"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            tools:text="Tu zona actual es Caballito" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/grupoCercania"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/espaciado_chico"
+            app:selectionRequired="true"
+            app:singleSelection="true" />
+
+        <!-- ============ Acciones ============ -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/botonLimpiar"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/filtros_limpiar" />
+
+            <!-- Estilo explícito: es la acción principal de la hoja y tiene que
+                 verse como botón lleno, sin depender del default del tema. -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/botonAplicar"
+                style="@style/Widget.Material3.Button"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/espaciado_mediano"
+                android:layout_weight="1"
+                android:text="@string/filtros_aplicar" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.core.widget.NestedScrollView>

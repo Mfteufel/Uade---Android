@@ -1,0 +1,58 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+        Tema único de la app (claro y oscuro).
+
+        No existe values-night/themes.xml a propósito: si hubiera un segundo
+        archivo con el mismo nombre de estilo, en modo oscuro pisaría a éste y se
+        perderían todos los items definidos acá. El cambio de modo se resuelve
+        solo con values-night/colors.xml, que redefine los mismos @color/ronda_*.
+
+        NoActionBar porque usamos una MaterialToolbar propia dentro del layout,
+        que es lo que corresponde con Single Activity Architecture.
+    -->
+    <style name="Base.Theme.TPO" parent="Theme.Material3.DayNight.NoActionBar">
+
+        <item name="colorPrimary">@color/ronda_primary</item>
+        <item name="colorOnPrimary">@color/ronda_on_primary</item>
+        <item name="colorPrimaryContainer">@color/ronda_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/ronda_on_primary_container</item>
+
+        <item name="colorSecondary">@color/ronda_secondary</item>
+        <item name="colorOnSecondary">@color/ronda_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/ronda_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/ronda_on_secondary_container</item>
+
+        <item name="colorTertiary">@color/ronda_tertiary</item>
+        <item name="colorOnTertiary">@color/ronda_on_tertiary</item>
+        <item name="colorTertiaryContainer">@color/ronda_tertiary_container</item>
+        <item name="colorOnTertiaryContainer">@color/ronda_on_tertiary_container</item>
+
+        <item name="colorError">@color/ronda_error</item>
+        <item name="colorOnError">@color/ronda_on_error</item>
+        <item name="colorErrorContainer">@color/ronda_error_container</item>
+        <item name="colorOnErrorContainer">@color/ronda_on_error_container</item>
+
+        <item name="android:colorBackground">@color/ronda_background</item>
+        <item name="colorOnBackground">@color/ronda_on_background</item>
+        <item name="colorSurface">@color/ronda_surface</item>
+        <item name="colorOnSurface">@color/ronda_on_surface</item>
+        <item name="colorSurfaceVariant">@color/ronda_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/ronda_on_surface_variant</item>
+
+        <item name="colorOutline">@color/ronda_outline</item>
+        <item name="colorOutlineVariant">@color/ronda_outline_variant</item>
+
+        <item name="colorSurfaceContainerLowest">@color/ronda_surface_container_lowest</item>
+        <item name="colorSurfaceContainerLow">@color/ronda_surface_container_low</item>
+        <item name="colorSurfaceContainer">@color/ronda_surface_container</item>
+        <item name="colorSurfaceContainerHigh">@color/ronda_surface_container_high</item>
+        <item name="colorSurfaceContainerHighest">@color/ronda_surface_container_highest</item>
+
+        <item name="colorSurfaceInverse">@color/ronda_inverse_surface</item>
+        <item name="colorOnSurfaceInverse">@color/ronda_inverse_on_surface</item>
+        <item name="colorPrimaryInverse">@color/ronda_inverse_primary</item>
+    </style>
+
+    <style name="Theme.TPO" parent="Base.Theme.TPO" />
+</resources>
