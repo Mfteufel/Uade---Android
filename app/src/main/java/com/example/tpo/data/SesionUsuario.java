@@ -18,6 +18,13 @@ public class SesionUsuario {
     private static SesionUsuario instancia;
 
     /**
+     * Identificador del usuario logueado. Hasta que exista el login (Punto 1)
+     * se usa un valor fijo; "Mis publicaciones" (Punto 5) lo necesita para
+     * pedirle a la API solo las publicaciones de este usuario.
+     */
+    private String id = "usuario-invitado";
+
+    /**
      * Zona declarada por el usuario. Hasta que exista el login se arranca con un
      * valor por defecto para que el filtro de cercanía sea probable.
      */
@@ -34,6 +41,14 @@ public class SesionUsuario {
             instancia = new SesionUsuario();
         }
         return instancia;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public Zona getZona() {

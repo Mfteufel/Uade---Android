@@ -66,6 +66,66 @@
     <string name="cercania_mi_zona">Solo mi zona</string>
     <string name="cercania_zonas_cercanas">Zonas cercanas</string>
 
+    <!-- ===================== Menú de la toolbar del Home ===================== -->
+    <string name="menu_mis_publicaciones">Mis publicaciones</string>
+    <string name="home_fab_publicar">Publicar un artículo</string>
+
+    <!-- ===================== Wizard "Publicar artículo" (Punto 5) ===================== -->
+    <string name="publicar_titulo">Publicar artículo</string>
+
+    <string name="publicar_paso_fotos">Fotos</string>
+    <string name="publicar_paso_fotos_ayuda">Elegí al menos una foto de la galería. La primera va a ser la foto principal.</string>
+    <string name="publicar_agregar_fotos">Agregar fotos</string>
+    <string name="publicar_quitar_foto">Quitar foto</string>
+    <string name="publicar_error_fotos">Agregá al menos una foto</string>
+
+    <string name="publicar_paso_titulo_descripcion">Título y descripción</string>
+    <string name="publicar_titulo_hint">Título del artículo</string>
+    <string name="publicar_descripcion_hint">Descripción</string>
+    <string name="publicar_error_titulo">Escribí un título</string>
+    <string name="publicar_error_descripcion">Escribí una descripción</string>
+
+    <string name="publicar_paso_categoria_estado">Categoría y estado</string>
+    <string name="publicar_categoria_label">Categoría</string>
+    <string name="publicar_error_categoria">Elegí una categoría</string>
+    <string name="publicar_error_estado">Elegí el estado del artículo</string>
+
+    <string name="publicar_paso_precio_zona">Precio y zona</string>
+    <string name="publicar_precio_hint">Precio</string>
+    <string name="publicar_error_precio">Ingresá un precio válido</string>
+    <string name="publicar_zona_hint">Zona de entrega</string>
+    <string name="publicar_error_zona">Elegí una zona de entrega</string>
+
+    <string name="publicar_paso_resumen">Resumen</string>
+    <string name="resumen_categoria">Categoría: %1$s</string>
+    <string name="resumen_estado">Estado: %1$s</string>
+    <string name="resumen_zona">Zona de entrega: %1$s</string>
+    <plurals name="resumen_fotos">
+        <item quantity="one">%1$d foto</item>
+        <item quantity="other">%1$d fotos</item>
+    </plurals>
+
+    <string name="publicar_siguiente">Siguiente</string>
+    <string name="publicar_atras">Atrás</string>
+    <string name="publicar_publicar">Publicar</string>
+    <string name="publicar_publicando">Publicando…</string>
+    <string name="publicar_exito">¡Publicado! Ya aparece en Mis publicaciones</string>
+
+    <!-- ===================== Estado de la publicación (Punto 5) ===================== -->
+    <string name="estado_publicacion_activa">Activa</string>
+    <string name="estado_publicacion_pausada">Pausada</string>
+    <string name="estado_publicacion_vendida">Vendida</string>
+
+    <!-- ===================== Mis publicaciones (Punto 5) ===================== -->
+    <string name="mis_publicaciones_titulo">Mis publicaciones</string>
+    <string name="mis_publicaciones_vacio_titulo">Todavía no publicaste nada</string>
+    <string name="mis_publicaciones_vacio_mensaje">Tocá el botón para publicar tu primer artículo.</string>
+    <string name="mis_publicaciones_error">No pudimos cargar tus publicaciones</string>
+    <string name="accion_pausar">Pausar</string>
+    <string name="accion_reactivar">Reactivar</string>
+    <string name="mis_publicaciones_pausada_ok">Publicación pausada</string>
+    <string name="mis_publicaciones_reactivada_ok">Publicación reactivada</string>
+
     <!-- ===================== Pendiente de otros puntos ===================== -->
     <!-- Se usa hasta que el Punto 4 (Detalle de publicación) exista como destino del nav_graph. -->
     <string name="detalle_proximamente">Detalle de \"%1$s\" — disponible al implementar el Punto 4</string>

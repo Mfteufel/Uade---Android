@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Tarjeta de una publicación propia, en "Mis publicaciones" (Punto 5).
+
+    A diferencia de item_publicacion.xml (Home), acá no hay zona ni vendedor
+    (son publicaciones propias, no ajenas) pero sí un estado de la publicación
+    (activa/pausada/vendida) y una acción para pausarla o reactivarla.
+-->
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    style="@style/Widget.Material3.CardView.Outlined"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+    android:layout_marginVertical="@dimen/espaciado_chico"
+    app:cardCornerRadius="16dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/espaciado_mediano">
+
+        <ImageView
+            android:id="@+id/fotoPublicacion"
+            android:layout_width="@dimen/item_foto_ancho"
+            android:layout_height="@dimen/item_foto_alto"
+            android:background="@drawable/bg_foto_publicacion"
+            android:contentDescription="@string/item_foto_descripcion"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_imagen"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/tituloPublicacion"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/espaciado_mediano"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/fotoPublicacion"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="Notebook Lenovo IdeaPad 15" />
+
+        <TextView
+            android:id="@+id/precioPublicacion"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/espaciado_mediano"
+            android:layout_marginTop="4dp"
+            android:textAppearance="?attr/textAppearanceTitleLarge"
+            android:textColor="?attr/colorPrimary"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/fotoPublicacion"
+            app:layout_constraintTop_toBottomOf="@id/tituloPublicacion"
+            tools:text="$ 480.000" />
+
+        <TextView
+            android:id="@+id/estadoPublicacion"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/espaciado_mediano"
+            android:layout_marginTop="@dimen/espaciado_chico"
+            android:background="@drawable/bg_estado_articulo"
+            android:paddingHorizontal="@dimen/espaciado_chico"
+            android:paddingVertical="4dp"
+            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:textColor="?attr/colorOnSecondaryContainer"
+            app:layout_constraintStart_toEndOf="@id/fotoPublicacion"
+            app:layout_constraintTop_toBottomOf="@id/precioPublicacion"
+            tools:text="Activa" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/botonAccion"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/espaciado_mediano"
+            android:layout_marginTop="@dimen/espaciado_chico"
+            app:layout_constraintStart_toEndOf="@id/fotoPublicacion"
+            app:layout_constraintTop_toBottomOf="@id/estadoPublicacion"
+            tools:text="@string/accion_pausar" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

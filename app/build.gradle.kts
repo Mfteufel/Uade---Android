@@ -41,6 +41,16 @@ dependencies {
     implementation(libs.navigation.ui)
     // RecyclerView para el listado de publicaciones del Home.
     implementation(libs.recyclerview)
+    // Room: persistencia del borrador de "Publicar artículo" (Punto 5).
+    implementation(libs.room.runtime)
+    annotationProcessor(libs.room.compiler)
+    // Retrofit: alta de publicaciones y pausar/reactivar contra la API_Rest del TPO.
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.gson)
+    implementation(libs.okhttp.logging.interceptor)
+    // ViewModel + LiveData: estado compartido entre los pasos del wizard de publicar.
+    implementation(libs.lifecycle.viewmodel)
+    implementation(libs.lifecycle.livedata)
     testImplementation(libs.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.ext.junit)

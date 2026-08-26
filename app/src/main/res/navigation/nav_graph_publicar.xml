@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Sub-grafo del wizard de "Publicar artículo" (Punto 5).
+
+    Se incluye desde nav_graph.xml con <include>, así que comparte el mismo
+    NavController que el resto de la app: no es una Activity ni un NavHost
+    aparte, solo una forma de agrupar los cinco pasos en su propio archivo.
+
+    Al compartir NavController, el ViewModel de la pantalla
+    (PublicarArticuloViewModel) se obtiene con scope a este grafo
+    (NavController.getBackStackEntry(R.id.nav_graph_publicar)): eso hace que
+    sobreviva mientras el usuario esté en cualquiera de los cinco pasos y se
+    destruya solo cuando sale del wizard entero, sin necesidad de pasar datos
+    de Fragment a Fragment por Bundle.
+
+    La navegación "Atrás" no tiene <action> propia: cada Fragment la resuelve
+    con NavController.navigateUp(), que ya sabe volver al paso anterior en el
+    back stack.
+-->
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph_publicar"
+    app:startDestination="@id/publicarFotosFragment">
+
+    <fragment
+        android:id="@+id/publicarFotosFragment"
+        android:name="com.example.tpo.ui.publicar.PublicarFotosFragment"
+        android:label="@string/publicar_paso_fotos"
+        tools:layout="@layout/fragment_publicar_fotos">
+        <action
+            android:id="@+id/action_fotos_to_tituloDescripcion"
+            app:destination="@id/publicarTituloDescripcionFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/publicarTituloDescripcionFragment"
+        android:name="com.example.tpo.ui.publicar.PublicarTituloDescripcionFragment"
+        android:label="@string/publicar_paso_titulo_descripcion"
+        tools:layout="@layout/fragment_publicar_titulo_descripcion">
+        <action
+            android:id="@+id/action_tituloDescripcion_to_categoriaEstado"
+            app:destination="@id/publicarCategoriaEstadoFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/publicarCategoriaEstadoFragment"
+        android:name="com.example.tpo.ui.publicar.PublicarCategoriaEstadoFragment"
+        android:label="@string/publicar_paso_categoria_estado"
+        tools:layout="@layout/fragment_publicar_categoria_estado">
+        <action
+            android:id="@+id/action_categoriaEstado_to_precioZona"
+            app:destination="@id/publicarPrecioZonaFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/publicarPrecioZonaFragment"
+        android:name="com.example.tpo.ui.publicar.PublicarPrecioZonaFragment"
+        android:label="@string/publicar_paso_precio_zona"
+        tools:layout="@layout/fragment_publicar_precio_zona">
+        <action
+            android:id="@+id/action_precioZona_to_resumen"
+            app:destination="@id/publicarResumenFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/publicarResumenFragment"
+        android:name="com.example.tpo.ui.publicar.PublicarResumenFragment"
+        android:label="@string/publicar_paso_resumen"
+        tools:layout="@layout/fragment_publicar_resumen" />
+
+</navigation>

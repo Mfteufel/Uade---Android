@@ -36,6 +36,16 @@
             app:destination="@id/detalleFragment" />
         -->
 
+        <!-- Punto 5: FAB del Home abre el wizard de publicar. -->
+        <action
+            android:id="@+id/action_home_to_publicar"
+            app:destination="@id/nav_graph_publicar" />
+
+        <!-- Punto 5: item del menú de la toolbar. -->
+        <action
+            android:id="@+id/action_home_to_misPublicaciones"
+            app:destination="@id/misPublicacionesFragment" />
+
     </fragment>
 
     <!--
@@ -48,5 +58,14 @@
             app:argType="string" />
     </fragment>
     -->
+
+    <!-- Punto 5: wizard de publicación, ver nav_graph_publicar.xml. -->
+    <include app:graph="@navigation/nav_graph_publicar" />
+
+    <fragment
+        android:id="@+id/misPublicacionesFragment"
+        android:name="com.example.tpo.ui.mispublicaciones.MisPublicacionesFragment"
+        android:label="@string/mis_publicaciones_titulo"
+        tools:layout="@layout/fragment_mis_publicaciones" />
 
 </navigation>
