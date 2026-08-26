@@ -14,7 +14,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/homeFragment">
+    app:startDestination="@id/loginFragment">
 
     <fragment
         android:id="@+id/homeFragment"
@@ -48,5 +48,21 @@
             app:argType="string" />
     </fragment>
     -->
+
+    <!-- Punto 1 - Login. Primera pantalla de la app. -->
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.example.tpo.ui.auth.LoginFragment"
+        tools:layout="@layout/fragment_login">
+
+        <!-- popUpTo + inclusive: al entrar al Home el login sale del historial,
+             así el botón "atrás" cierra la app en vez de volver al login. -->
+        <action
+            android:id="@+id/action_login_to_home"
+            app:destination="@id/homeFragment"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true" />
+
+    </fragment>
 
 </navigation>
