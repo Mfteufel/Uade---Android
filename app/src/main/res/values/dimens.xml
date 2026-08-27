@@ -4,6 +4,12 @@
     margen y que la pantalla quede desalineada.
 -->
 <resources>
+    <!-- Separación entre bloques dentro de una pantalla -->
+    <dimen name="espaciado_grande">24dp</dimen>
+
+    <!-- Diámetro del avatar del perfil -->
+    <dimen name="perfil_avatar_tamanio">88dp</dimen>
+
     <!-- Margen lateral estándar de la pantalla -->
     <dimen name="espaciado_pantalla">16dp</dimen>
     <dimen name="espaciado_chico">8dp</dimen>
