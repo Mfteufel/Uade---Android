@@ -1,0 +1,393 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Mi perfil — Punto 2 del TPO.
+
+    Una sola pantalla con dos modos: lectura y edición. No se duplican las vistas
+    de los datos; los mismos campos se habilitan o deshabilitan según el modo, y
+    lo único que cambia de verdad es qué botones se ven. Duplicar cada dato en un
+    TextView y en un campo editable obligaría a mantener los dos sincronizados,
+    que es la clase de bug que aparece justo antes de la entrega.
+
+    El FrameLayout de afuera existe para poder superponer los estados de carga y
+    de error sobre el contenido, igual que hace el Home.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.perfil.PerfilFragment">
+
+    <!-- ===================== Contenido ===================== -->
+    <!--
+        Va dentro de un ScrollView porque en pantallas chicas, con el teclado
+        abierto durante la edición, el contenido no entra completo.
+    -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/contenedorPerfil"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/espaciado_pantalla">
+
+            <!-- - Encabezado: avatar + nombre - -->
+
+            <TextView
+                android:id="@+id/textoInicial"
+                android:layout_width="@dimen/perfil_avatar_tamanio"
+                android:layout_height="@dimen/perfil_avatar_tamanio"
+                android:layout_gravity="center_horizontal"
+                android:background="@drawable/fondo_avatar"
+                android:gravity="center"
+                android:textAppearance="?attr/textAppearanceHeadlineMedium"
+                android:textColor="?attr/colorOnPrimaryContainer"
+                tools:text="J" />
+
+            <TextView
+                android:id="@+id/textoNombre"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaciado_mediano"
+                android:gravity="center"
+                android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                tools:text="Juan Elliff" />
+
+            <TextView
+                android:id="@+id/textoAntiguedad"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:gravity="center"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                tools:text="En Ronda desde julio de 2025" />
+
+            <!--- Reputación - -->
+            <!--
+                Es solo lectura en las dos modalidades: la reputación la calcula el
+                sistema interno de Ronda a partir de las calificaciones recibidas,
+                el usuario nunca la edita.
+            -->
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaciado_grande"
+                app:cardElevation="0dp"
+                app:strokeColor="?attr/colorOutlineVariant"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/espaciado_pantalla">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/perfil_reputacion"
+                        android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                    <!--
+                        Promedio: estrellas + número.
+                        Cuando el usuario todavía no tiene calificaciones se oculta
+                        este bloque entero y se muestra textoSinCalificaciones, para
+                        no mostrar "0,0" y que parezca una mala reputación.
+                    -->
+                    <LinearLayout
+                        android:id="@+id/contenedorPromedio"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/espaciado_mediano"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <RatingBar
+                            android:id="@+id/barraEstrellas"
+                            style="?android:attr/ratingBarStyleSmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:isIndicator="true"
+                            android:numStars="5"
+                            android:stepSize="0.1"
+                            tools:rating="4.6" />
+
+                        <TextView
+                            android:id="@+id/textoPromedio"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/espaciado_chico"
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            tools:text="4,6" />
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/textoSinCalificaciones"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/espaciado_mediano"
+                        android:text="@string/perfil_sin_calificaciones"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:visibility="gone"
+                        tools:visibility="visible" />
+
+                    <!-- Operaciones concretadas, separadas por rol como pide el enunciado. -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/espaciado_pantalla"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/textoOperacionesVendedor"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                                tools:text="7" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/perfil_como_vendedor"
+                                android:textAppearance="?attr/textAppearanceBodySmall"
+                                android:textColor="?attr/colorOnSurfaceVariant" />
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/textoOperacionesComprador"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                                tools:text="12" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/perfil_como_comprador"
+                                android:textAppearance="?attr/textAppearanceBodySmall"
+                                android:textColor="?attr/colorOnSurfaceVariant" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- - Datos personales - -->
+            <!--
+                Los cuatro campos que el enunciado declara editables. Arrancan
+                deshabilitados (modo lectura) y el Fragment los habilita al entrar
+                en modo edición.
+            -->
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaciado_grande"
+                android:text="@string/perfil_datos_personales"
+                android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/campoNombreContenedor"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaciado_mediano"
+                android:hint="@string/perfil_nombre">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/campoNombre"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:enabled="false"
+                    android:inputType="textPersonName"
+                    tools:text="Juan Elliff" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/campoEmailContenedor"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaciado_mediano"
+                android:hint="@string/perfil_email">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/campoEmail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:enabled="false"
+                    android:inputType="textEmailAddress"
+                    tools:text="juan.elliff@ronda.com" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/campoTelefonoContenedor"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaciado_mediano"
+                android:hint="@string/perfil_telefono">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/campoTelefono"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:enabled="false"
+                    android:inputType="phone"
+                    tools:text="1145678901" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!--
+                La zona es un enum de 16 valores, así que va como desplegable y no
+                como campo de texto libre: el usuario no puede escribir una zona
+                que no exista.
+
+                ExposedDropdownMenu + AutoCompleteTextView es la forma que Material
+                3 usa para los desplegables. El inputType="none" evita que se abra
+                el teclado al tocarlo.
+            -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/campoZonaContenedor"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaciado_mediano"
+                android:hint="@string/perfil_zona">
+
+                <AutoCompleteTextView
+                    android:id="@+id/campoZona"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:enabled="false"
+                    android:inputType="none"
+                    tools:text="Caballito" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- - Botones - -->
+            <!--
+                En modo lectura se ve solo "Editar". En modo edición se ven
+                "Guardar" y "Cancelar". El Fragment intercambia la visibilidad de
+                los dos contenedores.
+            -->
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/botonEditar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaciado_grande"
+                android:text="@string/perfil_editar" />
+
+            <LinearLayout
+                android:id="@+id/contenedorBotonesEdicion"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaciado_grande"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botonCancelar"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/perfil_cancelar" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botonGuardar"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/espaciado_mediano"
+                    android:layout_weight="1"
+                    android:text="@string/perfil_guardar" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- ===================== Estado de carga ===================== -->
+
+    <com.google.android.material.progressindicator.CircularProgressIndicator
+        android:id="@+id/progresoPerfil"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:indeterminate="true"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
+    <!-- ===================== Estado de error ===================== -->
+    <!--
+        Solo se usa cuando falla la carga inicial y no hay nada que mostrar. Un
+        error al guardar no ocupa toda la pantalla: se avisa con un Snackbar para
+        no perder de vista lo que el usuario venía escribiendo.
+    -->
+
+    <LinearLayout
+        android:id="@+id/estadoErrorPerfil"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="32dp"
+        android:visibility="gone"
+        tools:visibility="gone">
+
+        <TextView
+            android:id="@+id/textoErrorPerfil"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            tools:text="No pudimos cargar tu perfil" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/espaciado_chico"
+            android:gravity="center"
+            android:text="@string/error_mensaje"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/botonReintentarPerfil"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/espaciado_pantalla"
+            android:text="@string/error_reintentar" />
+
+    </LinearLayout>
+
+</FrameLayout>
