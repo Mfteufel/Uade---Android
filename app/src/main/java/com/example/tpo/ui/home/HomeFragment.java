@@ -14,6 +14,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.os.BundleCompat;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -500,23 +501,12 @@ public class HomeFragment extends Fragment implements PublicacionAdapter.OnPubli
     // Interacción con la lista
     // ------------------------------------------------------------------
 
-    /**
-     * El usuario tocó una publicación.
-     * <p>
-     * TODO (Punto 4 — Detalle de publicación): cuando exista DetalleFragment en el
-     * nav_graph, reemplazar el Snackbar por la navegación real:
-     * <pre>
-     * Bundle argumentos = new Bundle();
-     * argumentos.putString("publicacionId", publicacion.getId());
-     * Navigation.findNavController(requireView())
-     *         .navigate(R.id.action_home_to_detalle, argumentos);
-     * </pre>
-     */
+    /** El usuario tocó una publicación: navega al Detalle (Punto 4) con su id. */
     @Override
     public void onPublicacionClick(Publicacion publicacion) {
-        Snackbar.make(
-                requireView(),
-                getString(R.string.detalle_proximamente, publicacion.getTitulo()),
-                Snackbar.LENGTH_SHORT).show();
+        Bundle argumentos = new Bundle();
+        argumentos.putString("publicacionId", publicacion.getId());
+        Navigation.findNavController(requireView())
+                .navigate(R.id.action_home_to_detalle, argumentos);
     }
 }

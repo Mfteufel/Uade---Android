@@ -15,4 +15,7 @@
 
     <!-- Espacio extra al final de la lista para que la última tarjeta no quede pegada al borde -->
     <dimen name="lista_padding_inferior">24dp</dimen>
+
+    <!-- Lado de cada miniatura de la galería del Detalle -->
+    <dimen name="detalle_foto_tamano">220dp</dimen>
 </resources>

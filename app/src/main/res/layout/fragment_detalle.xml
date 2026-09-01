@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Pantalla Detalle de publicación (Punto 4 del TPO).
+
+    De arriba hacia abajo:
+      1. Toolbar con flecha para volver.
+      2. Contenido scrolleable: galería, título, precio, estado/categoría,
+         zona y antigüedad, descripción y datos del vendedor.
+      3. Barra de acciones fija al pie, que cambia según el rol: "Contactar al
+         vendedor" para cualquier otro usuario, o "Gestionar publicación" si el
+         usuario logueado es quien la publicó.
+
+    El contenido, el spinner de carga y el estado de error se superponen en el
+    mismo FrameLayout y el Fragment muestra uno solo por vez, igual que en el
+    Home.
+
+    El root es un CoordinatorLayout para que los Snackbar se posicionen bien.
+-->
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/contenedorDetalle"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface"
+    tools:context=".ui.detalle.DetalleFragment">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- ============ 1. Encabezado ============ -->
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:navigationIcon="@drawable/ic_flecha_atras"
+            app:title="@string/detalle_titulo" />
+
+        <!-- ============ 2. Contenido ============ -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <androidx.core.widget.NestedScrollView
+                android:id="@+id/scrollContenido"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingBottom="@dimen/espaciado_pantalla"
+                tools:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- Galería: lista simple de placeholders, uno por foto. Sin swipe. -->
+                    <HorizontalScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:clipToPadding="false"
+                        android:paddingHorizontal="@dimen/espaciado_pantalla"
+                        android:scrollbars="none">
+
+                        <LinearLayout
+                            android:id="@+id/grupoFotos"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            tools:ignore="UselessParent" />
+                    </HorizontalScrollView>
+
+                    <TextView
+                        android:id="@+id/tituloDetalle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+                        android:layout_marginTop="@dimen/espaciado_mediano"
+                        android:textAppearance="?attr/textAppearanceTitleLarge"
+                        tools:text="Notebook Lenovo IdeaPad 15" />
+
+                    <TextView
+                        android:id="@+id/precioDetalle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+                        android:layout_marginTop="4dp"
+                        android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                        android:textColor="?attr/colorPrimary"
+                        tools:text="$ 480.000" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+                        android:layout_marginTop="@dimen/espaciado_chico"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/estadoDetalle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_estado_articulo"
+                            android:paddingHorizontal="@dimen/espaciado_chico"
+                            android:paddingVertical="4dp"
+                            android:textAppearance="?attr/textAppearanceLabelSmall"
+                            android:textColor="?attr/colorOnSecondaryContainer"
+                            tools:text="Usado" />
+
+                        <TextView
+                            android:id="@+id/categoriaDetalle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/espaciado_chico"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            tools:text="Tecnología" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/zonaYFechaDetalle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+                        android:layout_marginTop="@dimen/espaciado_chico"
+                        android:drawablePadding="4dp"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        app:drawableStartCompat="@drawable/ic_zona"
+                        tools:text="Caballito · hace 5 h" />
+
+                    <com.google.android.material.divider.MaterialDivider
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+                        android:layout_marginTop="@dimen/espaciado_pantalla" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+                        android:layout_marginTop="@dimen/espaciado_pantalla"
+                        android:text="@string/detalle_descripcion_titulo"
+                        android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+                    <TextView
+                        android:id="@+id/descripcionDetalle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+                        android:layout_marginTop="@dimen/espaciado_chico"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        tools:text="Batería al 89%, funda y cargador original incluidos. Sin detalles en pantalla." />
+
+                    <com.google.android.material.divider.MaterialDivider
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+                        android:layout_marginTop="@dimen/espaciado_pantalla" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+                        android:layout_marginTop="@dimen/espaciado_pantalla"
+                        android:text="@string/detalle_vendedor_titulo"
+                        android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+                    <TextView
+                        android:id="@+id/nombreVendedorDetalle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+                        android:layout_marginTop="@dimen/espaciado_chico"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        tools:text="Martina G." />
+
+                </LinearLayout>
+            </androidx.core.widget.NestedScrollView>
+
+            <!-- Spinner de carga inicial -->
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/progresoInicial"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:indeterminate="true"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <!-- Estado de error: la publicación no se pudo cargar o no existe -->
+            <LinearLayout
+                android:id="@+id/estadoError"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:paddingHorizontal="32dp"
+                android:visibility="gone"
+                tools:visibility="gone">
+
+                <ImageView
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_error" />
+
+                <TextView
+                    android:id="@+id/textoError"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaciado_pantalla"
+                    android:gravity="center"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    tools:text="No encontramos esta publicación" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botonReintentar"
+                    style="@style/Widget.Material3.Button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaciado_pantalla"
+                    android:text="@string/error_reintentar" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <!-- ============ 3. Barra de acciones (según rol) ============ -->
+        <LinearLayout
+            android:id="@+id/barraAcciones"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/colorSurfaceContainer"
+            android:elevation="8dp"
+            android:orientation="vertical"
+            android:padding="@dimen/espaciado_pantalla"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <TextView
+                android:id="@+id/textoRolAviso"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/espaciado_chico"
+                android:gravity="center"
+                android:text="@string/detalle_es_tu_publicacion"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/botonAccion"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                tools:text="@string/detalle_contactar_vendedor" />
+        </LinearLayout>
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -1,6 +1,7 @@
 package com.example.tpo.data;
 
 import com.example.tpo.model.FiltroPublicaciones;
+import com.example.tpo.model.Publicacion;
 
 /**
  * Fuente de datos de publicaciones para el Home.
@@ -33,4 +34,12 @@ public interface PublicacionRepository {
     void buscarPublicaciones(FiltroPublicaciones filtro,
                              int pagina,
                              RepositorioCallback<PaginaPublicaciones> callback);
+
+    /**
+     * Busca una publicación puntual por id, para la pantalla de Detalle (Punto 4).
+     *
+     * @param id       id de la publicación ({@link Publicacion#getId()}).
+     * @param callback dónde se avisa el resultado. Siempre se invoca en el Main Thread.
+     */
+    void obtenerPublicacion(String id, RepositorioCallback<Publicacion> callback);
 }

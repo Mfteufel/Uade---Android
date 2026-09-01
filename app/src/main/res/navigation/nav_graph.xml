@@ -22,31 +22,20 @@
         android:label="@string/home_titulo"
         tools:layout="@layout/fragment_home">
 
-        <!--
-            TODO (Punto 4 - Detalle de publicación): cuando exista DetailFragment,
-            descomentar esta action y el destino de abajo, y reemplazar el Snackbar
-            de HomeFragment.alAbrirPublicacion() por:
-
-            Bundle args = new Bundle();
-            args.putString("publicacionId", publicacion.getId());
-            navController.navigate(R.id.action_home_to_detalle, args);
-
         <action
             android:id="@+id/action_home_to_detalle"
             app:destination="@id/detalleFragment" />
-        -->
 
     </fragment>
 
-    <!--
     <fragment
         android:id="@+id/detalleFragment"
         android:name="com.example.tpo.ui.detalle.DetalleFragment"
-        android:label="@string/detalle_titulo">
+        android:label="@string/detalle_titulo"
+        tools:layout="@layout/fragment_detalle">
         <argument
             android:name="publicacionId"
             app:argType="string" />
     </fragment>
-    -->
 
 </navigation>

@@ -23,7 +23,13 @@ public class SesionUsuario {
      */
     private Zona zona = Zona.CABALLITO;
 
-    private String nombre = "Invitado";
+    /**
+     * Nombre del usuario logueado. Hasta que exista el login se arranca con el
+     * nombre de un vendedor del catálogo de prueba ("Martina G.", publicación
+     * "1"): así el Detalle (Punto 4) puede mostrar la vista de "acciones según
+     * rol" del vendedor sin necesitar todavía un id de usuario real.
+     */
+    private String nombre = "Martina G.";
 
     private SesionUsuario() {
         // Constructor privado: se accede siempre por getInstancia().

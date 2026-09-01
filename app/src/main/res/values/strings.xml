@@ -66,7 +66,13 @@
     <string name="cercania_mi_zona">Solo mi zona</string>
     <string name="cercania_zonas_cercanas">Zonas cercanas</string>
 
-    <!-- ===================== Pendiente de otros puntos ===================== -->
-    <!-- Se usa hasta que el Punto 4 (Detalle de publicación) exista como destino del nav_graph. -->
-    <string name="detalle_proximamente">Detalle de \"%1$s\" — disponible al implementar el Punto 4</string>
+    <!-- ===================== Detalle de publicación ===================== -->
+    <string name="detalle_titulo">Publicación</string>
+    <string name="detalle_descripcion_titulo">Descripción</string>
+    <string name="detalle_vendedor_titulo">Vendedor</string>
+    <string name="detalle_es_tu_publicacion">Esta es tu publicación</string>
+    <string name="detalle_contactar_vendedor">Contactar al vendedor</string>
+    <string name="detalle_contactar_proximamente">La mensajería con %1$s todavía no está disponible</string>
+    <string name="detalle_gestionar_publicacion">Gestionar publicación</string>
+    <string name="detalle_gestionar_proximamente">Vas a poder editarla o marcarla como vendida desde "Mis publicaciones"</string>
 </resources>

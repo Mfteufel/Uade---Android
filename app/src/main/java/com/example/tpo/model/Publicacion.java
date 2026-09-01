@@ -3,15 +3,15 @@ package com.example.tpo.model;
 import java.io.Serializable;
 
 /**
- * Una publicación del listado del Home.
+ * Una publicación del listado del Home y del Detalle.
  * <p>
- * Modela solo lo que el Punto 3 necesita mostrar y filtrar (título, precio,
- * estado, zona, categoría, descripción y fecha). El Punto 4 (Detalle) va a
- * necesitar más campos —galería de fotos, reputación del vendedor, etc.—; se
- * agregan cuando se implemente esa pantalla para no adelantar trabajo.
+ * Modela título, precio, estado, zona, categoría, descripción, fecha, vendedor
+ * y cantidad de fotos. La reputación del vendedor no vive acá: la resuelve la
+ * pantalla que la necesite (feature aparte) para no acoplar este modelo a algo
+ * que todavía no está implementado.
  * <p>
  * Implementa {@link Serializable} para poder viajar en un Bundle como argumento
- * de navegación hacia el Detalle.
+ * de navegación (por ejemplo, con el filtro del Home hacia el bottom sheet).
  */
 public class Publicacion implements Serializable {
 
@@ -34,6 +34,15 @@ public class Publicacion implements Serializable {
      */
     private final long fechaPublicacion;
     private final String nombreVendedor;
+    /**
+     * Cantidad de fotos de la publicación, para la galería del Detalle.
+     * <p>
+     * Todavía no hay librería de carga de imágenes (Glide/Picasso) ni fotos
+     * reales: la galería muestra este número de placeholders (ver
+     * {@code ic_imagen}). Cuando se suba la foto de verdad en el Punto 5 esto
+     * pasa a ser una lista de URLs.
+     */
+    private final int cantidadFotos;
 
     public Publicacion(String id,
                        String titulo,
@@ -43,7 +52,8 @@ public class Publicacion implements Serializable {
                        Categoria categoria,
                        Zona zona,
                        long fechaPublicacion,
-                       String nombreVendedor) {
+                       String nombreVendedor,
+                       int cantidadFotos) {
         this.id = id;
         this.titulo = titulo;
         this.descripcion = descripcion;
@@ -53,6 +63,7 @@ public class Publicacion implements Serializable {
         this.zona = zona;
         this.fechaPublicacion = fechaPublicacion;
         this.nombreVendedor = nombreVendedor;
+        this.cantidadFotos = cantidadFotos;
     }
 
     public String getId() {
@@ -89,5 +100,9 @@ public class Publicacion implements Serializable {
 
     public String getNombreVendedor() {
         return nombreVendedor;
+    }
+
+    public int getCantidadFotos() {
+        return cantidadFotos;
     }
 }
