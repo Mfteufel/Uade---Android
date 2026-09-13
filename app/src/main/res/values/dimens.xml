@@ -18,4 +18,8 @@
 
     <!-- Lado de cada miniatura de la galería del Detalle -->
     <dimen name="detalle_foto_tamano">220dp</dimen>
+
+    <!-- Círculo con las iniciales del vendedor: chico en el Detalle, grande en el Perfil -->
+    <dimen name="avatar_vendedor_tamano">48dp</dimen>
+    <dimen name="avatar_perfil_tamano">64dp</dimen>
 </resources>

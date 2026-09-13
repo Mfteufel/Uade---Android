@@ -8,6 +8,7 @@ import com.example.tpo.model.Cercania;
 import com.example.tpo.model.EstadoArticulo;
 import com.example.tpo.model.FiltroPublicaciones;
 import com.example.tpo.model.Publicacion;
+import com.example.tpo.model.Vendedor;
 import com.example.tpo.model.Zona;
 import com.example.tpo.util.TextoUtils;
 
@@ -110,6 +111,34 @@ public class PublicacionRepositoryMock implements PublicacionRepository {
             }
         }
         return null;
+    }
+
+    @Override
+    public void obtenerPerfilVendedor(String vendedorId, RepositorioCallback<PerfilVendedor> callback) {
+        handlerPrincipal.postDelayed(() -> {
+            if (SIMULAR_ERROR) {
+                callback.onError("No pudimos cargar el perfil del vendedor");
+                return;
+            }
+            Vendedor vendedor = null;
+            List<Publicacion> suyas = new ArrayList<>();
+            for (Publicacion publicacion : catalogo) {
+                if (publicacion.getVendedor().getId().equals(vendedorId)) {
+                    vendedor = publicacion.getVendedor();
+                    suyas.add(publicacion);
+                }
+            }
+            if (vendedor == null) {
+                callback.onError("No encontramos este vendedor");
+                return;
+            }
+            // Más recientes primero, igual que el orden por defecto del Home. El
+            // perfil incluye la publicación desde la que se llegó: es lo que hace
+            // cualquier marketplace; filtrarla sería decisión de la pantalla.
+            Collections.sort(suyas, (a, b) ->
+                    Long.compare(b.getFechaPublicacion(), a.getFechaPublicacion()));
+            callback.onExito(new PerfilVendedor(vendedor, suyas));
+        }, DEMORA_SIMULADA_MS);
     }
 
     // ---------------------------------------------------------------------
@@ -228,10 +257,54 @@ public class PublicacionRepositoryMock implements PublicacionRepository {
         return ahora - (dias * 24L + horas) * 60L * 60L * 1000L;
     }
 
+    /** Milisegundos correspondientes a "hace N meses" (aproximando el mes a 30 días). */
+    private static long haceMeses(int meses) {
+        long ahora = System.currentTimeMillis();
+        return ahora - meses * 30L * 24L * 60L * 60L * 1000L;
+    }
+
+    // ---------------------------------------------------------------------
+    // Vendedores de prueba
+    // ---------------------------------------------------------------------
+
+    /*
+     * Los vendedores se declaran una sola vez y varias publicaciones comparten el
+     * mismo objeto. Es a propósito: el perfil público del Punto 4 lista "las otras
+     * publicaciones del vendedor", así que cada vendedor necesita tener más de una.
+     * Los ids son "v1".."v12"; "v1" (Martina G.) es el que usa SesionUsuario para
+     * poder probar la vista de "acciones según rol" del propio vendedor.
+     */
+    private static final Vendedor V1_MARTINA =
+            new Vendedor("v1", "Martina G.", 4.8, 23, haceMeses(20));
+    private static final Vendedor V2_NICOLAS =
+            new Vendedor("v2", "Nicolás P.", 4.6, 14, haceMeses(9));
+    private static final Vendedor V3_SOFIA =
+            new Vendedor("v3", "Sofía M.", 5.0, 6, haceMeses(4));
+    private static final Vendedor V4_FAMILIA_RUIZ =
+            new Vendedor("v4", "Familia Ruiz", 4.3, 9, haceMeses(30));
+    private static final Vendedor V5_VALERIA =
+            new Vendedor("v5", "Valeria S.", 4.9, 31, haceMeses(26));
+    private static final Vendedor V6_ESCUELA_MUSICA =
+            new Vendedor("v6", "Escuela de Música", 4.7, 52, haceMeses(40));
+    private static final Vendedor V7_CLUB_SAN_MARTIN =
+            new Vendedor("v7", "Club San Martín", 4.2, 7, haceMeses(15));
+    private static final Vendedor V8_GONZALO =
+            new Vendedor("v8", "Gonzalo H.", 4.5, 12, haceMeses(11));
+    // Sin ventas todavía: ejercita el caso "Sin calificaciones" del Detalle y del perfil.
+    private static final Vendedor V9_BRUNO =
+            new Vendedor("v9", "Bruno T.", 0.0, 0, haceMeses(2));
+    private static final Vendedor V10_ROCIO =
+            new Vendedor("v10", "Rocío N.", 4.4, 18, haceMeses(22));
+    private static final Vendedor V11_LAURA_Y_SEBA =
+            new Vendedor("v11", "Laura y Seba", 4.9, 27, haceMeses(18));
+    private static final Vendedor V12_HERNAN =
+            new Vendedor("v12", "Hernán W.", 4.1, 8, haceMeses(33));
+
     /**
      * Catálogo de prueba. Está armado a propósito con variedad de categorías,
      * estados, zonas, precios y fechas para que se note el efecto de cada filtro
-     * y de cada criterio de ordenamiento.
+     * y de cada criterio de ordenamiento. Cada vendedor es dueño de entre dos y
+     * tres publicaciones (ver el bloque de constantes de arriba).
      */
     private static List<Publicacion> crearCatalogoDePrueba() {
         List<Publicacion> lista = new ArrayList<>();
@@ -239,122 +312,122 @@ public class PublicacionRepositoryMock implements PublicacionRepository {
         lista.add(new Publicacion("1", "iPhone 13 128GB",
                 "Batería al 89%, funda y cargador original incluidos. Sin detalles en pantalla.",
                 620000, EstadoArticulo.COMO_NUEVO, Categoria.TECNOLOGIA, Zona.PALERMO,
-                hace(0, 2), "Martina G.", 3));
+                hace(0, 2), V1_MARTINA, 3));
         lista.add(new Publicacion("2", "Notebook Lenovo IdeaPad 15",
                 "i5 de 11va generación, 16GB de RAM y SSD de 512GB. Ideal para estudiar o trabajar.",
                 480000, EstadoArticulo.USADO, Categoria.TECNOLOGIA, Zona.CABALLITO,
-                hace(0, 5), "Nicolás P.", 4));
+                hace(0, 5), V2_NICOLAS, 4));
         lista.add(new Publicacion("3", "Monitor Samsung 24\" curvo",
                 "Full HD 75Hz. Lo uso poco desde que armé la PC nueva. Incluye cable HDMI.",
                 165000, EstadoArticulo.USADO, Categoria.TECNOLOGIA, Zona.BELGRANO,
-                hace(1, 3), "Luciano R.", 1));
+                hace(1, 3), V2_NICOLAS, 1));
         lista.add(new Publicacion("4", "Teclado mecánico Redragon",
                 "Switches red, retroiluminado RGB. Sin uso, me lo regalaron repetido.",
                 52000, EstadoArticulo.NUEVO, Categoria.TECNOLOGIA, Zona.ALMAGRO,
-                hace(2, 1), "Sofía M.", 2));
+                hace(2, 1), V3_SOFIA, 2));
 
         lista.add(new Publicacion("5", "Sillón de dos cuerpos",
                 "Tapizado en pana gris. Muy cómodo, lo vendo por mudanza. Retira en el día.",
                 210000, EstadoArticulo.USADO, Categoria.HOGAR, Zona.VILLA_CRESPO,
-                hace(0, 8), "Familia Ruiz", 3));
+                hace(0, 8), V4_FAMILIA_RUIZ, 3));
         lista.add(new Publicacion("6", "Mesa de comedor extensible",
                 "Madera de paraíso, para 6 u 8 personas. Tiene marcas de uso en la tapa.",
                 175000, EstadoArticulo.USADO, Categoria.HOGAR, Zona.FLORES,
-                hace(3, 6), "Carlos D.", 4));
+                hace(3, 6), V4_FAMILIA_RUIZ, 4));
         lista.add(new Publicacion("7", "Cafetera express Philips",
                 "La usé menos de diez veces. Está impecable, con manual y caja.",
                 145000, EstadoArticulo.COMO_NUEVO, Categoria.HOGAR, Zona.SAN_ISIDRO,
-                hace(1, 10), "Valeria S.", 1));
+                hace(1, 10), V5_VALERIA, 1));
         lista.add(new Publicacion("8", "Juego de sábanas queen",
                 "Algodón 200 hilos, sin estrenar. Color blanco.",
                 38000, EstadoArticulo.NUEVO, Categoria.HOGAR, Zona.QUILMES,
-                hace(4, 2), "Ana L.", 2));
+                hace(4, 2), V5_VALERIA, 2));
 
         lista.add(new Publicacion("9", "Campera de cuero negra",
                 "Talle M, cuero ecológico. Muy poco uso, quedó chica.",
                 85000, EstadoArticulo.COMO_NUEVO, Categoria.INDUMENTARIA, Zona.RECOLETA,
-                hace(0, 14), "Julieta F.", 3));
+                hace(0, 14), V1_MARTINA, 3));
         lista.add(new Publicacion("10", "Zapatillas Nike Air Max 90",
                 "Talle 42, usadas un par de veces. Vienen con la caja original.",
                 95000, EstadoArticulo.COMO_NUEVO, Categoria.INDUMENTARIA, Zona.NUNEZ,
-                hace(2, 7), "Bruno T.", 4));
+                hace(2, 7), V9_BRUNO, 4));
         lista.add(new Publicacion("11", "Vestido de fiesta largo",
                 "Talle S, azul noche. Usado una sola vez en un casamiento.",
                 62000, EstadoArticulo.COMO_NUEVO, Categoria.INDUMENTARIA, Zona.VICENTE_LOPEZ,
-                hace(5, 4), "Camila V.", 1));
+                hace(5, 4), V3_SOFIA, 1));
 
         lista.add(new Publicacion("12", "Bicicleta mountain bike rodado 29",
                 "Cuadro de aluminio, 21 cambios Shimano. Recién service completo.",
                 320000, EstadoArticulo.USADO, Categoria.DEPORTES, Zona.TIGRE,
-                hace(1, 1), "Federico A.", 2));
+                hace(1, 1), V7_CLUB_SAN_MARTIN, 2));
         lista.add(new Publicacion("13", "Set de mancuernas 20kg",
                 "Discos de goma con barra ajustable. Las uso desde que armé el gimnasio en casa.",
                 78000, EstadoArticulo.USADO, Categoria.DEPORTES, Zona.BOEDO,
-                hace(3, 9), "Gonzalo H.", 3));
+                hace(3, 9), V8_GONZALO, 3));
         lista.add(new Publicacion("14", "Cinta de correr plegable",
                 "Motor 2HP, se pliega para guardar. Funciona perfecto, la vendo por espacio.",
                 410000, EstadoArticulo.USADO, Categoria.DEPORTES, Zona.LOMAS_DE_ZAMORA,
-                hace(6, 3), "Mariano C.", 4));
+                hace(6, 3), V8_GONZALO, 4));
         lista.add(new Publicacion("15", "Pelota de fútbol profesional",
                 "Nueva, todavía en la bolsa. Número 5, cosida a mano.",
                 29000, EstadoArticulo.NUEVO, Categoria.DEPORTES, Zona.AVELLANEDA,
-                hace(7, 5), "Club San Martín", 1));
+                hace(7, 5), V7_CLUB_SAN_MARTIN, 1));
 
         lista.add(new Publicacion("16", "Colección Harry Potter completa",
                 "Los siete libros en tapa dura, edición Salamandra. Muy bien cuidados.",
                 115000, EstadoArticulo.COMO_NUEVO, Categoria.LIBROS, Zona.CABALLITO,
-                hace(0, 20), "Paula E.", 2));
+                hace(0, 20), V1_MARTINA, 2));
         lista.add(new Publicacion("17", "Rayuela - Julio Cortázar",
                 "Edición de bolsillo, con algunas anotaciones al margen en lápiz.",
                 12000, EstadoArticulo.USADO, Categoria.LIBROS, Zona.ALMAGRO,
-                hace(2, 12), "Diego B.", 3));
+                hace(2, 12), V9_BRUNO, 3));
         lista.add(new Publicacion("18", "Manual de Anatomía de Rouvière",
                 "Tomo 1 y 2. Los usé toda la carrera, están completos y sin hojas sueltas.",
                 68000, EstadoArticulo.USADO, Categoria.LIBROS, Zona.BARRACAS,
-                hace(8, 1), "Rocío N.", 4));
+                hace(8, 1), V10_ROCIO, 4));
 
         lista.add(new Publicacion("19", "Guitarra criolla Fonseca",
                 "Modelo 40, con funda acolchada. Encordado nuevo puesto la semana pasada.",
                 135000, EstadoArticulo.USADO, Categoria.INSTRUMENTOS, Zona.PALERMO,
-                hace(1, 16), "Tomás I.", 1));
+                hace(1, 16), V6_ESCUELA_MUSICA, 1));
         lista.add(new Publicacion("20", "Teclado Yamaha PSR-E373",
                 "61 teclas sensibles, con fuente y atril. Comprado hace seis meses.",
                 295000, EstadoArticulo.COMO_NUEVO, Categoria.INSTRUMENTOS, Zona.BELGRANO,
-                hace(4, 8), "Escuela de Música", 2));
+                hace(4, 8), V6_ESCUELA_MUSICA, 2));
         lista.add(new Publicacion("21", "Amplificador Marshall 15W",
                 "Ideal para practicar en casa. Tiene distorsión y reverb.",
                 160000, EstadoArticulo.USADO, Categoria.INSTRUMENTOS, Zona.VILLA_CRESPO,
-                hace(9, 2), "Ezequiel O.", 3));
+                hace(9, 2), V6_ESCUELA_MUSICA, 3));
 
         lista.add(new Publicacion("22", "Cochecito Infanti 3 en 1",
                 "Incluye huevito y base para auto. Usado por un solo bebé.",
                 240000, EstadoArticulo.USADO, Categoria.BEBES, Zona.SAN_ISIDRO,
-                hace(0, 11), "Laura y Seba", 4));
+                hace(0, 11), V11_LAURA_Y_SEBA, 4));
         lista.add(new Publicacion("23", "Cuna funcional de madera",
                 "Se convierte en cama de una plaza. Colchón incluido, sin manchas.",
                 185000, EstadoArticulo.COMO_NUEVO, Categoria.BEBES, Zona.VICENTE_LOPEZ,
-                hace(5, 15), "Melina Q.", 1));
+                hace(5, 15), V11_LAURA_Y_SEBA, 1));
         lista.add(new Publicacion("24", "Lote de ropa de bebé 0 a 6 meses",
                 "Aproximadamente 30 prendas, todas lavadas y en buen estado.",
                 35000, EstadoArticulo.USADO, Categoria.BEBES, Zona.QUILMES,
-                hace(10, 4), "Andrea Z.", 2));
+                hace(10, 4), V11_LAURA_Y_SEBA, 2));
 
         lista.add(new Publicacion("25", "Caja de herramientas completa",
                 "Llaves, destornilladores, pinzas y taladro. Todo en su maletín.",
                 125000, EstadoArticulo.USADO, Categoria.OTROS, Zona.BARRACAS,
-                hace(6, 18), "Ricardo U.", 3));
+                hace(6, 18), V10_ROCIO, 3));
         lista.add(new Publicacion("26", "Rompecabezas 3000 piezas",
                 "Armado una sola vez, están todas las piezas. Motivo: mapa antiguo.",
                 18000, EstadoArticulo.COMO_NUEVO, Categoria.OTROS, Zona.FLORES,
-                hace(11, 6), "Silvina K.", 4));
+                hace(11, 6), V12_HERNAN, 4));
         lista.add(new Publicacion("27", "Escritorio con estantería",
                 "Melamina blanca, 120cm de ancho. Se desarma para el traslado.",
                 98000, EstadoArticulo.USADO, Categoria.HOGAR, Zona.BOEDO,
-                hace(12, 3), "Hernán W.", 1));
+                hace(12, 3), V12_HERNAN, 1));
         lista.add(new Publicacion("28", "Aire acondicionado split 3000 frigorías",
                 "Frío/calor, funcionando perfecto. Se retira ya desinstalado.",
                 390000, EstadoArticulo.USADO, Categoria.HOGAR, Zona.AVELLANEDA,
-                hace(13, 9), "Gabriel Y.", 2));
+                hace(13, 9), V12_HERNAN, 2));
 
         return lista;
     }

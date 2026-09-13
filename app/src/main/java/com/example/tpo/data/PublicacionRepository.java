@@ -42,4 +42,17 @@ public interface PublicacionRepository {
      * @param callback dónde se avisa el resultado. Siempre se invoca en el Main Thread.
      */
     void obtenerPublicacion(String id, RepositorioCallback<Publicacion> callback);
+
+    /**
+     * Trae el perfil público de un vendedor: sus datos y sus publicaciones
+     * activas, para la pantalla de Perfil (Punto 4).
+     * <p>
+     * Va en una sola operación y no en dos (datos + publicaciones) porque la
+     * pantalla las necesita juntas: con dos callbacks habría que coordinar dos
+     * estados de carga y decidir qué hacer si una falla y la otra no.
+     *
+     * @param vendedorId id del vendedor ({@link com.example.tpo.model.Vendedor#getId()}).
+     * @param callback   dónde se avisa el resultado. Siempre se invoca en el Main Thread.
+     */
+    void obtenerPerfilVendedor(String vendedorId, RepositorioCallback<PerfilVendedor> callback);
 }

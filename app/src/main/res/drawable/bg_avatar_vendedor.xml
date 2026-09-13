@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Círculo de fondo del avatar del vendedor (Detalle y Perfil).
+
+    No hay librería de carga de imágenes (Glide/Picasso no se vio en clase) ni
+    fotos reales de perfil, así que el avatar es un TextView con las iniciales
+    sobre este círculo.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="?attr/colorPrimaryContainer" />
+</shape>

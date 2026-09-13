@@ -36,6 +36,32 @@
         <argument
             android:name="publicacionId"
             app:argType="string" />
+
+        <action
+            android:id="@+id/action_detalle_to_perfil"
+            app:destination="@id/perfilVendedorFragment" />
+    </fragment>
+
+    <!--
+        Perfil público del vendedor. Detalle y Perfil se pueden encadenar (ver un
+        perfil, entrar a otra publicación suya, ver ese perfil...), así que la
+        pila puede crecer. Se deja crecer a propósito: el "atrás" devuelve al
+        usuario exactamente por donde vino, que es lo que espera. NO poner
+        popUpTo para "cortar el ciclo": eso saca de la pila una pantalla que el
+        usuario sí vio y el "atrás" termina saltando a otro lado.
+    -->
+    <fragment
+        android:id="@+id/perfilVendedorFragment"
+        android:name="com.example.tpo.ui.perfil.PerfilVendedorFragment"
+        android:label="@string/perfil_titulo"
+        tools:layout="@layout/fragment_perfil_vendedor">
+        <argument
+            android:name="vendedorId"
+            app:argType="string" />
+
+        <action
+            android:id="@+id/action_perfil_to_detalle"
+            app:destination="@id/detalleFragment" />
     </fragment>
 
 </navigation>

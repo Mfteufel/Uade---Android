@@ -6,9 +6,9 @@ import java.io.Serializable;
  * Una publicación del listado del Home y del Detalle.
  * <p>
  * Modela título, precio, estado, zona, categoría, descripción, fecha, vendedor
- * y cantidad de fotos. La reputación del vendedor no vive acá: la resuelve la
- * pantalla que la necesite (feature aparte) para no acoplar este modelo a algo
- * que todavía no está implementado.
+ * y cantidad de fotos. El vendedor es un {@link Vendedor} (no un String suelto):
+ * así el Detalle puede mostrar su reputación y abrir su perfil público, y decidir
+ * las "acciones según rol" comparando por id contra el usuario logueado.
  * <p>
  * Implementa {@link Serializable} para poder viajar en un Bundle como argumento
  * de navegación (por ejemplo, con el filtro del Home hacia el bottom sheet).
@@ -33,7 +33,7 @@ public class Publicacion implements Serializable {
      * java.time recién está disponible desde API 26 (haría falta desugaring).
      */
     private final long fechaPublicacion;
-    private final String nombreVendedor;
+    private final Vendedor vendedor;
     /**
      * Cantidad de fotos de la publicación, para la galería del Detalle.
      * <p>
@@ -52,7 +52,7 @@ public class Publicacion implements Serializable {
                        Categoria categoria,
                        Zona zona,
                        long fechaPublicacion,
-                       String nombreVendedor,
+                       Vendedor vendedor,
                        int cantidadFotos) {
         this.id = id;
         this.titulo = titulo;
@@ -62,7 +62,7 @@ public class Publicacion implements Serializable {
         this.categoria = categoria;
         this.zona = zona;
         this.fechaPublicacion = fechaPublicacion;
-        this.nombreVendedor = nombreVendedor;
+        this.vendedor = vendedor;
         this.cantidadFotos = cantidadFotos;
     }
 
@@ -98,8 +98,8 @@ public class Publicacion implements Serializable {
         return fechaPublicacion;
     }
 
-    public String getNombreVendedor() {
-        return nombreVendedor;
+    public Vendedor getVendedor() {
+        return vendedor;
     }
 
     public int getCantidadFotos() {

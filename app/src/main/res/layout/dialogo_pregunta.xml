@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Contenido del diálogo "Preguntar" del Detalle (Punto 4).
+
+    Se infla y se pasa a un MaterialAlertDialogBuilder con setView(). El padding
+    lateral lo pone este layout porque el diálogo no lo agrega al contenido
+    custom.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="@dimen/espaciado_pantalla"
+    android:paddingTop="@dimen/espaciado_chico">
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/inputPregunta"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/detalle_pregunta_hint"
+        app:counterEnabled="true"
+        app:counterMaxLength="200">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/campoPregunta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="top|start"
+            android:inputType="textMultiLine|textCapSentences"
+            android:maxLength="200"
+            android:minLines="3" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+</LinearLayout>
