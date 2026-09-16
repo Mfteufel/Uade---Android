@@ -22,7 +22,7 @@
     <!-- Punto 1 - Login. Primera pantalla de la app. -->
     <fragment
         android:id="@+id/loginFragment"
-        android:name="com.example.tpo.ui.auth.LoginFragment"
+        android:name="com.example.tpo.login.LoginFragment"
         tools:layout="@layout/fragment_login">
 
         <!-- popUpTo + inclusive: al entrar al Home el login sale del historial,

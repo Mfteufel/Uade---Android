@@ -1,4 +1,4 @@
-package com.example.tpo.ui.auth;
+package com.example.tpo.login;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;

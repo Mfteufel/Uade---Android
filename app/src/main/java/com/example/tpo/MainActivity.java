@@ -8,6 +8,8 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import dagger.hilt.android.AndroidEntryPoint;
+
 /**
  * Única Activity de Ronda (Single Activity Architecture).
  * <p>
@@ -15,6 +17,7 @@ import androidx.core.view.WindowInsetsCompat;
  * activity_main.xml. Cada pantalla de la app es un Fragment y la navegación entre
  * ellas la maneja el NavController sobre nav_graph.xml.
  */
+@AndroidEntryPoint
 public class MainActivity extends AppCompatActivity {
 
     @Override
