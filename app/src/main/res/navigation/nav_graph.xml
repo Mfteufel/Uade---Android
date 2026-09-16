@@ -1,53 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    Grafo de navegación de Ronda.
-
-    Por ahora tiene un solo destino: el Home. A medida que se implementen los
-    otros puntos del TPO se van agregando acá como <fragment>, junto con las
-    <action> que los conectan.
-
-    Cuando esté el Punto 1 (Autenticación), el startDestination pasa a ser el
-    login y de ahí al Home se navega con popUpTo + inclusive="true", para que el
-    botón "atrás" en el Home cierre la app en vez de volver al login.
--->
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
     app:startDestination="@id/loginFragment">
+    <!-- app:startDestination="@id/perfilFragment"> -->
 
     <fragment
         android:id="@+id/homeFragment"
         android:name="com.example.tpo.ui.home.HomeFragment"
         android:label="@string/home_titulo"
-        tools:layout="@layout/fragment_home">
+        tools:layout="@layout/fragment_home" />
 
-        <!--
-            TODO (Punto 4 - Detalle de publicación): cuando exista DetailFragment,
-            descomentar esta action y el destino de abajo, y reemplazar el Snackbar
-            de HomeFragment.alAbrirPublicacion() por:
-
-            Bundle args = new Bundle();
-            args.putString("publicacionId", publicacion.getId());
-            navController.navigate(R.id.action_home_to_detalle, args);
-
-        <action
-            android:id="@+id/action_home_to_detalle"
-            app:destination="@id/detalleFragment" />
-        -->
-
-    </fragment>
-
-    <!--
+    <!-- Punto 2 - Perfil y Reputación -->
     <fragment
-        android:id="@+id/detalleFragment"
-        android:name="com.example.tpo.ui.detalle.DetalleFragment"
-        android:label="@string/detalle_titulo">
-        <argument
-            android:name="publicacionId"
-            app:argType="string" />
-    </fragment>
-    -->
+        android:id="@+id/perfilFragment"
+        android:name="com.example.tpo.ui.perfil.PerfilFragment"
+        android:label="@string/perfil_titulo"
+        tools:layout="@layout/fragment_perfil" />
 
     <!-- Punto 1 - Login. Primera pantalla de la app. -->
     <fragment
