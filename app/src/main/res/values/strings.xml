@@ -69,4 +69,23 @@
     <!-- ===================== Pendiente de otros puntos ===================== -->
     <!-- Se usa hasta que el Punto 4 (Detalle de publicación) exista como destino del nav_graph. -->
     <string name="detalle_proximamente">Detalle de \"%1$s\" — disponible al implementar el Punto 4</string>
+
+    <!-- ===================== Perfil y Reputación ===================== -->
+    <string name="perfil_titulo">Mi perfil</string>
+    <string name="perfil_antiguedad">En Ronda desde %1$s</string>
+    <string name="perfil_reputacion">Reputación</string>
+    <string name="perfil_sin_calificaciones">Todavía no recibiste calificaciones</string>
+    <string name="perfil_como_vendedor">operaciones como vendedor</string>
+    <string name="perfil_como_comprador">operaciones como comprador</string>
+    <string name="perfil_datos_personales">Datos personales</string>
+    <string name="perfil_nombre">Nombre</string>
+    <string name="perfil_email">Email</string>
+    <string name="perfil_telefono">Teléfono de contacto</string>
+    <string name="perfil_zona">Zona</string>
+    <string name="perfil_editar">Editar perfil</string>
+    <string name="perfil_guardar">Guardar</string>
+    <string name="perfil_cancelar">Cancelar</string>
+    <string name="perfil_guardado">Perfil actualizado</string>
+    <string name="perfil_zona_invalida">Elegí una zona de la lista</string>
+
 </resources>
