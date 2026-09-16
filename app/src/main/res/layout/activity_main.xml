@@ -4,6 +4,8 @@
 
     No tiene UI propia más allá del contenedor: todas las pantallas de Ronda son
     Fragments que el NavController va reemplazando adentro del NavHostFragment.
+    La bottom nav es la excepción: vive acá porque tiene que quedar fija sobre
+    todos los destinos de nivel raíz.
 
     El ConstraintLayout externo existe para poder aplicarle el padding de las
     barras del sistema (ver MainActivity): así ninguna pantalla queda tapada por
@@ -27,10 +29,22 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:defaultNavHost="true"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottomNav"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:navGraph="@navigation/nav_graph" />
+
+    <!--
+        itemTextAppearanceActiveBoldEnabled="false": sin esto, el label del
+        ítem seleccionado pasa a negrita y cambia de ancho (se ve raro).
+    -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNav"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:itemTextAppearanceActiveBoldEnabled="false"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:menu="@menu/menu_navegacion" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

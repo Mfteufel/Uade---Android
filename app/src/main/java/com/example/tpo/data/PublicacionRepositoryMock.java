@@ -3,6 +3,8 @@ package com.example.tpo.data;
 import android.os.Handler;
 import android.os.Looper;
 
+import androidx.annotation.Nullable;
+
 import com.example.tpo.model.Categoria;
 import com.example.tpo.model.Cercania;
 import com.example.tpo.model.EstadoArticulo;
@@ -93,30 +95,39 @@ public class PublicacionRepositoryMock implements PublicacionRepository {
 
     /** Aplica todos los criterios del filtro. Un artículo tiene que pasar todos para entrar. */
     private List<Publicacion> aplicarFiltros(FiltroPublicaciones filtro) {
+        List<Publicacion> resultado = new ArrayList<>();
+        for (Publicacion publicacion : catalogo) {
+            if (coincideConFiltro(publicacion, filtro)) {
+                resultado.add(publicacion);
+            }
+        }
+        return resultado;
+    }
+
+    /**
+     * true si la publicación pasa todos los criterios del filtro. Se expone
+     * público porque {@code BusquedaGuardadaRepositoryMock} también la usa,
+     * para saber si una publicación nueva matchea una búsqueda guardada
+     * (Punto 10, indicador de novedad).
+     */
+    public boolean coincideConFiltro(Publicacion publicacion, FiltroPublicaciones filtro) {
         String textoBuscado = TextoUtils.normalizar(filtro.getTexto());
         Zona zonaUsuario = SesionUsuario.getInstancia().getZona();
 
-        List<Publicacion> resultado = new ArrayList<>();
-        for (Publicacion publicacion : catalogo) {
-            if (!coincideTexto(publicacion, textoBuscado)) {
-                continue;
-            }
-            if (filtro.getCategoria() != null && publicacion.getCategoria() != filtro.getCategoria()) {
-                continue;
-            }
-            // Set vacío = el usuario no filtró por estado, entran todos.
-            if (!filtro.getEstados().isEmpty() && !filtro.getEstados().contains(publicacion.getEstado())) {
-                continue;
-            }
-            if (!coincidePrecio(publicacion, filtro)) {
-                continue;
-            }
-            if (!coincideCercania(publicacion, filtro.getCercania(), zonaUsuario)) {
-                continue;
-            }
-            resultado.add(publicacion);
+        if (!coincideTexto(publicacion, textoBuscado)) {
+            return false;
         }
-        return resultado;
+        if (filtro.getCategoria() != null && publicacion.getCategoria() != filtro.getCategoria()) {
+            return false;
+        }
+        // Set vacío = el usuario no filtró por estado, entran todos.
+        if (!filtro.getEstados().isEmpty() && !filtro.getEstados().contains(publicacion.getEstado())) {
+            return false;
+        }
+        if (!coincidePrecio(publicacion, filtro)) {
+            return false;
+        }
+        return coincideCercania(publicacion, filtro.getCercania(), zonaUsuario);
     }
 
     /** Búsqueda por texto libre sobre título y descripción, ignorando mayúsculas y tildes. */
@@ -191,6 +202,23 @@ public class PublicacionRepositoryMock implements PublicacionRepository {
         List<Publicacion> pagina0 = new ArrayList<>(resultado.subList(desde, hasta));
         boolean hayMas = hasta < total;
         return new PaginaPublicaciones(pagina0, pagina, hayMas, total);
+    }
+
+    /**
+     * Agrega una publicación nueva al catálogo, para probar el indicador de
+     * novedad de las búsquedas guardadas sin backend. Se dispara vía ADB, que le pasa título y
+     * categoría opcionales para poder matchear la búsqueda guardada que se
+     * esté probando (el resto de los criterios queda fijo).
+     */
+    public Publicacion agregarPublicacionDePrueba(@Nullable String titulo, @Nullable Categoria categoria) {
+        Publicacion nueva = new Publicacion(
+                "debug-" + System.currentTimeMillis(),
+                titulo != null ? titulo : "Publicación nueva de prueba",
+                "Generada a mano para probar el indicador de novedad del Punto 10.",
+                50000, EstadoArticulo.NUEVO, categoria != null ? categoria : Categoria.OTROS, Zona.CABALLITO,
+                System.currentTimeMillis(), "Cuenta de prueba");
+        catalogo.add(nueva);
+        return nueva;
     }
 
     // ---------------------------------------------------------------------

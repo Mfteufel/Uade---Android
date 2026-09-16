@@ -1,38 +1,54 @@
 package com.example.tpo.ui.home;
 
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.Editable;
+import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.os.BundleCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tpo.R;
+import com.example.tpo.data.BusquedaGuardadaRepository;
+import com.example.tpo.data.BusquedaGuardadaRepositoryMock;
+import com.example.tpo.data.FavoritoRepository;
+import com.example.tpo.data.FavoritoRepositoryMock;
 import com.example.tpo.data.PaginaPublicaciones;
 import com.example.tpo.data.PublicacionRepository;
 import com.example.tpo.data.PublicacionRepositoryMock;
 import com.example.tpo.data.RepositorioCallback;
 import com.example.tpo.model.Categoria;
+import com.example.tpo.model.Cercania;
+import com.example.tpo.model.EstadoArticulo;
 import com.example.tpo.model.FiltroPublicaciones;
 import com.example.tpo.model.OrdenPublicaciones;
 import com.example.tpo.model.Publicacion;
 import com.example.tpo.ui.ChipsUtils;
+import com.example.tpo.util.FormatoUtils;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Home / Explorar publicaciones — Punto 3 del TPO.
@@ -50,7 +66,9 @@ import com.google.android.material.textfield.TextInputEditText;
  * pide una recarga. Así hay un solo camino de datos y no una rama distinta por
  * cada control.
  */
-public class HomeFragment extends Fragment implements PublicacionAdapter.OnPublicacionClickListener {
+public class HomeFragment extends Fragment implements
+        PublicacionAdapter.OnPublicacionClickListener,
+        PublicacionAdapter.OnFavoritoClickListener {
 
     /** Clave con la que se guarda el filtro al recrearse la pantalla (rotación). */
     private static final String ESTADO_FILTRO = "estado_filtro";
@@ -73,6 +91,9 @@ public class HomeFragment extends Fragment implements PublicacionAdapter.OnPubli
     private ChipGroup grupoCategorias;
     private ChipGroup grupoOrden;
     private MaterialButton botonFiltros;
+    private ImageButton botonGuardarBusqueda;
+    private ImageButton botonBusquedasGuardadas;
+    private View indicadorNovedadBusquedas;
     private TextView textoResultados;
     private RecyclerView listaPublicaciones;
     private CircularProgressIndicator progresoInicial;
@@ -85,6 +106,8 @@ public class HomeFragment extends Fragment implements PublicacionAdapter.OnPubli
 
     // --- Estado de la pantalla (sobrevive a la destrucción de las vistas) ---
     private final PublicacionRepository repositorio = PublicacionRepositoryMock.getInstancia();
+    private final FavoritoRepository favoritoRepositorio = FavoritoRepositoryMock.getInstancia();
+    private final BusquedaGuardadaRepository busquedaGuardadaRepositorio = BusquedaGuardadaRepositoryMock.getInstancia();
     private FiltroPublicaciones filtro = new FiltroPublicaciones();
 
     private int paginaActual = 0;
@@ -142,6 +165,9 @@ public class HomeFragment extends Fragment implements PublicacionAdapter.OnPubli
         grupoCategorias = view.findViewById(R.id.grupoCategorias);
         grupoOrden = view.findViewById(R.id.grupoOrden);
         botonFiltros = view.findViewById(R.id.botonFiltros);
+        botonGuardarBusqueda = view.findViewById(R.id.botonGuardarBusqueda);
+        botonBusquedasGuardadas = view.findViewById(R.id.botonBusquedasGuardadas);
+        indicadorNovedadBusquedas = view.findViewById(R.id.indicadorNovedadBusquedas);
         textoResultados = view.findViewById(R.id.textoResultados);
         listaPublicaciones = view.findViewById(R.id.listaPublicaciones);
         progresoInicial = view.findViewById(R.id.progresoInicial);
@@ -156,9 +182,24 @@ public class HomeFragment extends Fragment implements PublicacionAdapter.OnPubli
         crearChipsDeOrden();
         configurarBotones();
         escucharResultadoDeFiltros();
+        escucharResultadoDeBusquedaGuardada();
+        escucharCierreDeBusquedasGuardadas();
 
         actualizarBotonFiltros();
+        actualizarIndicadorNovedadBusquedas();
         recargarDesdeCero();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // La lista puede tener publicaciones que mutaron mientras esta pantalla
+        // no estaba visible. El RecyclerView no se entera solo, hay que pedirle
+        // que vuelva a pintar.
+        if (adapter != null) {
+            adapter.notifyDataSetChanged();
+        }
+        actualizarIndicadorNovedadBusquedas();
     }
 
     @Override
@@ -190,6 +231,9 @@ public class HomeFragment extends Fragment implements PublicacionAdapter.OnPubli
         grupoCategorias = null;
         grupoOrden = null;
         botonFiltros = null;
+        botonGuardarBusqueda = null;
+        botonBusquedasGuardadas = null;
+        indicadorNovedadBusquedas = null;
         textoResultados = null;
         listaPublicaciones = null;
         progresoInicial = null;
@@ -205,7 +249,7 @@ public class HomeFragment extends Fragment implements PublicacionAdapter.OnPubli
     // ------------------------------------------------------------------
 
     private void configurarLista() {
-        adapter = new PublicacionAdapter(this);
+        adapter = new PublicacionAdapter(favoritoRepositorio, this, this);
         listaPublicaciones.setLayoutManager(new LinearLayoutManager(requireContext()));
         listaPublicaciones.setAdapter(adapter);
         // El RecyclerView ocupa siempre el mismo espacio en pantalla (no cambia de
@@ -237,6 +281,9 @@ public class HomeFragment extends Fragment implements PublicacionAdapter.OnPubli
 
     private void configurarBuscador() {
         campoBuscar.setText(filtro.getTexto());
+        actualizarIconoLimpiarBusqueda(); // estado inicial, por si se restaura con texto (rotación)
+        configurarClicEnIconoLimpiarBusqueda();
+
         campoBuscar.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -250,6 +297,7 @@ public class HomeFragment extends Fragment implements PublicacionAdapter.OnPubli
 
             @Override
             public void afterTextChanged(Editable s) {
+                actualizarIconoLimpiarBusqueda();
                 final String texto = s.toString();
 
                 // Se descarta la búsqueda anterior que todavía no se disparó y se
@@ -269,6 +317,36 @@ public class HomeFragment extends Fragment implements PublicacionAdapter.OnPubli
                 };
                 handlerBusqueda.postDelayed(busquedaPendiente, DEMORA_BUSQUEDA_MS);
             }
+        });
+    }
+
+    /** Muestra la cruz de "limpiar" (drawableEnd) solo cuando hay texto cargado. */
+    private void actualizarIconoLimpiarBusqueda() {
+        boolean hayTexto = campoBuscar.getText() != null && campoBuscar.getText().length() > 0;
+        Drawable iconoLimpiar = hayTexto
+                ? AppCompatResources.getDrawable(requireContext(), R.drawable.ic_cerrar)
+                : null;
+        campoBuscar.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                AppCompatResources.getDrawable(requireContext(), R.drawable.ic_buscar),
+                null, iconoLimpiar, null);
+    }
+
+    /** Detecta el toque sobre la cruz de limpiar y vacía el campo. */
+    private void configurarClicEnIconoLimpiarBusqueda() {
+        campoBuscar.setOnTouchListener((v, event) -> {
+            if (event.getAction() != MotionEvent.ACTION_UP) {
+                return false;
+            }
+            Drawable iconoLimpiar = campoBuscar.getCompoundDrawablesRelative()[2];
+            if (iconoLimpiar == null) {
+                return false;
+            }
+            int zonaIcono = campoBuscar.getWidth() - campoBuscar.getPaddingEnd() - iconoLimpiar.getBounds().width();
+            if (event.getX() >= zonaIcono) {
+                campoBuscar.setText("");
+                return true;
+            }
+            return false;
         });
     }
 
@@ -326,6 +404,12 @@ public class HomeFragment extends Fragment implements PublicacionAdapter.OnPubli
                 FiltrosBottomSheet.nuevaInstancia(filtro)
                         .show(getParentFragmentManager(), FiltrosBottomSheet.TAG));
 
+        botonGuardarBusqueda.setOnClickListener(v -> guardarBusqueda());
+
+        botonBusquedasGuardadas.setOnClickListener(v ->
+                new BusquedasGuardadasBottomSheet()
+                        .show(getParentFragmentManager(), BusquedasGuardadasBottomSheet.TAG));
+
         requireView().findViewById(R.id.botonReintentar)
                 .setOnClickListener(v -> recargarDesdeCero());
 
@@ -362,6 +446,123 @@ public class HomeFragment extends Fragment implements PublicacionAdapter.OnPubli
                 });
     }
 
+    /** Escucha el filtro que devuelve la hoja de búsquedas guardadas y reemplaza el filtro entero. */
+    private void escucharResultadoDeBusquedaGuardada() {
+        getParentFragmentManager().setFragmentResultListener(
+                BusquedasGuardadasBottomSheet.RESULTADO_BUSQUEDA_GUARDADA,
+                getViewLifecycleOwner(),
+                (clave, datos) -> {
+                    FiltroPublicaciones elegido = BundleCompat.getSerializable(
+                            datos, BusquedasGuardadasBottomSheet.EXTRA_FILTRO, FiltroPublicaciones.class);
+                    if (elegido == null) {
+                        return;
+                    }
+                    String busquedaId = datos.getString(BusquedasGuardadasBottomSheet.EXTRA_ID);
+                    aplicarBusquedaGuardada(elegido, busquedaId);
+                });
+    }
+
+    /** Se dispara al cerrarse la hoja de búsquedas guardadas (se elija algo o no) para apagar el indicador del ícono. */
+    private void escucharCierreDeBusquedasGuardadas() {
+        getParentFragmentManager().setFragmentResultListener(
+                BusquedasGuardadasBottomSheet.RESULTADO_CERRADA,
+                getViewLifecycleOwner(),
+                (clave, datos) -> actualizarIndicadorNovedadBusquedas());
+    }
+
+    /** Punto 10 (indicador de novedad): puntito rojo en el ícono si hay alguna búsqueda guardada con publicaciones nuevas. */
+    private void actualizarIndicadorNovedadBusquedas() {
+        if (indicadorNovedadBusquedas == null) {
+            return;
+        }
+        indicadorNovedadBusquedas.setVisibility(
+                busquedaGuardadaRepositorio.hayAlgunaNovedad() ? View.VISIBLE : View.GONE);
+    }
+
+    /** Reemplaza el filtro vigente por el de una búsqueda guardada y refleja el cambio en toda la UI. */
+    private void aplicarBusquedaGuardada(FiltroPublicaciones elegido, @Nullable String busquedaId) {
+        // El filtro se actualiza antes que los controles: así el TextWatcher del
+        // buscador ve que el texto ya coincide con filtro.getTexto() y no
+        // dispara una recarga de más (mismo orden que limpiarTodosLosFiltros()).
+        filtro = elegido.copia();
+        campoBuscar.setText(filtro.getTexto());
+        crearChipsDeCategoria();
+        crearChipsDeOrden();
+        actualizarBotonFiltros();
+        recargarDesdeCero();
+
+        // recargarDesdeCero() ya limpió el destacado de la carga anterior; acá se
+        // vuelve a marcar con las publicaciones nuevas de esta búsqueda puntual.
+        if (adapter != null && busquedaId != null) {
+            adapter.marcarNuevasDeBusqueda(busquedaGuardadaRepositorio.publicacionesNuevasDe(busquedaId));
+        }
+    }
+
+    /** Guarda una copia del filtro vigente — Punto 10. El nombre se genera solo. */
+    private void guardarBusqueda() {
+        String nombre = generarNombreBusqueda(filtro);
+        busquedaGuardadaRepositorio.guardar(nombre, filtro.copia(), new RepositorioCallback<Void>() {
+            @Override
+            public void onExito(Void resultado) {
+                if (listaPublicaciones == null) {
+                    return; // la vista ya no existe
+                }
+                Snackbar.make(requireView(),
+                        getString(R.string.home_busqueda_guardada, nombre),
+                        Snackbar.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onError(String mensaje) {
+                if (listaPublicaciones == null) {
+                    return;
+                }
+                Snackbar.make(requireView(), mensaje, Snackbar.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    /** Arma un nombre detallando cada criterio, ej. "notebook · Tecnología · Nuevo · $100.000–$500.000 · Solo mi zona". */
+    private String generarNombreBusqueda(FiltroPublicaciones filtro) {
+        List<String> partes = new ArrayList<>();
+
+        if (!filtro.getTexto().isEmpty()) {
+            partes.add("\"" + filtro.getTexto() + "\"");
+        }
+        if (filtro.getCategoria() != null) {
+            partes.add(getString(filtro.getCategoria().getEtiqueta()));
+        }
+        if (!filtro.getEstados().isEmpty()) {
+            List<String> estados = new ArrayList<>();
+            for (EstadoArticulo estado : filtro.getEstados()) {
+                estados.add(getString(estado.getEtiqueta()));
+            }
+            partes.add(TextUtils.join(", ", estados));
+        }
+        String rangoPrecio = formatearRangoPrecio(filtro.getPrecioMinimo(), filtro.getPrecioMaximo());
+        if (rangoPrecio != null) {
+            partes.add(rangoPrecio);
+        }
+        if (filtro.getCercania() != Cercania.TODAS) {
+            partes.add(getString(filtro.getCercania().getEtiqueta()));
+        }
+        return TextUtils.join(" · ", partes);
+    }
+
+    @Nullable
+    private String formatearRangoPrecio(@Nullable Double minimo, @Nullable Double maximo) {
+        if (minimo != null && maximo != null) {
+            return FormatoUtils.precio(minimo) + "–" + FormatoUtils.precio(maximo);
+        }
+        if (minimo != null) {
+            return getString(R.string.busqueda_guardada_precio_desde, FormatoUtils.precio(minimo));
+        }
+        if (maximo != null) {
+            return getString(R.string.busqueda_guardada_precio_hasta, FormatoUtils.precio(maximo));
+        }
+        return null;
+    }
+
     /** Muestra en el botón cuántos filtros avanzados hay activos: "Filtros (2)". */
     private void actualizarBotonFiltros() {
         int activos = filtro.contarFiltrosAvanzadosActivos();
@@ -394,7 +595,20 @@ public class HomeFragment extends Fragment implements PublicacionAdapter.OnPubli
         cargando = false;
         paginaActual = 0;
         hayMasPaginas = true;
+        actualizarBotonGuardarBusqueda();
+        // Cualquier búsqueda nueva descarta el destacado "Nueva" de la anterior;
+        // aplicarBusquedaGuardada() lo vuelve a poner si corresponde, después de esto.
+        if (adapter != null) {
+            adapter.marcarNuevasDeBusqueda(Collections.emptySet());
+        }
         cargarPagina(0);
+    }
+
+    /** Guardar solo tiene sentido si hay algo distinto del estado inicial para guardar. */
+    private void actualizarBotonGuardarBusqueda() {
+        boolean hayAlgoQueGuardar = !filtro.esPorDefecto();
+        botonGuardarBusqueda.setEnabled(hayAlgoQueGuardar);
+        botonGuardarBusqueda.setAlpha(hayAlgoQueGuardar ? 1f : 0.4f);
     }
 
     private void cargarPagina(int pagina) {
@@ -500,23 +714,44 @@ public class HomeFragment extends Fragment implements PublicacionAdapter.OnPubli
     // Interacción con la lista
     // ------------------------------------------------------------------
 
-    /**
-     * El usuario tocó una publicación.
-     * <p>
-     * TODO (Punto 4 — Detalle de publicación): cuando exista DetalleFragment en el
-     * nav_graph, reemplazar el Snackbar por la navegación real:
-     * <pre>
-     * Bundle argumentos = new Bundle();
-     * argumentos.putString("publicacionId", publicacion.getId());
-     * Navigation.findNavController(requireView())
-     *         .navigate(R.id.action_home_to_detalle, argumentos);
-     * </pre>
-     */
+    /** El usuario tocó una publicación. */
     @Override
     public void onPublicacionClick(Publicacion publicacion) {
         Snackbar.make(
                 requireView(),
                 getString(R.string.detalle_proximamente, publicacion.getTitulo()),
                 Snackbar.LENGTH_SHORT).show();
+    }
+
+    /**
+     * El usuario tocó el corazón de una tarjeta — Punto 10 (Favoritos).
+     * <p>
+     * El adapter ya pintó el ícono de forma optimista antes de llamar acá; a
+     * esta altura solo hace falta avisarle al repositorio y, si falla,
+     * corregir el ícono de vuelta a como estaba.
+     */
+    @Override
+    public void onFavoritoClick(Publicacion publicacion, boolean favoritoNuevo) {
+        RepositorioCallback<Void> callback = new RepositorioCallback<Void>() {
+            @Override
+            public void onExito(Void resultado) {
+                // El ícono ya está pintado correctamente desde el click; nada más que hacer.
+            }
+
+            @Override
+            public void onError(String mensaje) {
+                if (listaPublicaciones == null || adapter == null) {
+                    return; // la vista ya no existe
+                }
+                adapter.refrescarFavorito(publicacion.getId());
+                Snackbar.make(requireView(), mensaje, Snackbar.LENGTH_SHORT).show();
+            }
+        };
+
+        if (favoritoNuevo) {
+            favoritoRepositorio.marcar(publicacion, callback);
+        } else {
+            favoritoRepositorio.desmarcar(publicacion.getId(), callback);
+        }
     }
 }

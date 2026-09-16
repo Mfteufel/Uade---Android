@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Menú de la bottom nav. Los id de cada <item> tienen que coincidir con el id
+    del <fragment> correspondiente en nav_graph.xml — NavigationUI los usa para
+    saber a qué destino navegar cuando se toca cada ítem.
+
+    Cada ícono es un selector (ic_nav_*) que cambia entre la versión llena
+    (ítem activo, state_checked=true) y la de contorno (inactivo) — mismo
+    criterio visual que ya usa el corazón de favorito en item_publicacion.xml.
+-->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/homeFragment"
+        android:icon="@drawable/ic_nav_home"
+        android:title="@string/nav_home" />
+
+    <item
+        android:id="@+id/favoritosFragment"
+        android:icon="@drawable/ic_nav_favoritos"
+        android:title="@string/nav_favoritos" />
+
+    <item
+        android:id="@+id/perfilFragment"
+        android:icon="@drawable/ic_nav_perfil"
+        android:title="@string/nav_perfil" />
+
+</menu>

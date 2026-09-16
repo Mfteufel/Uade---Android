@@ -4,17 +4,21 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tpo.R;
+import com.example.tpo.data.FavoritoRepository;
 import com.example.tpo.model.Publicacion;
 import com.example.tpo.util.FormatoUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Adapter del listado de publicaciones del Home.
@@ -36,11 +40,29 @@ public class PublicacionAdapter extends RecyclerView.Adapter<PublicacionAdapter.
         void onPublicacionClick(Publicacion publicacion);
     }
 
-    private final List<Publicacion> publicaciones = new ArrayList<>();
-    private final OnPublicacionClickListener listener;
+    /**
+     * Aviso de que el usuario tocó el corazón de favorito de una tarjeta.
+     * Igual que con el click de la tarjeta, el adapter no decide nada: ya
+     * pintó el ícono de forma optimista
+     * y le avisa al Fragment el estado nuevo para que llame al repositorio.
+     */
+    public interface OnFavoritoClickListener {
+        void onFavoritoClick(Publicacion publicacion, boolean favoritoNuevo);
+    }
 
-    public PublicacionAdapter(OnPublicacionClickListener listener) {
+    private final List<Publicacion> publicaciones = new ArrayList<>();
+    private final FavoritoRepository favoritoRepositorio;
+    private final OnPublicacionClickListener listener;
+    private final OnFavoritoClickListener favoritoListener;
+    /** IDs a destacar como "Nueva" porque matchean la búsqueda guardada recién aplicada (Punto 10). */
+    private Set<String> idsNuevaBusqueda = Collections.emptySet();
+
+    public PublicacionAdapter(FavoritoRepository favoritoRepositorio,
+                              OnPublicacionClickListener listener,
+                              OnFavoritoClickListener favoritoListener) {
+        this.favoritoRepositorio = favoritoRepositorio;
         this.listener = listener;
+        this.favoritoListener = favoritoListener;
     }
 
     @NonNull
@@ -54,7 +76,15 @@ public class PublicacionAdapter extends RecyclerView.Adapter<PublicacionAdapter.
 
     @Override
     public void onBindViewHolder(@NonNull PublicacionViewHolder holder, int position) {
-        holder.enlazar(publicaciones.get(position), listener);
+        Publicacion publicacion = publicaciones.get(position);
+        boolean esNuevaDeBusqueda = idsNuevaBusqueda.contains(publicacion.getId());
+        holder.enlazar(publicacion, favoritoRepositorio, esNuevaDeBusqueda, listener, favoritoListener);
+    }
+
+    /** Punto 10: qué publicaciones destacar como "Nueva" al aplicar una búsqueda guardada con novedad. */
+    public void marcarNuevasDeBusqueda(Set<String> ids) {
+        idsNuevaBusqueda = ids;
+        notifyDataSetChanged();
     }
 
     @Override
@@ -91,6 +121,20 @@ public class PublicacionAdapter extends RecyclerView.Adapter<PublicacionAdapter.
     }
 
     /**
+     * Vuelve a pintar el ícono de favorito de una publicación puntual leyendo
+     * el estado real del repositorio. Se usa para corregir el pintado
+     * optimista cuando marcar/desmarcar falla.
+     */
+    public void refrescarFavorito(String publicacionId) {
+        for (int i = 0; i < publicaciones.size(); i++) {
+            if (publicaciones.get(i).getId().equals(publicacionId)) {
+                notifyItemChanged(i);
+                return;
+            }
+        }
+    }
+
+    /**
      * ViewHolder de una tarjeta.
      * <p>
      * Los findViewById se hacen una sola vez acá, en el constructor. Ese es
@@ -100,23 +144,36 @@ public class PublicacionAdapter extends RecyclerView.Adapter<PublicacionAdapter.
     static class PublicacionViewHolder extends RecyclerView.ViewHolder {
 
         private final TextView titulo;
+        private final View indicadorNuevaBusqueda;
         private final TextView precio;
+        private final View indicadorNovedadPrecio;
         private final TextView estado;
         private final TextView zona;
+        private final ImageButton botonFavorito;
 
         PublicacionViewHolder(@NonNull View itemView) {
             super(itemView);
             titulo = itemView.findViewById(R.id.tituloPublicacion);
+            indicadorNuevaBusqueda = itemView.findViewById(R.id.indicadorNuevaBusqueda);
             precio = itemView.findViewById(R.id.precioPublicacion);
+            indicadorNovedadPrecio = itemView.findViewById(R.id.indicadorNovedadPrecio);
             estado = itemView.findViewById(R.id.estadoPublicacion);
             zona = itemView.findViewById(R.id.zonaPublicacion);
+            botonFavorito = itemView.findViewById(R.id.botonFavorito);
         }
 
-        void enlazar(Publicacion publicacion, OnPublicacionClickListener listener) {
+        void enlazar(Publicacion publicacion,
+                     FavoritoRepository favoritoRepositorio,
+                     boolean esNuevaDeBusqueda,
+                     OnPublicacionClickListener listener,
+                     OnFavoritoClickListener favoritoListener) {
             Context contexto = itemView.getContext();
 
             titulo.setText(publicacion.getTitulo());
+            indicadorNuevaBusqueda.setVisibility(esNuevaDeBusqueda ? View.VISIBLE : View.GONE);
             precio.setText(FormatoUtils.precio(publicacion.getPrecio()));
+            indicadorNovedadPrecio.setVisibility(
+                    favoritoRepositorio.tieneNovedad(publicacion.getId()) ? View.VISIBLE : View.GONE);
             estado.setText(publicacion.getEstado().getEtiqueta());
 
             // Renglón "Caballito · hace 5 h"
@@ -125,7 +182,24 @@ public class PublicacionAdapter extends RecyclerView.Adapter<PublicacionAdapter.
                     publicacion.getZona().getNombre(),
                     FormatoUtils.antiguedad(contexto, publicacion.getFechaPublicacion())));
 
+            pintarFavorito(favoritoRepositorio.esFavorito(publicacion.getId()));
+            botonFavorito.setOnClickListener(v -> {
+                boolean favoritoNuevo = !favoritoRepositorio.esFavorito(publicacion.getId());
+                // Se pinta sin esperar la respuesta del repositorio: si
+                // falla, el Fragment llama a refrescarFavorito() para corregirlo.
+                pintarFavorito(favoritoNuevo);
+                favoritoListener.onFavoritoClick(publicacion, favoritoNuevo);
+            });
+
             itemView.setOnClickListener(v -> listener.onPublicacionClick(publicacion));
+        }
+
+        private void pintarFavorito(boolean favorito) {
+            Context contexto = itemView.getContext();
+            botonFavorito.setImageResource(
+                    favorito ? R.drawable.ic_favorito_lleno : R.drawable.ic_favorito_borde);
+            botonFavorito.setContentDescription(contexto.getString(
+                    favorito ? R.string.item_favorito_quitar : R.string.item_favorito_agregar));
         }
     }
 }
