@@ -1,20 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    Grafo de navegación de Ronda.
-
-    Por ahora tiene un solo destino: el Home. A medida que se implementen los
-    otros puntos del TPO se van agregando acá como <fragment>, junto con las
-    <action> que los conectan.
-
-    Cuando esté el Punto 1 (Autenticación), el startDestination pasa a ser el
-    login y de ahí al Home se navega con popUpTo + inclusive="true", para que el
-    botón "atrás" en el Home cierre la app en vez de volver al login.
--->
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
     app:startDestination="@id/homeFragment">
+    <!-- app:startDestination="@id/perfilFragment"> -->
 
     <fragment
         android:id="@+id/homeFragment"
@@ -29,7 +19,7 @@
         android:label="@string/favoritos_titulo"
         tools:layout="@layout/fragment_favoritos" />
 
-    <!-- Punto 2 (Perfil): placeholder, ver PerfilFragment. -->
+    <!-- Punto 2 - Perfil y Reputación -->
     <fragment
         android:id="@+id/perfilFragment"
         android:name="com.example.tpo.ui.perfil.PerfilFragment"
