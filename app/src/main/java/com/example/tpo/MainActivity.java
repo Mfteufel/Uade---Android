@@ -20,6 +20,8 @@ import com.example.tpo.ui.home.HomeFragment;
 import com.google.android.material.badge.BadgeDrawable;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
+import dagger.hilt.android.AndroidEntryPoint;
+
 /**
  * Única Activity de Ronda (Single Activity Architecture).
  * <p>
@@ -28,6 +30,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
  * es un Fragment y la navegación entre ellas la maneja el NavController sobre
  * nav_graph.xml.
  */
+@AndroidEntryPoint
 public class MainActivity extends AppCompatActivity {
 
     private BottomNavigationView bottomNav;
