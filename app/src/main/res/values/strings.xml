@@ -1,11 +1,15 @@
 <resources>
     <string name="app_name">Ronda</string>
 
+    <!-- ===================== Bottom nav ===================== -->
+    <string name="nav_home">Home</string>
+    <string name="nav_favoritos">Favoritos</string>
+    <string name="nav_perfil">Perfil</string>
+
     <!-- ===================== Home / Explorar ===================== -->
     <string name="home_titulo">Ronda</string>
     <string name="home_subtitulo">Comprá y vendé cerca tuyo</string>
     <string name="home_buscar_hint">Buscar por título o descripción</string>
-    <string name="home_limpiar_busqueda">Limpiar búsqueda</string>
 
     <!-- Botón que abre el bottom sheet. La segunda versión muestra cuántos filtros hay activos. -->
     <string name="home_filtros">Filtros</string>
@@ -22,6 +26,17 @@
     <!-- Renglón inferior de la tarjeta: "Palermo · hace 2 h" -->
     <string name="item_zona_y_fecha">%1$s · %2$s</string>
     <string name="publicado_recien">recién publicado</string>
+    <string name="item_favorito_agregar">Agregar a favoritos</string>
+    <string name="item_favorito_quitar">Quitar de favoritos</string>
+    <!-- Punto 10, indicador de novedad: favorito bajó de precio desde que se marcó. -->
+    <string name="item_novedad_bajo_precio">Bajó de precio</string>
+    <!-- Punto 10, indicador de novedad: publicación matchea con la búsqueda guardada. -->
+    <string name="item_nueva_busqueda">Nueva</string>
+
+    <!-- ===================== Mis favoritos (Punto 10) ===================== -->
+    <string name="favoritos_titulo">Mis favoritos</string>
+    <string name="favoritos_vacio_titulo">Todavía no tenés favoritos</string>
+    <string name="favoritos_vacio_mensaje">Marcá publicaciones con el corazón para encontrarlas acá.</string>
 
     <!-- ===================== Estados de la pantalla ===================== -->
     <string name="vacio_titulo">No encontramos publicaciones</string>
@@ -66,6 +81,20 @@
     <string name="cercania_mi_zona">Solo mi zona</string>
     <string name="cercania_zonas_cercanas">Zonas cercanas</string>
 
+    <!-- ===================== Guardar / ver búsquedas (Punto 10) ===================== -->
+    <string name="home_guardar_busqueda">Guardar esta búsqueda</string>
+    <string name="home_ver_busquedas_guardadas">Ver búsquedas guardadas</string>
+    <string name="home_busqueda_guardada">Guardaste \"%1$s\"</string>
+
+    <string name="busquedas_guardadas_titulo">Búsquedas guardadas</string>
+    <string name="busquedas_guardadas_vacio">Todavía no guardaste ninguna búsqueda. Tocá el ícono de guardar junto al buscador.</string>
+    <string name="busqueda_guardada_eliminar">Eliminar búsqueda guardada</string>
+    <!-- Parte del rango de precio en el nombre autogenerado, cuando solo hay un extremo cargado -->
+    <string name="busqueda_guardada_precio_desde">Desde %1$s</string>
+    <string name="busqueda_guardada_precio_hasta">Hasta %1$s</string>
+    <!-- Punto 10, indicador de novedad: apareció una publicación nueva que matchea esta búsqueda. -->
+    <string name="busqueda_guardada_novedad">Hay publicaciones nuevas</string>
+
     <!-- ===================== Pendiente de otros puntos ===================== -->
     <!-- Se usa hasta que el Punto 4 (Detalle de publicación) exista como destino del nav_graph. -->
     <string name="detalle_proximamente">Detalle de \"%1$s\" — disponible al implementar el Punto 4</string>
@@ -87,5 +116,4 @@
     <string name="perfil_cancelar">Cancelar</string>
     <string name="perfil_guardado">Perfil actualizado</string>
     <string name="perfil_zona_invalida">Elegí una zona de la lista</string>
-
 </resources>

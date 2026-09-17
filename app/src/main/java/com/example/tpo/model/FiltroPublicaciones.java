@@ -4,6 +4,7 @@ import androidx.annotation.Nullable;
 
 import java.io.Serializable;
 import java.util.EnumSet;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -137,6 +138,20 @@ public class FiltroPublicaciones implements Serializable {
     }
 
     /**
+     * true si el filtro está en su estado inicial: sin texto buscado, sin
+     * categoría, sin filtros avanzados y con el orden por defecto.
+     * <p>
+     * Se usa para deshabilitar "Guardar búsqueda" en el Home — guardar el
+     * estado inicial no tendría sentido, sería "todas las publicaciones".
+     */
+    public boolean esPorDefecto() {
+        return texto.isEmpty()
+                && categoria == null
+                && contarFiltrosAvanzadosActivos() == 0
+                && orden == OrdenPublicaciones.RECIENTES;
+    }
+
+    /**
      * Devuelve una copia independiente del filtro.
      * <p>
      * El bottom sheet edita una copia y no el filtro real: así, si el usuario
@@ -153,5 +168,33 @@ public class FiltroPublicaciones implements Serializable {
         copia.cercania = this.cercania;
         copia.orden = this.orden;
         return copia;
+    }
+
+    /**
+     * Igualdad por valor de todos los criterios. Se usa para detectar
+     * búsquedas guardadas duplicadas: dos filtros con los mismos criterios
+     * se consideran "la misma búsqueda".
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof FiltroPublicaciones)) {
+            return false;
+        }
+        FiltroPublicaciones otro = (FiltroPublicaciones) obj;
+        return texto.equals(otro.texto)
+                && categoria == otro.categoria
+                && estados.equals(otro.estados)
+                && Objects.equals(precioMinimo, otro.precioMinimo)
+                && Objects.equals(precioMaximo, otro.precioMaximo)
+                && cercania == otro.cercania
+                && orden == otro.orden;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(texto, categoria, estados, precioMinimo, precioMaximo, cercania, orden);
     }
 }
