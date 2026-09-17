@@ -9,12 +9,15 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
 
 import com.example.tpo.data.FavoritoRepositoryMock;
 import com.example.tpo.debug.SimulacionNovedadesReceiver;
+import com.example.tpo.ui.home.HomeFragment;
+import com.google.android.material.badge.BadgeDrawable;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 /**
@@ -29,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
 
     private BottomNavigationView bottomNav;
     private SimulacionNovedadesReceiver receptorNovedades;
+    private NavHostFragment navHostFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,14 +59,14 @@ public class MainActivity extends AppCompatActivity {
 
         // NavigationUI mapea cada <item> de menu_navegacion.xml al <fragment>
         // de nav_graph.xml con el mismo id.
-        NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
+        navHostFragment = (NavHostFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.nav_host_fragment);
         NavController navController = navHostFragment.getNavController();
         NavigationUI.setupWithNavController(bottomNav, navController);
 
         // RECEIVER_EXPORTED porque el broadcast de prueba llega desde `adb shell am
         // broadcast`, que corre como shell y no como este mismo paquete.
-        receptorNovedades = new SimulacionNovedadesReceiver(this::actualizarBadgeFavoritos);
+        receptorNovedades = new SimulacionNovedadesReceiver(this::onNovedadSimulada);
         ContextCompat.registerReceiver(this, receptorNovedades, SimulacionNovedadesReceiver.crearFiltro(),
                 ContextCompat.RECEIVER_EXPORTED);
         actualizarBadgeFavoritos();
@@ -74,9 +78,18 @@ public class MainActivity extends AppCompatActivity {
         unregisterReceiver(receptorNovedades);
     }
 
+    private void onNovedadSimulada() {
+        actualizarBadgeFavoritos();
+        Fragment actual = navHostFragment.getChildFragmentManager().getPrimaryNavigationFragment();
+        if (actual instanceof HomeFragment) {
+            ((HomeFragment) actual).actualizarIndicadorNovedadBusquedas();
+        }
+    }
+
     private void actualizarBadgeFavoritos() {
         if (FavoritoRepositoryMock.getInstancia().hayAlgunaNovedad()) {
-            bottomNav.getOrCreateBadge(R.id.favoritosFragment);
+            BadgeDrawable badge = bottomNav.getOrCreateBadge(R.id.favoritosFragment);
+            badge.setBackgroundColor(ContextCompat.getColor(this, R.color.color_indicador_novedad));
         } else {
             bottomNav.removeBadge(R.id.favoritosFragment);
         }

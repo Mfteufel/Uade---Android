@@ -470,8 +470,11 @@ public class HomeFragment extends Fragment implements
                 (clave, datos) -> actualizarIndicadorNovedadBusquedas());
     }
 
-    /** Punto 10 (indicador de novedad): puntito rojo en el ícono si hay alguna búsqueda guardada con publicaciones nuevas. */
-    private void actualizarIndicadorNovedadBusquedas() {
+    /**
+     * Punto 10 (indicador de novedad): puntito rojo en el ícono si hay alguna búsqueda
+     * guardada con publicaciones nuevas.
+     */
+    public void actualizarIndicadorNovedadBusquedas() {
         if (indicadorNovedadBusquedas == null) {
             return;
         }
