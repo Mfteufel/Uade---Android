@@ -1,5 +1,6 @@
 package com.example.tpo.data.remote;
 
+import com.example.tpo.BuildConfig;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -11,13 +12,15 @@ import retrofit2.converter.gson.GsonConverterFactory;
 /**
  * Punto único de acceso a Retrofit.
  * <p>
- * TODO: reemplazar por la URL real de la API_Rest del TPO en cuanto exista.
- * Mientras tanto apunta a un placeholder: la app compila y corre, pero
- * {@link ApiService} va a devolver error de red hasta que se cambie esto.
+ * La URL sale de {@code BuildConfig.API_BASE_URL}, que a su vez se arma desde
+ * {@code local.properties} (ver {@code app/build.gradle.kts}): cada quien la
+ * apunta a su propio backend de desarrollo (por ejemplo el FastAPI corriendo
+ * en la red local) sin tocar este archivo. Sin esa propiedad, cae a un
+ * placeholder que no responde.
  */
 public final class ApiClient {
 
-    private static final String BASE_URL = "https://api.ronda.tpo.uade.edu.ar/";
+    private static final String BASE_URL = BuildConfig.API_BASE_URL;
 
     private static ApiService instancia;
 

@@ -63,7 +63,7 @@ public class MisPublicacionesRepositoryApi implements MisPublicacionesRepository
                 return;
             }
 
-            RequestBody vendedorId = texto(SesionUsuario.getInstancia().getId());
+            RequestBody vendedorId = texto(SesionUsuario.getInstancia().getUsuarioId());
             RequestBody titulo = texto(borrador.getTitulo());
             RequestBody descripcion = texto(borrador.getDescripcion());
             RequestBody categoria = texto(borrador.getCategoria().name());
@@ -103,7 +103,7 @@ public class MisPublicacionesRepositoryApi implements MisPublicacionesRepository
 
     @Override
     public void listar(RepositorioCallback<List<MiPublicacion>> callback) {
-        api.listarMisPublicaciones(SesionUsuario.getInstancia().getId())
+        api.listarMisPublicaciones(SesionUsuario.getInstancia().getUsuarioId())
                 .enqueue(new Callback<List<MiPublicacionResponse>>() {
                     @Override
                     public void onResponse(@NonNull Call<List<MiPublicacionResponse>> call,

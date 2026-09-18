@@ -14,7 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tpo.R;
 import com.example.tpo.data.MisPublicacionesRepository;
-import com.example.tpo.data.MisPublicacionesRepositoryApi;
+import com.example.tpo.data.MisPublicacionesRepositoryLocal;
 import com.example.tpo.data.RepositorioCallback;
 import com.example.tpo.model.EstadoPublicacion;
 import com.example.tpo.model.MiPublicacion;
@@ -41,17 +41,19 @@ public class MisPublicacionesFragment extends Fragment implements MiPublicacionA
     private MiPublicacionAdapter adapter;
 
     /**
-     * {@link MisPublicacionesRepositoryApi} necesita un {@code Context} de
-     * aplicación, que todavía no existe cuando se inicializan los campos del
-     * Fragment; por eso se crea recién en {@link #onAttach}, que es el primer
-     * momento del ciclo de vida en el que hay uno disponible.
+     * {@link MisPublicacionesRepositoryLocal} necesita un {@code Context}, que
+     * todavía no existe cuando se inicializan los campos del Fragment; por eso
+     * se obtiene recién en {@link #onAttach}, que es el primer momento del
+     * ciclo de vida en el que hay uno disponible.
      */
     private MisPublicacionesRepository repositorio;
 
     @Override
     public void onAttach(@NonNull android.content.Context context) {
         super.onAttach(context);
-        repositorio = new MisPublicacionesRepositoryApi(context);
+        // TODO: cuando exista el backend de FastAPI, reemplazar por
+        // new MisPublicacionesRepositoryApi(context).
+        repositorio = MisPublicacionesRepositoryLocal.getInstancia(context);
     }
 
     @Nullable

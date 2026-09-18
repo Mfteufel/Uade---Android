@@ -52,4 +52,6 @@
     <color name="ronda_inverse_surface">#2E312E</color>
     <color name="ronda_inverse_on_surface">#EFF1ED</color>
     <color name="ronda_inverse_primary">#98D7B2</color>
+
+    <color name="color_indicador_novedad">#E53935</color>
 </resources>

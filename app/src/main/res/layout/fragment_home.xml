@@ -38,30 +38,86 @@
             app:titleCentered="false"
             app:titleTextAppearance="@style/TextAppearance.Material3.HeadlineSmall" />
 
-        <!-- ============ 2. Buscador ============ -->
-        <!--
-            endIconMode="clear_text" agrega solo la cruz para limpiar el texto:
-            no hay que programarla, la maneja el propio TextInputLayout.
-        -->
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/inputBuscar"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        <!-- ============ 2. Buscador + guardar/ver búsquedas (Punto 10) ============ -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="@dimen/espaciado_pantalla"
-            android:hint="@string/home_buscar_hint"
-            app:endIconContentDescription="@string/home_limpiar_busqueda"
-            app:endIconMode="clear_text"
-            app:startIconDrawable="@drawable/ic_buscar">
+            android:baselineAligned="false"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/espaciado_pantalla"
+            android:paddingEnd="4dp">
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/campoBuscar"
-                android:layout_width="match_parent"
+            <!--
+                Lupa y cruz van como drawableStart/End del EditText (no como
+                startIcon/endIconMode de Material) porque esos posicionan el
+                ícono a distancia fija del borde y con la píldora pisaban la
+                curva. Ver HomeFragment.configurarBuscador.
+            -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/inputBuscar"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:imeOptions="actionSearch"
-                android:inputType="text"
-                android:maxLines="1" />
-        </com.google.android.material.textfield.TextInputLayout>
+                android:layout_weight="1"
+                app:boxCornerRadiusBottomEnd="20dp"
+                app:boxCornerRadiusBottomStart="20dp"
+                app:boxCornerRadiusTopEnd="20dp"
+                app:boxCornerRadiusTopStart="20dp"
+                app:hintEnabled="false">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/campoBuscar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:drawablePadding="8dp"
+                    android:hint="@string/home_buscar_hint"
+                    android:imeOptions="actionSearch"
+                    android:inputType="text"
+                    android:maxLines="1"
+                    android:minHeight="0dp"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:paddingVertical="6dp"
+                    app:drawableStartCompat="@drawable/ic_buscar" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <ImageButton
+                android:id="@+id/botonGuardarBusqueda"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="4dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/home_guardar_busqueda"
+                android:padding="8dp"
+                android:src="@drawable/ic_guardar" />
+
+            <FrameLayout
+                android:layout_width="40dp"
+                android:layout_height="40dp">
+
+                <ImageButton
+                    android:id="@+id/botonBusquedasGuardadas"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/home_ver_busquedas_guardadas"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_marcadores" />
+
+                <!-- Punto 10 (indicador de novedad): equivalente al badge nativo de la bottom nav, que solo aplica a ítems de menú. -->
+                <View
+                    android:id="@+id/indicadorNovedadBusquedas"
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    android:layout_gravity="top|end"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/bg_indicador_novedad"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+            </FrameLayout>
+        </LinearLayout>
 
         <!-- ============ 3. Categorías ============ -->
         <!--

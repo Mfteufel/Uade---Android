@@ -1,6 +1,7 @@
 package com.example.tpo.ui.publicar;
 
 import android.net.Uri;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -72,7 +73,17 @@ public class FotoSeleccionadaAdapter extends RecyclerView.Adapter<FotoSelecciona
         }
 
         void vincular(Uri foto) {
-            imagenFoto.setImageURI(foto);
+            // Una foto elegida en una sesión anterior puede venir de un borrador
+            // guardado en Room cuyo permiso de lectura del Photo Picker ya no es
+            // válido (se revoca al reiniciarse el proceso si no se hizo
+            // takePersistableUriPermission a tiempo). Sin este catch, esa
+            // SecurityException tira abajo toda la pantalla.
+            try {
+                imagenFoto.setImageURI(foto);
+            } catch (SecurityException excepcion) {
+                Log.w("FotoSeleccionadaAdapter", "Sin permiso para leer " + foto, excepcion);
+                imagenFoto.setImageResource(R.drawable.ic_imagen);
+            }
         }
     }
 }

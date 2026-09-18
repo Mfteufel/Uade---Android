@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Selector del ícono de Favoritos en la bottom nav: lleno si es el ítem activo, contorno si no. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/ic_favorito_nav_lleno" android:state_checked="true" />
+    <item android:drawable="@drawable/ic_favorito_nav" />
+</selector>

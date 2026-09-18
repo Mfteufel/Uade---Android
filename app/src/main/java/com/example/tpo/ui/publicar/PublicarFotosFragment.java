@@ -1,5 +1,6 @@
 package com.example.tpo.ui.publicar;
 
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -57,6 +58,19 @@ public class PublicarFotosFragment extends PublicarPasoFragment {
                 BorradorPublicacion borrador = viewModel.getBorrador().getValue();
                 if (borrador == null) {
                     return;
+                }
+                // El Photo Picker solo da permiso de lectura mientras dura este
+                // proceso; como la foto se guarda en el borrador de Room para
+                // poder retomarlo después de cerrar la app, hay que pedir que el
+                // permiso persista más allá de este proceso.
+                for (Uri uri : uris) {
+                    try {
+                        requireContext().getContentResolver()
+                                .takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    } catch (SecurityException excepcion) {
+                        // Algunos orígenes del picker no soportan permiso persistente;
+                        // la foto igual se puede mostrar en esta misma sesión.
+                    }
                 }
                 List<Uri> fotos = new ArrayList<>(borrador.getFotos());
                 fotos.addAll(uris);
