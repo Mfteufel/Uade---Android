@@ -43,6 +43,20 @@ public class Publicacion implements Serializable {
      * pasa a ser una lista de URLs.
      */
     private final int cantidadFotos;
+    /**
+     * Estado de la publicación (activa / pausada / vendida) — Punto 4,
+     * "gestión de la publicación".
+     * <p>
+     * Es el único campo no {@code final} de la clase: todo lo demás describe el
+     * artículo tal como se publicó y no cambia, pero el estado es justamente lo
+     * que el vendedor puede modificar después de publicar (pausar, reactivar,
+     * marcar como vendida). Contra la API real este campo llegaría en el
+     * {@code GET} y se actualizaría con un {@code PUT
+     * /publicaciones/{id}/estado}; acá lo muta directamente el repositorio mock.
+     * No se agrega al constructor a propósito: todas las publicaciones del
+     * catálogo de prueba arrancan {@link EstadoPublicacion#ACTIVA}.
+     */
+    private EstadoPublicacion estadoPublicacion = EstadoPublicacion.ACTIVA;
 
     public Publicacion(String id,
                        String titulo,
@@ -104,5 +118,13 @@ public class Publicacion implements Serializable {
 
     public int getCantidadFotos() {
         return cantidadFotos;
+    }
+
+    public EstadoPublicacion getEstadoPublicacion() {
+        return estadoPublicacion;
+    }
+
+    public void setEstadoPublicacion(EstadoPublicacion estadoPublicacion) {
+        this.estadoPublicacion = estadoPublicacion;
     }
 }

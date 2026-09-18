@@ -19,16 +19,29 @@
         android:id="@+id/textoPrecioPedido"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="@dimen/espaciado_chico"
         android:textAppearance="?attr/textAppearanceBodyMedium"
         android:textColor="?attr/colorOnSurfaceVariant"
         tools:text="El vendedor pide $ 620.000" />
+
+    <!-- Solo aparece si el usuario ya le había ofertado antes a esta publicación:
+         ofertar de nuevo reemplaza esa oferta, no manda una segunda. -->
+    <TextView
+        android:id="@+id/textoOfertaVigente"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="?attr/colorPrimary"
+        android:visibility="gone"
+        tools:text="Ya ofertaste $ 300.000 por esta publicación"
+        tools:visibility="visible" />
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/inputOferta"
         style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/espaciado_chico"
         android:hint="@string/detalle_oferta_hint"
         app:prefixText="$">
 

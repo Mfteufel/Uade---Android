@@ -6,6 +6,7 @@ import android.os.Looper;
 import com.example.tpo.model.Categoria;
 import com.example.tpo.model.Cercania;
 import com.example.tpo.model.EstadoArticulo;
+import com.example.tpo.model.EstadoPublicacion;
 import com.example.tpo.model.FiltroPublicaciones;
 import com.example.tpo.model.Publicacion;
 import com.example.tpo.model.Vendedor;
@@ -123,8 +124,15 @@ public class PublicacionRepositoryMock implements PublicacionRepository {
             Vendedor vendedor = null;
             List<Publicacion> suyas = new ArrayList<>();
             for (Publicacion publicacion : catalogo) {
-                if (publicacion.getVendedor().getId().equals(vendedorId)) {
-                    vendedor = publicacion.getVendedor();
+                if (!publicacion.getVendedor().getId().equals(vendedorId)) {
+                    continue;
+                }
+                // El vendedor se identifica igual aunque no tenga ninguna
+                // publicación activa; lo que se filtra es la lista, no el perfil.
+                vendedor = publicacion.getVendedor();
+                // El enunciado pide "sus publicaciones activas" y el contador del
+                // perfil dice justamente eso: una pausada o vendida no entra acá.
+                if (publicacion.getEstadoPublicacion() == EstadoPublicacion.ACTIVA) {
                     suyas.add(publicacion);
                 }
             }
@@ -141,6 +149,25 @@ public class PublicacionRepositoryMock implements PublicacionRepository {
         }, DEMORA_SIMULADA_MS);
     }
 
+    @Override
+    public void cambiarEstadoPublicacion(String id,
+                                         EstadoPublicacion nuevoEstado,
+                                         RepositorioCallback<Publicacion> callback) {
+        handlerPrincipal.postDelayed(() -> {
+            if (SIMULAR_ERROR) {
+                callback.onError("No pudimos actualizar la publicación");
+                return;
+            }
+            Publicacion encontrada = buscarPorId(id);
+            if (encontrada == null) {
+                callback.onError("No encontramos esta publicación");
+                return;
+            }
+            encontrada.setEstadoPublicacion(nuevoEstado);
+            callback.onExito(encontrada);
+        }, DEMORA_SIMULADA_MS);
+    }
+
     // ---------------------------------------------------------------------
     // Filtrado
     // ---------------------------------------------------------------------
@@ -149,9 +176,17 @@ public class PublicacionRepositoryMock implements PublicacionRepository {
     private List<Publicacion> aplicarFiltros(FiltroPublicaciones filtro) {
         String textoBuscado = TextoUtils.normalizar(filtro.getTexto());
         Zona zonaUsuario = SesionUsuario.getInstancia().getZona();
+        String idUsuario = SesionUsuario.getInstancia().getIdUsuario();
 
         List<Publicacion> resultado = new ArrayList<>();
         for (Publicacion publicacion : catalogo) {
+            // Una publicación pausada o vendida solo la sigue viendo su dueño.
+            // Ocultarla también para el dueño lo dejaría sin forma de reactivarla,
+            // porque la sección "Mis publicaciones" (Punto 5) todavía no existe.
+            boolean esMia = publicacion.getVendedor().getId().equals(idUsuario);
+            if (publicacion.getEstadoPublicacion() != EstadoPublicacion.ACTIVA && !esMia) {
+                continue;
+            }
             if (!coincideTexto(publicacion, textoBuscado)) {
                 continue;
             }

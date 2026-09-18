@@ -5,22 +5,31 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.HorizontalScrollView;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.widget.NestedScrollView;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 
 import com.example.tpo.R;
+import com.example.tpo.data.OfertasPublicacion;
+import com.example.tpo.data.PreguntasPublicacion;
 import com.example.tpo.data.PublicacionRepository;
 import com.example.tpo.data.PublicacionRepositoryMock;
 import com.example.tpo.data.PublicacionesGuardadas;
 import com.example.tpo.data.RepositorioCallback;
 import com.example.tpo.data.SesionUsuario;
+import com.example.tpo.model.EstadoPublicacion;
+import com.example.tpo.model.Oferta;
+import com.example.tpo.model.Pregunta;
 import com.example.tpo.model.Publicacion;
 import com.example.tpo.model.Vendedor;
 import com.example.tpo.ui.VendedorUi;
@@ -35,6 +44,8 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
+import java.util.List;
+
 /**
  * Detalle de publicación — Punto 4 del TPO.
  * <p>
@@ -43,12 +54,14 @@ import com.google.android.material.textfield.TextInputLayout;
  * día que exista la API_Rest el cambio es solo la implementación del
  * repositorio, no esta pantalla.
  * <p>
- * Muestra galería (lista simple de placeholders), datos de la publicación, fecha
- * de publicación, tarjeta del vendedor (reputación + acceso al perfil público) y
- * las acciones que cambian según quién mira: un interesado puede preguntar,
- * ofertar y guardar la publicación; el propio vendedor accede a la gestión de su
- * publicación. El rol se decide comparando el id del vendedor contra el del
- * usuario logueado (no el nombre, que puede repetirse entre personas distintas).
+ * Muestra galería (lista simple de placeholders, con contador de foto actual),
+ * datos de la publicación, fecha de publicación, tarjeta del vendedor
+ * (reputación + acceso al perfil público) y las acciones que cambian según
+ * quién mira: un interesado puede preguntar, ofertar y guardar la publicación
+ * (si sigue activa); el propio vendedor accede a la gestión de su publicación
+ * (pausar, reactivar, marcar vendida, ver preguntas y ofertas recibidas). El
+ * rol se decide comparando el id del vendedor contra el del usuario logueado
+ * (no el nombre, que puede repetirse entre personas distintas).
  */
 public class DetalleFragment extends Fragment {
 
@@ -66,17 +79,25 @@ public class DetalleFragment extends Fragment {
     @Nullable
     private Publicacion publicacionCargada;
 
+    /** Cuántas fotos tiene la galería actual, para el contador ("2 de 3") y sus límites. */
+    private int cantidadFotosGaleria = 1;
+
     // --- Vistas. Son null fuera del rango onCreateView..onDestroyView ---
     private MaterialToolbar toolbar;
     private NestedScrollView scrollContenido;
+    private HorizontalScrollView scrollFotos;
     private LinearLayout grupoFotos;
+    private TextView contadorFotos;
     private TextView tituloDetalle;
     private TextView precioDetalle;
+    private TextView estadoPublicacionDetalle;
     private TextView estadoDetalle;
     private TextView categoriaDetalle;
     private TextView zonaYFechaDetalle;
     private TextView fechaPublicacionDetalle;
     private TextView descripcionDetalle;
+    private View bloqueMisInteracciones;
+    private LinearLayout grupoMisInteracciones;
     private View tarjetaVendedor;
     private TextView inicialesVendedor;
     private TextView nombreVendedorDetalle;
@@ -121,14 +142,19 @@ public class DetalleFragment extends Fragment {
 
         toolbar = view.findViewById(R.id.toolbar);
         scrollContenido = view.findViewById(R.id.scrollContenido);
+        scrollFotos = view.findViewById(R.id.scrollFotos);
         grupoFotos = view.findViewById(R.id.grupoFotos);
+        contadorFotos = view.findViewById(R.id.contadorFotos);
         tituloDetalle = view.findViewById(R.id.tituloDetalle);
         precioDetalle = view.findViewById(R.id.precioDetalle);
+        estadoPublicacionDetalle = view.findViewById(R.id.estadoPublicacionDetalle);
         estadoDetalle = view.findViewById(R.id.estadoDetalle);
         categoriaDetalle = view.findViewById(R.id.categoriaDetalle);
         zonaYFechaDetalle = view.findViewById(R.id.zonaYFechaDetalle);
         fechaPublicacionDetalle = view.findViewById(R.id.fechaPublicacionDetalle);
         descripcionDetalle = view.findViewById(R.id.descripcionDetalle);
+        bloqueMisInteracciones = view.findViewById(R.id.bloqueMisInteracciones);
+        grupoMisInteracciones = view.findViewById(R.id.grupoMisInteracciones);
         tarjetaVendedor = view.findViewById(R.id.tarjetaVendedor);
         inicialesVendedor = view.findViewById(R.id.inicialesVendedor);
         nombreVendedorDetalle = view.findViewById(R.id.nombreVendedorDetalle);
@@ -146,9 +172,45 @@ public class DetalleFragment extends Fragment {
         botonGestionar = view.findViewById(R.id.botonGestionar);
 
         configurarToolbar(view);
+        configurarGaleria();
+        escucharResultadoDeGestion();
         view.findViewById(R.id.botonReintentar).setOnClickListener(v -> cargarPublicacion());
 
         cargarPublicacion();
+    }
+
+    /** Recalcula el contador de fotos ("2 de 3") a medida que el usuario scrollea la tira. */
+    private void configurarGaleria() {
+        scrollFotos.setOnScrollChangeListener((v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
+            if (cantidadFotosGaleria <= 1) {
+                return;
+            }
+            int anchoItem = getResources().getDimensionPixelSize(R.dimen.detalle_foto_tamano)
+                    + getResources().getDimensionPixelSize(R.dimen.espaciado_chico);
+            int indice = Math.round(scrollX / (float) anchoItem);
+            indice = Math.max(0, Math.min(indice, cantidadFotosGaleria - 1));
+            contadorFotos.setText(getString(R.string.detalle_foto_contador, indice + 1, cantidadFotosGaleria));
+        });
+    }
+
+    /**
+     * Escucha el resultado de "Gestionar publicación": la hoja ya aplicó el
+     * cambio contra el repositorio, acá solo hace falta refrescar la pantalla y
+     * confirmar. El Snackbar se muestra ANTES de recargar y no después: recargar
+     * oculta barraAcciones mientras carga, y el Snackbar necesita una vista
+     * visible para anclarse.
+     */
+    private void escucharResultadoDeGestion() {
+        getParentFragmentManager().setFragmentResultListener(
+                GestionPublicacionBottomSheet.RESULTADO_GESTION,
+                getViewLifecycleOwner(),
+                (clave, datos) -> {
+                    int mensaje = datos.getInt(GestionPublicacionBottomSheet.EXTRA_MENSAJE);
+                    if (mensaje != 0) {
+                        mostrarSnackbar(getString(mensaje));
+                    }
+                    cargarPublicacion();
+                });
     }
 
     /**
@@ -183,14 +245,19 @@ public class DetalleFragment extends Fragment {
 
         toolbar = null;
         scrollContenido = null;
+        scrollFotos = null;
         grupoFotos = null;
+        contadorFotos = null;
         tituloDetalle = null;
         precioDetalle = null;
+        estadoPublicacionDetalle = null;
         estadoDetalle = null;
         categoriaDetalle = null;
         zonaYFechaDetalle = null;
         fechaPublicacionDetalle = null;
         descripcionDetalle = null;
+        bloqueMisInteracciones = null;
+        grupoMisInteracciones = null;
         tarjetaVendedor = null;
         inicialesVendedor = null;
         nombreVendedorDetalle = null;
@@ -263,6 +330,17 @@ public class DetalleFragment extends Fragment {
 
         tituloDetalle.setText(publicacion.getTitulo());
         precioDetalle.setText(FormatoUtils.precio(publicacion.getPrecio()));
+
+        // Badge de estado de la PUBLICACIÓN (no del artículo): oculto para
+        // "Activa", que es el caso normal y no necesita destacarse.
+        EstadoPublicacion estadoPublicacion = publicacion.getEstadoPublicacion();
+        if (estadoPublicacion == EstadoPublicacion.ACTIVA) {
+            estadoPublicacionDetalle.setVisibility(View.GONE);
+        } else {
+            estadoPublicacionDetalle.setText(estadoPublicacion.getEtiqueta());
+            estadoPublicacionDetalle.setVisibility(View.VISIBLE);
+        }
+
         estadoDetalle.setText(publicacion.getEstado().getEtiqueta());
         categoriaDetalle.setText(publicacion.getCategoria().getEtiqueta());
         zonaYFechaDetalle.setText(getString(
@@ -283,13 +361,27 @@ public class DetalleFragment extends Fragment {
         barraAcciones.setVisibility(View.VISIBLE);
     }
 
-    /** Llena la galería con un placeholder por foto (sin swipe, ver dimens/detalle_foto_tamano). */
+    /**
+     * Llena la galería con un placeholder por foto (sin swipe, ver
+     * dimens/detalle_foto_tamano) y arma el contador ("2 de 3"), con una
+     * contentDescription distinta por foto para TalkBack.
+     */
     private void mostrarGaleria(int cantidadFotos) {
         grupoFotos.removeAllViews();
+        cantidadFotosGaleria = Math.max(cantidadFotos, 1);
         LayoutInflater inflater = LayoutInflater.from(requireContext());
-        int fotos = Math.max(cantidadFotos, 1);
-        for (int i = 0; i < fotos; i++) {
-            grupoFotos.addView(inflater.inflate(R.layout.item_foto_detalle, grupoFotos, false));
+        for (int i = 0; i < cantidadFotosGaleria; i++) {
+            ImageView foto = (ImageView) inflater.inflate(R.layout.item_foto_detalle, grupoFotos, false);
+            foto.setContentDescription(getString(R.string.detalle_foto_numero, i + 1, cantidadFotosGaleria));
+            grupoFotos.addView(foto);
+        }
+        scrollFotos.scrollTo(0, 0);
+
+        // Con una sola foto, "1 de 1" no aporta nada.
+        boolean hayVariasFotos = cantidadFotosGaleria > 1;
+        contadorFotos.setVisibility(hayVariasFotos ? View.VISIBLE : View.GONE);
+        if (hayVariasFotos) {
+            contadorFotos.setText(getString(R.string.detalle_foto_contador, 1, cantidadFotosGaleria));
         }
     }
 
@@ -310,13 +402,18 @@ public class DetalleFragment extends Fragment {
      * Muestra la vista de vendedor (aviso "es tu publicación" + gestión) o la de
      * interesado (preguntar / ofertar / guardar), nunca las dos. La comparación
      * es por id de vendedor: dos personas pueden llamarse igual.
+     * <p>
+     * Para el interesado, además depende del estado de la publicación: si ya no
+     * está activa (la pausó o la vendió el dueño) no tiene sentido ofrecer
+     * "Preguntar" ni "Ofertar", pero sí sigue pudiendo guardarla, porque guardar
+     * es un marcador propio y no una operación con el vendedor.
      */
     private void configurarAccionSegunRol(Publicacion publicacion) {
         Vendedor vendedor = publicacion.getVendedor();
         boolean esMia = vendedor.getId().equals(SesionUsuario.getInstancia().getIdUsuario());
+        boolean activa = publicacion.getEstadoPublicacion() == EstadoPublicacion.ACTIVA;
 
-        textoRolAviso.setVisibility(esMia ? View.VISIBLE : View.GONE);
-        accionesInteresado.setVisibility(esMia ? View.GONE : View.VISIBLE);
+        accionesInteresado.setVisibility((!esMia && activa) ? View.VISIBLE : View.GONE);
         botonGestionar.setVisibility(esMia ? View.VISIBLE : View.GONE);
         // Nadie guarda su propia publicación.
         if (itemGuardar != null) {
@@ -324,14 +421,86 @@ public class DetalleFragment extends Fragment {
         }
 
         if (esMia) {
-            // La gestión de publicaciones es otro punto del TPO: por ahora es un stub.
-            botonGestionar.setOnClickListener(v -> mostrarSnackbar(
-                    getString(R.string.detalle_gestionar_proximamente)));
-        } else {
-            actualizarIconoGuardar();
+            textoRolAviso.setText(R.string.detalle_es_tu_publicacion);
+            textoRolAviso.setVisibility(View.VISIBLE);
+            botonGestionar.setOnClickListener(v ->
+                    GestionPublicacionBottomSheet.nuevaInstancia(publicacionId)
+                            .show(getParentFragmentManager(), GestionPublicacionBottomSheet.TAG));
+            // El propio vendedor no le pregunta ni le oferta a su publicación; eso
+            // lo ve del otro lado, en "Gestionar publicación".
+            bloqueMisInteracciones.setVisibility(View.GONE);
+            return;
+        }
+
+        actualizarIconoGuardar();
+        mostrarMisInteracciones(publicacion);
+        if (activa) {
+            textoRolAviso.setVisibility(View.GONE);
             botonPreguntar.setOnClickListener(v -> mostrarDialogoPregunta(vendedor));
             botonOfertar.setOnClickListener(v -> mostrarDialogoOferta(publicacion));
+        } else {
+            textoRolAviso.setText(R.string.detalle_publicacion_no_disponible);
+            textoRolAviso.setVisibility(View.VISIBLE);
         }
+    }
+
+    // ------------------------------------------------------------------
+    // Lo que el interesado ya le envió al vendedor
+    // ------------------------------------------------------------------
+
+    /**
+     * Muestra las preguntas y la oferta vigente que el usuario logueado ya le
+     * mandó al vendedor sobre esta publicación. Si no mandó nada, el bloque
+     * entero queda oculto. No se llama para el propio vendedor: sus
+     * preguntas/ofertas recibidas se ven desde "Gestionar publicación", no acá.
+     */
+    private void mostrarMisInteracciones(Publicacion publicacion) {
+        String idUsuario = SesionUsuario.getInstancia().getIdUsuario();
+        List<Pregunta> misPreguntas = PreguntasPublicacion.getInstancia()
+                .delUsuario(publicacion.getId(), idUsuario);
+        Oferta miOferta = OfertasPublicacion.getInstancia()
+                .delUsuario(publicacion.getId(), idUsuario);
+
+        grupoMisInteracciones.removeAllViews();
+        LayoutInflater inflater = LayoutInflater.from(requireContext());
+
+        if (!misPreguntas.isEmpty()) {
+            grupoMisInteracciones.addView(
+                    inflarEncabezado(inflater, R.string.detalle_mis_preguntas_titulo));
+            for (Pregunta pregunta : misPreguntas) {
+                grupoMisInteracciones.addView(inflarFilaInteraccion(
+                        inflater, R.drawable.ic_preguntar, pregunta.getTexto(), pregunta.getFecha()));
+            }
+        }
+        if (miOferta != null) {
+            grupoMisInteracciones.addView(
+                    inflarEncabezado(inflater, R.string.detalle_mi_oferta_titulo));
+            grupoMisInteracciones.addView(inflarFilaInteraccion(inflater, R.drawable.ic_ofertar,
+                    FormatoUtils.precio(miOferta.getMonto()), miOferta.getFecha()));
+        }
+
+        boolean hayAlgoQueMostrar = !misPreguntas.isEmpty() || miOferta != null;
+        bloqueMisInteracciones.setVisibility(hayAlgoQueMostrar ? View.VISIBLE : View.GONE);
+    }
+
+    private View inflarEncabezado(LayoutInflater inflater, @StringRes int texto) {
+        View encabezado = inflater.inflate(
+                R.layout.item_encabezado_seccion, grupoMisInteracciones, false);
+        ((TextView) encabezado.findViewById(R.id.textoEncabezadoSeccion)).setText(texto);
+        return encabezado;
+    }
+
+    /** Fila de {@code item_interaccion.xml} para "lo mío": sin nombre de autor, solo la antigüedad. */
+    private View inflarFilaInteraccion(LayoutInflater inflater,
+                                       @DrawableRes int icono,
+                                       String texto,
+                                       long fecha) {
+        View fila = inflater.inflate(R.layout.item_interaccion, grupoMisInteracciones, false);
+        ((ImageView) fila.findViewById(R.id.iconoInteraccion)).setImageResource(icono);
+        ((TextView) fila.findViewById(R.id.textoInteraccion)).setText(texto);
+        ((TextView) fila.findViewById(R.id.autorInteraccion))
+                .setText(FormatoUtils.antiguedad(requireContext(), fecha));
+        return fila;
     }
 
     // ------------------------------------------------------------------
@@ -400,6 +569,8 @@ public class DetalleFragment extends Fragment {
                     }
                     input.setError(null);
                     dialogo.dismiss();
+
+                    registrarPregunta(texto);
                     mostrarSnackbar(getString(R.string.detalle_pregunta_enviada, vendedor.getNombre()));
                 }));
 
@@ -411,11 +582,21 @@ public class DetalleFragment extends Fragment {
         View contenido = LayoutInflater.from(requireContext())
                 .inflate(R.layout.dialogo_oferta, null, false);
         TextView precioPedido = contenido.findViewById(R.id.textoPrecioPedido);
+        TextView textoOfertaVigente = contenido.findViewById(R.id.textoOfertaVigente);
         TextInputLayout input = contenido.findViewById(R.id.inputOferta);
         TextInputEditText campo = contenido.findViewById(R.id.campoOferta);
 
         precioPedido.setText(getString(R.string.detalle_oferta_ayuda,
                 FormatoUtils.precio(publicacion.getPrecio())));
+
+        // Si ya había una oferta hecha, se avisa: mandar una nueva la reemplaza.
+        Oferta ofertaVigente = OfertasPublicacion.getInstancia().delUsuario(
+                publicacion.getId(), SesionUsuario.getInstancia().getIdUsuario());
+        if (ofertaVigente != null) {
+            textoOfertaVigente.setText(getString(
+                    R.string.detalle_oferta_vigente, FormatoUtils.precio(ofertaVigente.getMonto())));
+            textoOfertaVigente.setVisibility(View.VISIBLE);
+        }
 
         double minimo = publicacion.getPrecio() * PROPORCION_MINIMA_OFERTA;
 
@@ -457,6 +638,8 @@ public class DetalleFragment extends Fragment {
                     }
                     input.setError(null);
                     dialogo.dismiss();
+
+                    registrarOferta(publicacion, monto);
                     mostrarSnackbar(getString(R.string.detalle_oferta_enviada,
                             FormatoUtils.precio(monto), publicacion.getVendedor().getNombre()));
                 }));
@@ -469,6 +652,33 @@ public class DetalleFragment extends Fragment {
     private String leerTexto(TextInputEditText campo) {
         CharSequence contenido = campo.getText();
         return contenido == null ? "" : contenido.toString().trim();
+    }
+
+    /** Guarda la pregunta en memoria y refresca "lo que ya le enviaste" de la pantalla. */
+    private void registrarPregunta(String texto) {
+        if (publicacionCargada == null) {
+            return; // no debería pasar: el diálogo solo se abre con una publicación cargada
+        }
+        SesionUsuario sesion = SesionUsuario.getInstancia();
+        Pregunta pregunta = new Pregunta(
+                publicacionCargada.getId(), sesion.getIdUsuario(), sesion.getNombre(),
+                texto, System.currentTimeMillis());
+        PreguntasPublicacion.getInstancia().agregar(pregunta);
+        mostrarMisInteracciones(publicacionCargada);
+    }
+
+    /**
+     * Guarda la oferta en memoria (reemplazando la anterior del usuario, si
+     * tenía una — ver {@link OfertasPublicacion#guardar}) y refresca "lo que ya
+     * le enviaste".
+     */
+    private void registrarOferta(Publicacion publicacion, double monto) {
+        SesionUsuario sesion = SesionUsuario.getInstancia();
+        Oferta oferta = new Oferta(
+                publicacion.getId(), sesion.getIdUsuario(), sesion.getNombre(),
+                monto, System.currentTimeMillis());
+        OfertasPublicacion.getInstancia().guardar(oferta);
+        mostrarMisInteracciones(publicacion);
     }
 
     // ------------------------------------------------------------------

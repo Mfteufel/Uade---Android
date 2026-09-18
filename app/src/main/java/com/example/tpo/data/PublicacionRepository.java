@@ -1,5 +1,6 @@
 package com.example.tpo.data;
 
+import com.example.tpo.model.EstadoPublicacion;
 import com.example.tpo.model.FiltroPublicaciones;
 import com.example.tpo.model.Publicacion;
 
@@ -55,4 +56,21 @@ public interface PublicacionRepository {
      * @param callback   dónde se avisa el resultado. Siempre se invoca en el Main Thread.
      */
     void obtenerPerfilVendedor(String vendedorId, RepositorioCallback<PerfilVendedor> callback);
+
+    /**
+     * Cambia el estado de una publicación (pausar, reactivar, marcar como
+     * vendida) — "gestión de la publicación" del Punto 4.
+     * <p>
+     * Contra la API real esto es un {@code PUT /publicaciones/{id}/estado}. La
+     * mutación vive acá y no en el Fragment: la pantalla de gestión solo pide el
+     * cambio y reacciona al resultado.
+     *
+     * @param id           id de la publicación a modificar.
+     * @param nuevoEstado  estado al que pasa.
+     * @param callback     dónde se avisa el resultado (la publicación ya actualizada).
+     *                     Siempre se invoca en el Main Thread.
+     */
+    void cambiarEstadoPublicacion(String id,
+                                  EstadoPublicacion nuevoEstado,
+                                  RepositorioCallback<Publicacion> callback);
 }

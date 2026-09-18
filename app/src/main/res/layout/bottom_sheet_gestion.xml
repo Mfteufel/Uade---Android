@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Hoja "Gestionar publicación" — acción del vendedor en el Detalle (Punto 4).
+
+    A diferencia de la hoja de filtros, ésta pide datos al repositorio (la
+    misma publicación que ya se ve en el Detalle, resuelta de nuevo por id) y
+    por eso necesita sus propios estados de carga/error, calcados de
+    fragment_detalle.xml: contenido, spinner y error se superponen en el mismo
+    FrameLayout y se muestra uno solo por vez.
+
+    De arriba hacia abajo: encabezado (título, precio, estado actual), botones
+    de acción según el estado, preguntas recibidas, ofertas recibidas y
+    "Editar publicación" (stub, Punto 5).
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <!-- Manija de arrastre: le avisa al usuario que la hoja se puede deslizar -->
+    <com.google.android.material.bottomsheet.BottomSheetDragHandleView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <!-- minHeight para que el spinner tenga dónde centrarse mientras carga y la
+         hoja no "salte" de tamaño cuando el contenido aparece. -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="240dp">
+
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/scrollGestion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="@dimen/espaciado_pantalla"
+                android:paddingBottom="@dimen/espaciado_pantalla">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/gestion_titulo"
+                    android:textAppearance="?attr/textAppearanceHeadlineSmall" />
+
+                <TextView
+                    android:id="@+id/tituloGestion"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaciado_mediano"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    tools:text="iPhone 13 128GB" />
+
+                <TextView
+                    android:id="@+id/precioGestion"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorPrimary"
+                    tools:text="$ 620.000" />
+
+                <TextView
+                    android:id="@+id/estadoActualGestion"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    tools:text="Estado: Activa" />
+
+                <!-- ============ Acciones según estado ============
+                     Los cuatro botones están siempre en el layout; el Fragment
+                     muestra solo los que corresponden al estado actual (ver el
+                     comentario de configurarBotonesSegunEstado() en el .java). -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botonPausar"
+                    style="@style/Widget.Material3.Button.OutlinedButton.Icon"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaciado_pantalla"
+                    android:text="@string/gestion_pausar"
+                    android:visibility="gone"
+                    app:icon="@drawable/ic_pausar" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botonReactivar"
+                    style="@style/Widget.Material3.Button.OutlinedButton.Icon"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaciado_pantalla"
+                    android:text="@string/gestion_reactivar"
+                    android:visibility="gone"
+                    app:icon="@drawable/ic_reactivar" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botonMarcarVendida"
+                    style="@style/Widget.Material3.Button.Icon"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaciado_chico"
+                    android:text="@string/gestion_marcar_vendida"
+                    android:visibility="gone"
+                    app:icon="@drawable/ic_vendida" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botonVolverAPublicar"
+                    style="@style/Widget.Material3.Button.Icon"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaciado_pantalla"
+                    android:text="@string/gestion_volver_a_publicar"
+                    android:visibility="gone"
+                    app:icon="@drawable/ic_reactivar" />
+
+                <com.google.android.material.divider.MaterialDivider
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaciado_pantalla" />
+
+                <!-- ============ Preguntas recibidas ============ -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaciado_pantalla"
+                    android:baselineAligned="false"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/gestion_preguntas_titulo"
+                        android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+                    <TextView
+                        android:id="@+id/cantidadPreguntasGestion"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceLabelLarge"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        tools:text="2 preguntas" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/textoSinPreguntas"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaciado_chico"
+                    android:text="@string/gestion_sin_preguntas"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:visibility="gone"
+                    tools:visibility="gone" />
+
+                <LinearLayout
+                    android:id="@+id/grupoPreguntasGestion"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <com.google.android.material.divider.MaterialDivider
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaciado_pantalla" />
+
+                <!-- ============ Ofertas recibidas ============ -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaciado_pantalla"
+                    android:baselineAligned="false"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/gestion_ofertas_titulo"
+                        android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+                    <TextView
+                        android:id="@+id/cantidadOfertasGestion"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceLabelLarge"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        tools:text="1 oferta" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/textoSinOfertas"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaciado_chico"
+                    android:text="@string/gestion_sin_ofertas"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:visibility="gone"
+                    tools:visibility="gone" />
+
+                <LinearLayout
+                    android:id="@+id/grupoOfertasGestion"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <com.google.android.material.divider.MaterialDivider
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaciado_pantalla" />
+
+                <!-- Editar: stub a propósito, depende de cámara/galería y borrador
+                     persistente (Punto 5), que todavía no se vieron en clase. -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botonEditarGestion"
+                    style="@style/Widget.Material3.Button.TextButton.Icon"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaciado_pantalla"
+                    android:text="@string/gestion_editar"
+                    app:icon="@drawable/ic_editar" />
+
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/progresoGestion"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:indeterminate="true"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <LinearLayout
+            android:id="@+id/estadoErrorGestion"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingHorizontal="32dp"
+            android:visibility="gone"
+            tools:visibility="gone">
+
+            <ImageView
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_error" />
+
+            <TextView
+                android:id="@+id/textoErrorGestion"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaciado_pantalla"
+                android:gravity="center"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                tools:text="No pudimos actualizar la publicación" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/botonReintentarGestion"
+                style="@style/Widget.Material3.Button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaciado_pantalla"
+                android:text="@string/error_reintentar" />
+        </LinearLayout>
+
+    </FrameLayout>
+</LinearLayout>

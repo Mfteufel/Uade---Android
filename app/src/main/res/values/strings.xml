@@ -72,10 +72,22 @@
     <string name="detalle_vendedor_titulo">Vendedor</string>
     <string name="detalle_es_tu_publicacion">Esta es tu publicación</string>
     <string name="detalle_gestionar_publicacion">Gestionar publicación</string>
-    <string name="detalle_gestionar_proximamente">Vas a poder editarla o marcarla como vendida desde "Mis publicaciones"</string>
+    <!-- Vista de un interesado cuando la publicación ya no está activa: no puede preguntar ni ofertar, pero sí guardarla. -->
+    <string name="detalle_publicacion_no_disponible">Esta publicación ya no está disponible</string>
 
     <!-- Fecha exacta de publicación: "Publicado el 5 de septiembre de 2026" -->
     <string name="detalle_publicado_el">Publicado el %1$s</string>
+
+    <!-- ===================== Estado de la publicación (Nuevo != EstadoArticulo, ver EstadoPublicacion) ===================== -->
+    <string name="estado_publicacion_activa">Activa</string>
+    <string name="estado_publicacion_pausada">Pausada</string>
+    <string name="estado_publicacion_vendida">Vendida</string>
+
+    <!-- ===================== Galería del Detalle ===================== -->
+    <!-- Contador debajo de la tira de fotos: "2 de 3" -->
+    <string name="detalle_foto_contador">%1$d de %2$d</string>
+    <!-- contentDescription de cada foto, para TalkBack -->
+    <string name="detalle_foto_numero">Foto %1$d de %2$d</string>
 
     <!-- ===================== Vendedor (Detalle y Perfil) ===================== -->
     <string name="detalle_ver_perfil">Ver perfil</string>
@@ -115,9 +127,15 @@
     <string name="detalle_oferta_muy_alta">Tu oferta supera el precio publicado. Podés comprarlo directo por %1$s</string>
     <string name="detalle_oferta_enviar">Ofertar</string>
     <string name="detalle_oferta_enviada">Le ofertaste %1$s a %2$s</string>
+    <!-- Helper del diálogo de oferta cuando el usuario ya tenía una oferta hecha: ofertar de nuevo la reemplaza. -->
+    <string name="detalle_oferta_vigente">Ya ofertaste %1$s por esta publicación</string>
 
     <!-- Acción común a los diálogos del Detalle -->
     <string name="dialogo_cancelar">Cancelar</string>
+
+    <!-- ===================== Detalle: lo que el interesado ya envió ===================== -->
+    <string name="detalle_mis_preguntas_titulo">Tus preguntas</string>
+    <string name="detalle_mi_oferta_titulo">Tu oferta</string>
 
     <!-- ===================== Perfil del vendedor ===================== -->
     <string name="perfil_titulo">Perfil del vendedor</string>
@@ -126,5 +144,32 @@
     <plurals name="perfil_publicaciones_cantidad">
         <item quantity="one">%1$d publicación activa</item>
         <item quantity="other">%1$d publicaciones activas</item>
+    </plurals>
+
+    <!-- ===================== Gestión de la publicación (vendedor) ===================== -->
+    <string name="gestion_titulo">Gestionar publicación</string>
+    <!-- "Estado: Activa" -->
+    <string name="gestion_estado_actual">Estado: %1$s</string>
+    <string name="gestion_pausar">Pausar publicación</string>
+    <string name="gestion_reactivar">Reactivar publicación</string>
+    <string name="gestion_marcar_vendida">Marcar como vendida</string>
+    <string name="gestion_volver_a_publicar">Volver a publicar</string>
+    <string name="gestion_editar">Editar publicación</string>
+    <!-- La edición real del artículo depende de cámara/galería y persistencia del borrador: es el Punto 5. -->
+    <string name="gestion_editar_proximamente">Vas a poder editarla desde \"Mis publicaciones\" (Punto 5)</string>
+    <string name="gestion_preguntas_titulo">Preguntas recibidas</string>
+    <string name="gestion_ofertas_titulo">Ofertas recibidas</string>
+    <string name="gestion_sin_preguntas">Todavía no te hicieron preguntas</string>
+    <string name="gestion_sin_ofertas">Todavía no recibiste ofertas</string>
+    <string name="gestion_pausada_ok">Pausaste la publicación</string>
+    <string name="gestion_reactivada_ok">Reactivaste la publicación</string>
+    <string name="gestion_vendida_ok">Marcaste la publicación como vendida</string>
+    <plurals name="gestion_preguntas_cantidad">
+        <item quantity="one">%1$d pregunta</item>
+        <item quantity="other">%1$d preguntas</item>
+    </plurals>
+    <plurals name="gestion_ofertas_cantidad">
+        <item quantity="one">%1$d oferta</item>
+        <item quantity="other">%1$d ofertas</item>
     </plurals>
 </resources>

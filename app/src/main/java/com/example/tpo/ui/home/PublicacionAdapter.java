@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tpo.R;
+import com.example.tpo.model.EstadoPublicacion;
 import com.example.tpo.model.Publicacion;
 import com.example.tpo.util.FormatoUtils;
 
@@ -102,6 +103,7 @@ public class PublicacionAdapter extends RecyclerView.Adapter<PublicacionAdapter.
         private final TextView titulo;
         private final TextView precio;
         private final TextView estado;
+        private final TextView estadoPublicacion;
         private final TextView zona;
 
         PublicacionViewHolder(@NonNull View itemView) {
@@ -109,6 +111,7 @@ public class PublicacionAdapter extends RecyclerView.Adapter<PublicacionAdapter.
             titulo = itemView.findViewById(R.id.tituloPublicacion);
             precio = itemView.findViewById(R.id.precioPublicacion);
             estado = itemView.findViewById(R.id.estadoPublicacion);
+            estadoPublicacion = itemView.findViewById(R.id.estadoPublicacionItem);
             zona = itemView.findViewById(R.id.zonaPublicacion);
         }
 
@@ -118,6 +121,16 @@ public class PublicacionAdapter extends RecyclerView.Adapter<PublicacionAdapter.
             titulo.setText(publicacion.getTitulo());
             precio.setText(FormatoUtils.precio(publicacion.getPrecio()));
             estado.setText(publicacion.getEstado().getEtiqueta());
+
+            // Badge de "Pausada"/"Vendida" — Punto 4, gestión de la publicación.
+            // Solo lo ve el dueño: el mock ya oculta del listado las que no son
+            // suyas y no están activas (ver PublicacionRepositoryMock.aplicarFiltros).
+            if (publicacion.getEstadoPublicacion() == EstadoPublicacion.ACTIVA) {
+                estadoPublicacion.setVisibility(View.GONE);
+            } else {
+                estadoPublicacion.setText(publicacion.getEstadoPublicacion().getEtiqueta());
+                estadoPublicacion.setVisibility(View.VISIBLE);
+            }
 
             // Renglón "Caballito · hace 5 h"
             zona.setText(contexto.getString(

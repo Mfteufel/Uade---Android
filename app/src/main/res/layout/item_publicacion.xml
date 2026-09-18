@@ -77,6 +77,26 @@
             app:layout_constraintTop_toBottomOf="@id/precioPublicacion"
             tools:text="Usado" />
 
+        <!-- Badge del estado de la PUBLICACIÓN (pausada/vendida), no del artículo:
+             solo lo ve el dueño (el mock oculta las no activas para el resto), y
+             solo cuando no está "Activa". Enganchado a estadoPublicacion para no
+             tocar sus constraints existentes. -->
+        <TextView
+            android:id="@+id/estadoPublicacionItem"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/espaciado_chico"
+            android:background="@drawable/bg_estado_publicacion"
+            android:paddingHorizontal="@dimen/espaciado_chico"
+            android:paddingVertical="4dp"
+            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:textColor="?attr/colorOnErrorContainer"
+            android:visibility="gone"
+            app:layout_constraintStart_toEndOf="@id/estadoPublicacion"
+            app:layout_constraintTop_toTopOf="@id/estadoPublicacion"
+            tools:text="Pausada"
+            tools:visibility="visible" />
+
         <!--
             Zona y antigüedad en un solo renglón ("Caballito · hace 5 h").
             El ícono va como drawableStart para no sumar otra View al árbol.
