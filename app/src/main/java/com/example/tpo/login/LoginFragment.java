@@ -58,7 +58,17 @@ public class LoginFragment extends Fragment {
                 return;
             }
 
-            SesionUsuario.getInstancia().setNombre(usuario);
+            SesionUsuario sesion = SesionUsuario.getInstancia();
+            sesion.setNombre(usuario);
+            // idUsuario (catálogo de vendedores v1..v12 del Punto 4) arrancaba
+            // hardcodeado en "v1" (Martina G.), así que cualquiera que entrara por
+            // este login se veía dueño de sus publicaciones. Lo pisamos acá con
+            // usuarioId (el id real de esta sesión, "u0", que no matchea ningún
+            // vendedor del catálogo mock) para que el rol en el Detalle sea
+            // consistente con quién inició sesión. Reconciliar de verdad los dos
+            // catálogos (v1..v12 vs u0..u2) queda pendiente, ver TODO en
+            // SesionUsuario.
+            sesion.setIdUsuario(sesion.getUsuarioId());
             Navigation.findNavController(view).navigate(R.id.action_login_to_home);
         });
     }
