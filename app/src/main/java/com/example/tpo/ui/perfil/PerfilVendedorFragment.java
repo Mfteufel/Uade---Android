@@ -14,6 +14,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tpo.R;
+import com.example.tpo.data.FavoritoRepository;
+import com.example.tpo.data.FavoritoRepositoryMock;
 import com.example.tpo.data.PerfilVendedor;
 import com.example.tpo.data.PublicacionRepository;
 import com.example.tpo.data.PublicacionRepositoryMock;
@@ -26,6 +28,7 @@ import com.example.tpo.util.FormatoUtils;
 import com.example.tpo.util.TextoUtils;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
+import com.google.android.material.snackbar.Snackbar;
 
 /**
  * Perfil público del vendedor — Punto 4 del TPO.
@@ -33,14 +36,17 @@ import com.google.android.material.progressindicator.CircularProgressIndicator;
  * Recibe el id del vendedor por argumento de navegación y lo resuelve contra el
  * repositorio, igual que el Detalle. Muestra los datos del vendedor (reputación,
  * antigüedad) y el listado de sus publicaciones activas, reusando el mismo
- * {@link PublicacionAdapter} que el Home; tocar una lleva a su Detalle.
+ * {@link PublicacionAdapter} que el Home; tocar una lleva a su Detalle, y el
+ * corazón de favorito (Punto 10) funciona igual que en el Home.
  */
 public class PerfilVendedorFragment extends Fragment
-        implements PublicacionAdapter.OnPublicacionClickListener {
+        implements PublicacionAdapter.OnPublicacionClickListener,
+        PublicacionAdapter.OnFavoritoClickListener {
 
     public static final String ARG_VENDEDOR_ID = "vendedorId";
 
     private final PublicacionRepository repositorio = PublicacionRepositoryMock.getInstancia();
+    private final FavoritoRepository favoritoRepositorio = FavoritoRepositoryMock.getInstancia();
     private String vendedorId;
 
     // --- Vistas. Son null fuera del rango onCreateView..onDestroyView ---
@@ -93,7 +99,7 @@ public class PerfilVendedorFragment extends Fragment
         toolbar.setNavigationOnClickListener(v -> Navigation.findNavController(view).navigateUp());
         view.findViewById(R.id.botonReintentar).setOnClickListener(v -> cargarPerfil());
 
-        adapter = new PublicacionAdapter(this);
+        adapter = new PublicacionAdapter(favoritoRepositorio, this, this);
         listaPublicacionesVendedor.setLayoutManager(new LinearLayoutManager(requireContext()));
         listaPublicacionesVendedor.setAdapter(adapter);
 
@@ -187,5 +193,31 @@ public class PerfilVendedorFragment extends Fragment
         argumentos.putString("publicacionId", publicacion.getId());
         Navigation.findNavController(requireView())
                 .navigate(R.id.action_perfil_to_detalle, argumentos);
+    }
+
+    /** El usuario tocó el corazón de una tarjeta — mismo criterio que HomeFragment. */
+    @Override
+    public void onFavoritoClick(Publicacion publicacion, boolean favoritoNuevo) {
+        RepositorioCallback<Void> callback = new RepositorioCallback<Void>() {
+            @Override
+            public void onExito(Void resultado) {
+                // El ícono ya está pintado correctamente desde el click; nada más que hacer.
+            }
+
+            @Override
+            public void onError(String mensaje) {
+                if (listaPublicacionesVendedor == null || adapter == null) {
+                    return; // la vista ya no existe
+                }
+                adapter.refrescarFavorito(publicacion.getId());
+                Snackbar.make(requireView(), mensaje, Snackbar.LENGTH_SHORT).show();
+            }
+        };
+
+        if (favoritoNuevo) {
+            favoritoRepositorio.marcar(publicacion, callback);
+        } else {
+            favoritoRepositorio.desmarcar(publicacion.getId(), callback);
+        }
     }
 }

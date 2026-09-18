@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Círculo de fondo del avatar del perfil.
+
+    El enunciado no pide foto de perfil, así que en lugar de una imagen se muestra
+    la inicial del nombre sobre este círculo. Evita tener que pedir permisos de
+    galería y cargar archivos, que es trabajo del Punto 5.
+
+    El color sale del tema (?attr/colorPrimaryContainer) y no de colors.xml
+    directamente, para que acompañe el modo claro y el oscuro sin duplicar nada.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="?attr/colorPrimaryContainer" />
+</shape>

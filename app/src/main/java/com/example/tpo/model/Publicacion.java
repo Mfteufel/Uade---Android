@@ -21,8 +21,9 @@ public class Publicacion implements Serializable {
     /**
      * Precio en pesos. Se usa double por simplicidad del TPO; si el backend
      * devolviera centavos convendría un long para evitar errores de redondeo.
+     * No es final: ver {@link #actualizarPrecio}.
      */
-    private final double precio;
+    private double precio;
     private final EstadoArticulo estado;
     private final Categoria categoria;
     private final Zona zona;
@@ -94,6 +95,15 @@ public class Publicacion implements Serializable {
 
     public double getPrecio() {
         return precio;
+    }
+
+    /**
+     * Campo mutable de la clase: se usa para
+     * simular una baja de precio (Punto 10, indicador de novedad) para
+     * que el cambio se vea en cualquier pantalla sin recargar desde el repositorio.
+     */
+    public void actualizarPrecio(double nuevoPrecio) {
+        this.precio = nuevoPrecio;
     }
 
     public EstadoArticulo getEstado() {

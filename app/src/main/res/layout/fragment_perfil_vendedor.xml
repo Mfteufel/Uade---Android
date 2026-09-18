@@ -34,7 +34,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:navigationIcon="@drawable/ic_flecha_atras"
-            app:title="@string/perfil_titulo" />
+            app:title="@string/perfil_vendedor_titulo" />
 
         <!-- ============ 2. Contenido ============ -->
         <FrameLayout
