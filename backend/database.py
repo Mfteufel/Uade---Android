@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
     nombre        TEXT NOT NULL,
     password_hash TEXT,
     zona          TEXT,
+    telefono      TEXT,
     creado_en     TEXT NOT NULL
 );
 
@@ -39,6 +40,22 @@ CREATE TABLE IF NOT EXISTS publicaciones (
     vendedor_id        TEXT NOT NULL,
     texto_busqueda     TEXT NOT NULL,
     fecha_publicacion  INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS favoritos (
+    usuario_id     INTEGER NOT NULL,
+    publicacion_id INTEGER NOT NULL,
+    precio_visto   REAL NOT NULL,
+    PRIMARY KEY (usuario_id, publicacion_id)
+);
+
+CREATE TABLE IF NOT EXISTS busquedas (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    usuario_id     INTEGER NOT NULL,
+    nombre         TEXT NOT NULL,
+    filtro         TEXT NOT NULL,
+    visto_hasta    INTEGER NOT NULL,
+    fecha_guardado INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS fotos (
@@ -86,6 +103,10 @@ def inicializar():
     RUTA_BASE.parent.mkdir(parents=True, exist_ok=True)
     with conectar() as conexion:
         conexion.executescript(ESQUEMA)
+        # las bases creadas antes de sumar el telefono no tienen esa columna
+        columnas = [fila["name"] for fila in conexion.execute("PRAGMA table_info(usuarios)")]
+        if "telefono" not in columnas:
+            conexion.execute("ALTER TABLE usuarios ADD COLUMN telefono TEXT")
 
 
 def buscar_usuario_por_email(email):
@@ -189,8 +210,8 @@ def cambiar_estado_publicacion(publicacion_id, estado):
         return cursor.rowcount > 0
 
 
-def buscar_publicaciones(texto, categoria, estados, zonas, precio_min, precio_max,
-                         orden, pagina, tamanio):
+def armar_condiciones(texto, categoria, estados, zonas, precio_min, precio_max,
+                      vendedor_id=None, desde=None):
     condiciones = ["estado_publicacion = 'ACTIVA'"]
     valores = []
     if texto:
@@ -211,8 +232,20 @@ def buscar_publicaciones(texto, categoria, estados, zonas, precio_min, precio_ma
     if precio_max is not None:
         condiciones.append("precio <= ?")
         valores.append(precio_max)
+    if vendedor_id:
+        condiciones.append("vendedor_id = ?")
+        valores.append(str(vendedor_id))
+    if desde is not None:
+        condiciones.append("fecha_publicacion > ?")
+        valores.append(desde)
+    return " AND ".join(condiciones), valores
 
-    donde = " AND ".join(condiciones)
+
+def buscar_publicaciones(texto, categoria, estados, zonas, precio_min, precio_max,
+                         orden, pagina, tamanio, vendedor_id=None):
+    donde, valores = armar_condiciones(
+        texto, categoria, estados, zonas, precio_min, precio_max, vendedor_id
+    )
     with conectar() as conexion:
         total = conexion.execute(
             "SELECT COUNT(*) FROM publicaciones WHERE " + donde, valores
@@ -223,6 +256,27 @@ def buscar_publicaciones(texto, categoria, estados, zonas, precio_min, precio_ma
             valores + [tamanio, pagina * tamanio],
         ).fetchall()
     return filas, total
+
+
+def contar_publicaciones_nuevas(filtro, desde):
+    donde, valores = armar_condiciones(
+        filtro.get("texto"), filtro.get("categoria"), filtro.get("estados") or [],
+        filtro.get("zonas") or [], filtro.get("precioMinimo"), filtro.get("precioMaximo"),
+        None, desde,
+    )
+    with conectar() as conexion:
+        return conexion.execute(
+            "SELECT COUNT(*) FROM publicaciones WHERE " + donde, valores
+        ).fetchone()[0]
+
+
+def actualizar_publicacion(publicacion_id, titulo, descripcion, precio):
+    with conectar() as conexion:
+        conexion.execute(
+            "UPDATE publicaciones SET titulo = ?, descripcion = ?, precio = ?, texto_busqueda = ?"
+            " WHERE id = ?",
+            (titulo, descripcion, precio, normalizar(titulo + " " + descripcion), publicacion_id),
+        )
 
 
 def agregar_foto(publicacion_id, archivo):
@@ -248,3 +302,82 @@ def nombre_de_vendedor(vendedor_id):
         if usuario is not None:
             return usuario["nombre"]
     return "Usuario"
+
+
+def actualizar_usuario(usuario_id, nombre, email, telefono, zona):
+    with conectar() as conexion:
+        conexion.execute(
+            "UPDATE usuarios SET nombre = ?, email = ?, telefono = ?, zona = ? WHERE id = ?",
+            (nombre, email, telefono, zona, usuario_id),
+        )
+    return buscar_usuario_por_id(usuario_id)
+
+
+def agregar_favorito(usuario_id, publicacion_id, precio):
+    with conectar() as conexion:
+        conexion.execute(
+            "INSERT OR IGNORE INTO favoritos (usuario_id, publicacion_id, precio_visto)"
+            " VALUES (?, ?, ?)",
+            (usuario_id, publicacion_id, precio),
+        )
+
+
+def quitar_favorito(usuario_id, publicacion_id):
+    with conectar() as conexion:
+        conexion.execute(
+            "DELETE FROM favoritos WHERE usuario_id = ? AND publicacion_id = ?",
+            (usuario_id, publicacion_id),
+        )
+
+
+def favoritos_de(usuario_id):
+    with conectar() as conexion:
+        return conexion.execute(
+            "SELECT p.*, f.precio_visto FROM favoritos f"
+            " JOIN publicaciones p ON p.id = f.publicacion_id"
+            " WHERE f.usuario_id = ? ORDER BY p.fecha_publicacion DESC",
+            (usuario_id,),
+        ).fetchall()
+
+
+def marcar_favoritos_vistos(usuario_id):
+    with conectar() as conexion:
+        conexion.execute(
+            "UPDATE favoritos SET precio_visto = (SELECT precio FROM publicaciones"
+            " WHERE publicaciones.id = favoritos.publicacion_id) WHERE usuario_id = ?",
+            (usuario_id,),
+        )
+
+
+def crear_busqueda(usuario_id, nombre, filtro_json):
+    momento = ahora_en_milisegundos()
+    with conectar() as conexion:
+        cursor = conexion.execute(
+            "INSERT INTO busquedas (usuario_id, nombre, filtro, visto_hasta, fecha_guardado)"
+            " VALUES (?, ?, ?, ?, ?)",
+            (usuario_id, nombre, filtro_json, momento, momento),
+        )
+        return cursor.lastrowid
+
+
+def busquedas_de(usuario_id):
+    with conectar() as conexion:
+        return conexion.execute(
+            "SELECT * FROM busquedas WHERE usuario_id = ? ORDER BY id DESC", (usuario_id,)
+        ).fetchall()
+
+
+def borrar_busqueda(usuario_id, busqueda_id):
+    with conectar() as conexion:
+        cursor = conexion.execute(
+            "DELETE FROM busquedas WHERE id = ? AND usuario_id = ?", (busqueda_id, usuario_id)
+        )
+        return cursor.rowcount > 0
+
+
+def marcar_busquedas_vistas(usuario_id):
+    with conectar() as conexion:
+        conexion.execute(
+            "UPDATE busquedas SET visto_hasta = ? WHERE usuario_id = ?",
+            (ahora_en_milisegundos(), usuario_id),
+        )
