@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Hoja para calificar a la contraparte de una operación (Punto 9): estrellas de
+    1 a 5 y un comentario breve opcional.
+
+    "Enviar" arranca deshabilitado y se habilita recién cuando hay al menos una
+    estrella: el mínimo es 1, no se puede mandar una calificación vacía. Las
+    reglas de fondo (plazo, una sola vez, participante) las valida el servidor;
+    si rechaza, el motivo aparece en textoErrorCalificar sin cerrar la hoja.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="@dimen/espaciado_grande">
+
+    <TextView
+        android:id="@+id/textoTituloCalificar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceTitleLarge"
+        tools:text="Calificá a Sofía M." />
+
+    <TextView
+        android:id="@+id/textoArticuloCalificar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        tools:text="Por: Teclado mecánico Redragon" />
+
+    <TextView
+        android:id="@+id/textoPlazoCalificar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        tools:text="Podés calificar hasta el 23/09/2026" />
+
+    <RatingBar
+        android:id="@+id/barraCalificar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="@dimen/espaciado_pantalla"
+        android:contentDescription="@string/calificar_estrellas_descripcion"
+        android:numStars="5"
+        android:rating="0"
+        android:stepSize="1" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/campoComentarioContenedor"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/espaciado_pantalla"
+        android:hint="@string/calificar_comentario"
+        app:counterEnabled="true"
+        app:counterMaxLength="280">
+
+        <!-- maxLength igual al del servidor (Calificacion.LARGO_MAXIMO_COMENTARIO). -->
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/campoComentario"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="top"
+            android:inputType="textCapSentences|textMultiLine"
+            android:maxLength="280"
+            android:minLines="2" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <TextView
+        android:id="@+id/textoErrorCalificar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/espaciado_chico"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorError"
+        android:visibility="gone"
+        tools:text="Venció el plazo para calificar (7 días desde la entrega)"
+        tools:visibility="visible" />
+
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/progresoCalificar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/espaciado_chico"
+        android:indeterminate="true"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/espaciado_pantalla"
+        android:gravity="end"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/botonCancelarCalificar"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/perfil_cancelar" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/botonEnviarCalificar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/espaciado_chico"
+            android:enabled="false"
+            android:text="@string/calificar_enviar" />
+    </LinearLayout>
+
+</LinearLayout>

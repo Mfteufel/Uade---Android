@@ -40,8 +40,8 @@ import dagger.hilt.android.AndroidEntryPoint;
  * Mi perfil y reputación — Punto 2 del TPO.
  * <p>
  * Muestra y edita los datos personales, cambia la foto de perfil y muestra la
- * reputación. Desde acá se llega al propio perfil público, para ver lo mismo
- * que ven los demás.
+ * reputación. Desde acá se llega al historial de operaciones (Punto 9) y al
+ * propio perfil público, para ver lo mismo que ven los demás.
  */
 @AndroidEntryPoint
 public class PerfilFragment extends Fragment {
@@ -59,6 +59,7 @@ public class PerfilFragment extends Fragment {
     private TextView textoAntiguedad;
 
     private View bloqueReputacion;
+    private TextView textoCalificacionesPendientes;
 
     private TextInputEditText campoNombre;
     private TextInputEditText campoEmail;
@@ -117,6 +118,7 @@ public class PerfilFragment extends Fragment {
         textoAntiguedad = view.findViewById(R.id.textoAntiguedad);
 
         bloqueReputacion = view.findViewById(R.id.bloqueReputacion);
+        textoCalificacionesPendientes = view.findViewById(R.id.textoCalificacionesPendientes);
 
         campoNombre = view.findViewById(R.id.campoNombre);
         campoEmail = view.findViewById(R.id.campoEmail);
@@ -137,6 +139,8 @@ public class PerfilFragment extends Fragment {
                 .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
                 .build()));
         view.findViewById(R.id.botonVerPerfilPublico).setOnClickListener(v -> irAMiPerfilPublico());
+        view.findViewById(R.id.botonMisOperaciones).setOnClickListener(v ->
+                Navigation.findNavController(requireView()).navigate(R.id.action_miPerfil_to_historial));
 
         view.findViewById(R.id.botonReintentarPerfil)
                 .setOnClickListener(v -> cargarPerfil());
@@ -160,6 +164,7 @@ public class PerfilFragment extends Fragment {
         textoNombre = null;
         textoAntiguedad = null;
         bloqueReputacion = null;
+        textoCalificacionesPendientes = null;
         campoNombre = null;
         campoEmail = null;
         campoTelefono = null;
@@ -215,6 +220,11 @@ public class PerfilFragment extends Fragment {
 
         PerfilUi.pintarReputacion(bloqueReputacion, usuario.getReputacion(),
                 R.string.perfil_sin_calificaciones);
+
+        int pendientes = usuario.getCalificacionesPendientes();
+        textoCalificacionesPendientes.setVisibility(pendientes > 0 ? View.VISIBLE : View.GONE);
+        textoCalificacionesPendientes.setText(getResources().getQuantityString(
+                R.plurals.perfil_calificaciones_pendientes, pendientes, pendientes));
 
         campoNombre.setText(usuario.getNombre());
         campoEmail.setText(usuario.getEmail());

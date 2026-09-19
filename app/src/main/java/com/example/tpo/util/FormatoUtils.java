@@ -77,6 +77,11 @@ public final class FormatoUtils {
         return new SimpleDateFormat("MMMM 'de' yyyy", LOCALE_AR).format(new Date(fechaMillis));
     }
 
+    /** "16/09/2026", para lugares con poco espacio (chip del rango de fechas, plazo para calificar). */
+    public static String fechaCorta(long fechaMillis) {
+        return new SimpleDateFormat("dd/MM/yyyy", LOCALE_AR).format(new Date(fechaMillis));
+    }
+
     /**
      * Reputación del vendedor lista para mostrar: "4,8 · 23 ventas", o el aviso de
      * que todavía no tiene calificaciones cuando no hizo ninguna venta.
