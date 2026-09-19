@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Contenido del diálogo "Contraofertar" de DetalleOfertaBottomSheet (Punto 7).
+    Mismo criterio que dialogo_oferta.xml, con un campo de mensaje opcional
+    además del monto.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="@dimen/espaciado_pantalla"
+    android:paddingTop="@dimen/espaciado_chico">
+
+    <TextView
+        android:id="@+id/textoMontoActualContraoferta"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        tools:text="Monto propuesto: $ 500.000" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/inputContraoferta"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/espaciado_chico"
+        android:hint="@string/detalle_oferta_neg_monto_hint"
+        app:prefixText="$">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/campoContraoferta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:imeOptions="actionNext"
+            android:inputType="number"
+            android:maxLines="1" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/inputMensajeContraoferta"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/espaciado_chico"
+        android:hint="@string/detalle_oferta_neg_mensaje_hint">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/campoMensajeContraoferta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:imeOptions="actionDone"
+            android:maxLines="2" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+</LinearLayout>

@@ -61,6 +61,24 @@ public final class FormatoUtils {
     }
 
     /**
+     * Cuánto falta para un momento futuro ("en 2 días") — usado por el vencimiento de
+     * una oferta (Punto 7). No reutiliza {@link #antiguedad}: esa función asume que
+     * {@code fechaMillis} ya pasó, y su caso especial de "menos de un minuto" se
+     * dispara incorrectamente con cualquier diferencia negativa (una fecha futura).
+     */
+    public static CharSequence tiempoRestante(Context context, long fechaMillis) {
+        long ahora = System.currentTimeMillis();
+        if (fechaMillis - ahora < DateUtils.MINUTE_IN_MILLIS) {
+            return context.getString(R.string.vencimiento_en_menos_de_un_minuto);
+        }
+        return DateUtils.getRelativeTimeSpanString(
+                fechaMillis,
+                ahora,
+                DateUtils.MINUTE_IN_MILLIS,
+                DateUtils.FORMAT_ABBREV_RELATIVE);
+    }
+
+    /**
      * Fecha absoluta, "5 de septiembre de 2026". El renglón de zona muestra la
      * antigüedad relativa ("hace 5 h"), útil de un vistazo, pero el enunciado del
      * Detalle pide la fecha de publicación explícita.
