@@ -203,6 +203,14 @@
     <string name="detalle_mis_preguntas_titulo">Tus preguntas</string>
     <string name="detalle_mi_oferta_titulo">Tu oferta</string>
 
+    <!-- ===================== Detalle: punto de entrega y mapa (Punto 8) ===================== -->
+    <string name="detalle_punto_entrega_titulo">Punto de entrega</string>
+    <!-- Se muestra en vez de la dirección mientras el interesado no tiene una oferta aceptada. -->
+    <string name="detalle_entrega_bloqueada">La dirección exacta se muestra cuando el vendedor acepta tu oferta</string>
+    <string name="detalle_como_llegar">Cómo llegar</string>
+    <!-- Ninguna de las apps de mapas probadas pudo abrir la dirección (o el dispositivo no tiene ninguna instalada). -->
+    <string name="detalle_mapa_sin_app">No encontramos una app de mapas para mostrar la dirección</string>
+
     <!-- ===================== Perfil del vendedor (Punto 4 — no confundir con perfil_titulo, el perfil propio del Punto 2) ===================== -->
     <string name="perfil_vendedor_titulo">Perfil del vendedor</string>
     <string name="perfil_publicaciones_titulo">Sus publicaciones</string>
@@ -238,6 +246,9 @@
         <item quantity="one">%1$d oferta</item>
         <item quantity="other">%1$d ofertas</item>
     </plurals>
+    <!-- Botón de cada oferta recibida, Punto 8: acepta y desbloquea la dirección de entrega para ese comprador. -->
+    <string name="gestion_aceptar_oferta">Aceptar</string>
+    <string name="gestion_oferta_aceptada">Aceptada</string>
 
     <!-- ===================== Mis publicaciones (Punto 5) ===================== -->
     <string name="mis_publicaciones_titulo">Mis publicaciones</string>

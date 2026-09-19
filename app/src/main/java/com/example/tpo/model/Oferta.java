@@ -19,6 +19,14 @@ public class Oferta implements Serializable {
     private final double monto;
     /** Momento del envío, en milisegundos desde epoch. */
     private final long fecha;
+    /**
+     * true si el vendedor ya aceptó esta oferta. No es final ni se recibe por
+     * constructor porque toda oferta arranca sin aceptar (mismo criterio que
+     * {@link Publicacion#getEstadoPublicacion()}): se acepta después, desde
+     * "Gestionar publicación". Punto 8: es lo que habilita al comprador a ver
+     * la dirección de entrega.
+     */
+    private boolean aceptada = false;
 
     public Oferta(String publicacionId, String autorId, String autorNombre, double monto, long fecha) {
         this.publicacionId = publicacionId;
@@ -46,5 +54,13 @@ public class Oferta implements Serializable {
 
     public long getFecha() {
         return fecha;
+    }
+
+    public boolean isAceptada() {
+        return aceptada;
+    }
+
+    public void setAceptada(boolean aceptada) {
+        this.aceptada = aceptada;
     }
 }

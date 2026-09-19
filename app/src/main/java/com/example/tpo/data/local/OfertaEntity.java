@@ -27,4 +27,12 @@ public class OfertaEntity {
     public double monto;
 
     public long fecha;
+
+    /**
+     * true si el vendedor ya aceptó esta oferta — Punto 8: hasta que esto no
+     * pase, el comprador no puede ver la dirección de entrega. El resto del
+     * ciclo de la oferta (rechazar, contraofertar, vencimiento) es del Punto 7
+     * y todavía no existe, así que por ahora esto es lo único que hace falta.
+     */
+    public boolean aceptada;
 }

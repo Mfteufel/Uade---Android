@@ -320,6 +320,12 @@ public class GestionPublicacionBottomSheet extends BottomSheetDialogFragment {
         });
     }
 
+    /**
+     * Punto 8: cada fila de oferta ahora suma el botón "Aceptar" (o el texto
+     * "Aceptada" si el vendedor ya la aceptó antes). Por eso ya no se reusa
+     * item_interaccion.xml como en las preguntas: hace falta un layout propio
+     * con esa acción extra (item_oferta_gestion.xml).
+     */
     private void pintarOfertasRecibidas(List<Oferta> ofertas) {
         int cantidad = ofertas.size();
         cantidadOfertasGestion.setText(getResources().getQuantityString(
@@ -329,15 +335,47 @@ public class GestionPublicacionBottomSheet extends BottomSheetDialogFragment {
         grupoOfertasGestion.removeAllViews();
         LayoutInflater inflater = LayoutInflater.from(requireContext());
         for (Oferta oferta : ofertas) {
-            View fila = inflater.inflate(R.layout.item_interaccion, grupoOfertasGestion, false);
-            ((ImageView) fila.findViewById(R.id.iconoInteraccion)).setImageResource(R.drawable.ic_ofertar);
+            View fila = inflater.inflate(R.layout.item_oferta_gestion, grupoOfertasGestion, false);
             ((TextView) fila.findViewById(R.id.textoInteraccion)).setText(FormatoUtils.precio(oferta.getMonto()));
             ((TextView) fila.findViewById(R.id.autorInteraccion)).setText(getString(
                     R.string.item_zona_y_fecha,
                     oferta.getAutorNombre(),
                     FormatoUtils.antiguedad(requireContext(), oferta.getFecha())));
+
+            MaterialButton botonAceptar = fila.findViewById(R.id.botonAceptarOferta);
+            TextView textoAceptada = fila.findViewById(R.id.textoOfertaAceptada);
+            botonAceptar.setVisibility(oferta.isAceptada() ? View.GONE : View.VISIBLE);
+            textoAceptada.setVisibility(oferta.isAceptada() ? View.VISIBLE : View.GONE);
+            botonAceptar.setOnClickListener(v -> aceptarOferta(oferta));
+
             grupoOfertasGestion.addView(fila);
         }
+    }
+
+    /**
+     * Acepta la oferta y vuelve a pintar la lista para que se note el cambio al
+     * toque (botón → texto "Aceptada"). No hace falta recargar toda la
+     * publicación: alcanza con refrescar el listado de ofertas.
+     */
+    private void aceptarOferta(Oferta oferta) {
+        ofertasPublicacion.aceptar(oferta.getPublicacionId(), oferta.getAutorId(),
+                new RepositorioCallback<Void>() {
+                    @Override
+                    public void onExito(Void resultado) {
+                        if (grupoOfertasGestion == null) {
+                            return; // la hoja ya se cerró
+                        }
+                        mostrarOfertasRecibidas();
+                    }
+
+                    @Override
+                    public void onError(String mensaje) {
+                        if (scrollGestion == null) {
+                            return;
+                        }
+                        Snackbar.make(requireView(), mensaje, Snackbar.LENGTH_LONG).show();
+                    }
+                });
     }
 
     // ------------------------------------------------------------------

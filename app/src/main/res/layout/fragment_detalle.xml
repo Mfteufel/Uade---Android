@@ -231,6 +231,70 @@
                             android:orientation="vertical" />
                     </LinearLayout>
 
+                    <!-- Punto 8: punto de entrega. Todo el bloque queda oculto si la
+                         publicación no tiene dirección cargada. Si tiene, pero a este
+                         usuario todavía no le aceptaron la oferta, se ve el aviso de
+                         "bloqueada" en vez de la dirección real. -->
+                    <LinearLayout
+                        android:id="@+id/bloquePuntoEntrega"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone"
+                        tools:visibility="visible">
+
+                        <com.google.android.material.divider.MaterialDivider
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+                            android:layout_marginTop="@dimen/espaciado_pantalla" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+                            android:layout_marginTop="@dimen/espaciado_pantalla"
+                            android:text="@string/detalle_punto_entrega_titulo"
+                            android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+                        <!-- Solo una de las dos vistas siguientes está visible por vez. -->
+                        <TextView
+                            android:id="@+id/textoEntregaBloqueada"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+                            android:layout_marginTop="@dimen/espaciado_chico"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:visibility="gone"
+                            tools:text="La dirección exacta se muestra cuando el vendedor acepta tu oferta" />
+
+                        <TextView
+                            android:id="@+id/direccionEntregaDetalle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+                            android:layout_marginTop="@dimen/espaciado_chico"
+                            android:drawablePadding="4dp"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:visibility="gone"
+                            app:drawableStartCompat="@drawable/ic_zona"
+                            tools:text="Av. 9 de Julio 1000, CABA"
+                            tools:visibility="visible" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/botonComoLlegar"
+                            style="@style/Widget.Material3.Button.OutlinedButton.Icon"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+                            android:layout_marginTop="@dimen/espaciado_chico"
+                            android:text="@string/detalle_como_llegar"
+                            android:visibility="gone"
+                            app:icon="@drawable/ic_como_llegar"
+                            tools:visibility="visible" />
+                    </LinearLayout>
+
                     <com.google.android.material.divider.MaterialDivider
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"

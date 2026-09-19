@@ -21,4 +21,8 @@ public interface OfertaDao {
     @Nullable
     @Query("SELECT * FROM oferta WHERE publicacionId = :publicacionId AND autorId = :autorId LIMIT 1")
     OfertaEntity delUsuario(String publicacionId, String autorId);
+
+    /** Marca como aceptada la oferta de este usuario — Punto 8, acción del vendedor. */
+    @Query("UPDATE oferta SET aceptada = 1 WHERE publicacionId = :publicacionId AND autorId = :autorId")
+    void aceptar(String publicacionId, String autorId);
 }

@@ -1,5 +1,7 @@
 package com.example.tpo.model;
 
+import androidx.annotation.Nullable;
+
 import java.io.Serializable;
 
 /**
@@ -58,6 +60,17 @@ public class Publicacion implements Serializable {
      * catálogo de prueba arrancan {@link EstadoPublicacion#ACTIVA}.
      */
     private EstadoPublicacion estadoPublicacion = EstadoPublicacion.ACTIVA;
+    /**
+     * Dirección exacta del punto de entrega, en texto libre (puede ser una
+     * dirección o directamente coordenadas pegadas de Google Maps) — Punto 8.
+     * <p>
+     * {@code null} en las publicaciones que todavía no la cargaron (el
+     * enunciado la exige recién desde el Punto 5, que la carga al publicar).
+     * Por eso no se agregó como parámetro obligatorio del constructor
+     * principal: así el catálogo de prueba puede migrarse de a poco.
+     */
+    @Nullable
+    private final String direccionEntrega;
 
     public Publicacion(String id,
                        String titulo,
@@ -69,6 +82,21 @@ public class Publicacion implements Serializable {
                        long fechaPublicacion,
                        Vendedor vendedor,
                        int cantidadFotos) {
+        this(id, titulo, descripcion, precio, estado, categoria, zona,
+                fechaPublicacion, vendedor, cantidadFotos, null);
+    }
+
+    public Publicacion(String id,
+                       String titulo,
+                       String descripcion,
+                       double precio,
+                       EstadoArticulo estado,
+                       Categoria categoria,
+                       Zona zona,
+                       long fechaPublicacion,
+                       Vendedor vendedor,
+                       int cantidadFotos,
+                       @Nullable String direccionEntrega) {
         this.id = id;
         this.titulo = titulo;
         this.descripcion = descripcion;
@@ -79,6 +107,7 @@ public class Publicacion implements Serializable {
         this.fechaPublicacion = fechaPublicacion;
         this.vendedor = vendedor;
         this.cantidadFotos = cantidadFotos;
+        this.direccionEntrega = direccionEntrega;
     }
 
     public String getId() {
@@ -136,5 +165,10 @@ public class Publicacion implements Serializable {
 
     public void setEstadoPublicacion(EstadoPublicacion estadoPublicacion) {
         this.estadoPublicacion = estadoPublicacion;
+    }
+
+    @Nullable
+    public String getDireccionEntrega() {
+        return direccionEntrega;
     }
 }

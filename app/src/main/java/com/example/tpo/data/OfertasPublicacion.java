@@ -47,7 +47,12 @@ public class OfertasPublicacion {
         return instancia;
     }
 
-    /** Guarda la oferta, reemplazando la anterior del mismo usuario para esa publicación si existía. */
+    /**
+     * Guarda la oferta, reemplazando la anterior del mismo usuario para esa publicación si
+     * existía. Ojo: como esto reemplaza la fila entera, volver a ofertar sobre una oferta ya
+     * aceptada la dejaría en {@code aceptada = false} de nuevo, pero no hace falta contemplar
+     * ese caso todavía porque el Detalle no deja ofertar dos veces sin pasar por acá.
+     */
     public void guardar(Oferta oferta, RepositorioCallback<Void> callback) {
         executor.execute(() -> {
             OfertaEntity entity = new OfertaEntity();
@@ -56,7 +61,19 @@ public class OfertasPublicacion {
             entity.autorNombre = oferta.getAutorNombre();
             entity.monto = oferta.getMonto();
             entity.fecha = oferta.getFecha();
+            entity.aceptada = oferta.isAceptada();
             dao.guardar(entity);
+            handlerPrincipal.post(() -> callback.onExito(null));
+        });
+    }
+
+    /**
+     * Marca la oferta como aceptada — acción del vendedor desde "Gestionar publicación"
+     * (Punto 8). A partir de acá el comprador ya puede ver la dirección de entrega.
+     */
+    public void aceptar(String publicacionId, String autorId, RepositorioCallback<Void> callback) {
+        executor.execute(() -> {
+            dao.aceptar(publicacionId, autorId);
             handlerPrincipal.post(() -> callback.onExito(null));
         });
     }
@@ -83,8 +100,10 @@ public class OfertasPublicacion {
     }
 
     private static Oferta haciaModelo(OfertaEntity entity) {
-        return new Oferta(
+        Oferta oferta = new Oferta(
                 entity.publicacionId, entity.autorId, entity.autorNombre,
                 entity.monto, entity.fecha);
+        oferta.setAceptada(entity.aceptada);
+        return oferta;
     }
 }
