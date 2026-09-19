@@ -321,4 +321,14 @@
         </FrameLayout>
     </LinearLayout>
 
+    <!-- Punto 5: abre el wizard de "Publicar artículo". -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabPublicar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="@dimen/espaciado_pantalla"
+        android:contentDescription="@string/home_fab_publicar"
+        app:srcCompat="@drawable/ic_agregar" />
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -10,7 +10,44 @@
         android:id="@+id/homeFragment"
         android:name="com.example.tpo.ui.home.HomeFragment"
         android:label="@string/home_titulo"
-        tools:layout="@layout/fragment_home" />
+        tools:layout="@layout/fragment_home">
+
+        <!--
+            TODO (Punto 4 - Detalle de publicación): cuando exista DetailFragment,
+            descomentar esta action y el destino de abajo, y reemplazar el Snackbar
+            de HomeFragment.alAbrirPublicacion() por:
+
+            Bundle args = new Bundle();
+            args.putString("publicacionId", publicacion.getId());
+            navController.navigate(R.id.action_home_to_detalle, args);
+
+        <action
+            android:id="@+id/action_home_to_detalle"
+            app:destination="@id/detalleFragment" />
+        -->
+
+        <!-- Punto 5: FAB del Home abre el wizard de publicar. -->
+        <action
+            android:id="@+id/action_home_to_publicar"
+            app:destination="@id/nav_graph_publicar" />
+
+        <!-- Punto 5: item del menú de la toolbar. -->
+        <action
+            android:id="@+id/action_home_to_misPublicaciones"
+            app:destination="@id/misPublicacionesFragment" />
+
+    </fragment>
+
+    <!--
+    <fragment
+        android:id="@+id/detalleFragment"
+        android:name="com.example.tpo.ui.detalle.DetalleFragment"
+        android:label="@string/detalle_titulo">
+        <argument
+            android:name="publicacionId"
+            app:argType="string" />
+    </fragment>
+    -->
 
     <!-- Favoritos: destino de la bottom nav, ver menu_navegacion.xml. -->
     <fragment
@@ -41,5 +78,14 @@
             app:popUpToInclusive="true" />
 
     </fragment>
+
+    <!-- Punto 5: wizard de publicación, ver nav_graph_publicar.xml. -->
+    <include app:graph="@navigation/nav_graph_publicar" />
+
+    <fragment
+        android:id="@+id/misPublicacionesFragment"
+        android:name="com.example.tpo.ui.mispublicaciones.MisPublicacionesFragment"
+        android:label="@string/mis_publicaciones_titulo"
+        tools:layout="@layout/fragment_mis_publicaciones" />
 
 </navigation>

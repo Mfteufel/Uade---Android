@@ -19,6 +19,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.os.BundleCompat;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -38,9 +39,11 @@ import com.example.tpo.model.FiltroPublicaciones;
 import com.example.tpo.model.OrdenPublicaciones;
 import com.example.tpo.model.Publicacion;
 import com.example.tpo.ui.ChipsUtils;
+import com.google.android.material.appbar.MaterialToolbar;
 import com.example.tpo.util.FormatoUtils;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.ChipGroup;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.google.android.material.snackbar.Snackbar;
@@ -87,6 +90,8 @@ public class HomeFragment extends Fragment implements
     private static final int UMBRAL_PAGINACION = 3;
 
     // --- Vistas. Son null fuera del rango onCreateView..onDestroyView ---
+    private MaterialToolbar toolbar;
+    private FloatingActionButton fabPublicar;
     private TextInputEditText campoBuscar;
     private ChipGroup grupoCategorias;
     private ChipGroup grupoOrden;
@@ -161,6 +166,8 @@ public class HomeFragment extends Fragment implements
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        toolbar = view.findViewById(R.id.toolbar);
+        fabPublicar = view.findViewById(R.id.fabPublicar);
         campoBuscar = view.findViewById(R.id.campoBuscar);
         grupoCategorias = view.findViewById(R.id.grupoCategorias);
         grupoOrden = view.findViewById(R.id.grupoOrden);
@@ -181,6 +188,7 @@ public class HomeFragment extends Fragment implements
         crearChipsDeCategoria();
         crearChipsDeOrden();
         configurarBotones();
+        configurarEntradaAPublicar();
         escucharResultadoDeFiltros();
         escucharResultadoDeBusquedaGuardada();
         escucharCierreDeBusquedasGuardadas();
@@ -227,6 +235,8 @@ public class HomeFragment extends Fragment implements
         // 3) Se sueltan las referencias a vistas. El Fragment puede seguir vivo
         //    después de que su vista muere; si guardara las referencias, mantendría
         //    en memoria todo el árbol de vistas (memory leak).
+        toolbar = null;
+        fabPublicar = null;
         campoBuscar = null;
         grupoCategorias = null;
         grupoOrden = null;
@@ -415,6 +425,24 @@ public class HomeFragment extends Fragment implements
 
         requireView().findViewById(R.id.botonLimpiarFiltros)
                 .setOnClickListener(v -> limpiarTodosLosFiltros());
+    }
+
+    /**
+     * Cablea las dos entradas del Punto 5: el FAB que abre el wizard de
+     * publicar y el ítem "Mis publicaciones" del menú de la toolbar.
+     */
+    private void configurarEntradaAPublicar() {
+        fabPublicar.setOnClickListener(v -> NavHostFragment.findNavController(this)
+                .navigate(R.id.action_home_to_publicar));
+
+        toolbar.inflateMenu(R.menu.menu_home);
+        toolbar.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == R.id.menuMisPublicaciones) {
+                NavHostFragment.findNavController(this).navigate(R.id.action_home_to_misPublicaciones);
+                return true;
+            }
+            return false;
+        });
     }
 
     /**
