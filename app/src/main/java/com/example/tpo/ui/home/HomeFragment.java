@@ -24,6 +24,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tpo.R;
+import com.example.tpo.login.LoginFragment;
 import com.example.tpo.data.BusquedaGuardadaRepository;
 import com.example.tpo.data.BusquedaGuardadaRepositoryMock;
 import com.example.tpo.data.FavoritoRepository;
@@ -445,6 +446,12 @@ public class HomeFragment extends Fragment implements
             }
             if (item.getItemId() == R.id.menuVerGuardados) {
                 NavHostFragment.findNavController(this).navigate(R.id.action_home_to_guardados);
+                return true;
+            }
+            if (item.getItemId() == R.id.menuCerrarSesion) {
+                Bundle argumentos = new Bundle();
+                argumentos.putBoolean(LoginFragment.ARG_CERRAR_SESION, true);
+                NavHostFragment.findNavController(this).navigate(R.id.action_home_to_login, argumentos);
                 return true;
             }
             return false;

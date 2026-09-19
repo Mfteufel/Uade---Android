@@ -31,6 +31,12 @@
             android:id="@+id/action_home_to_guardados"
             app:destination="@id/guardadosFragment" />
 
+        <action
+            android:id="@+id/action_home_to_login"
+            app:destination="@id/loginFragment"
+            app:popUpTo="@id/homeFragment"
+            app:popUpToInclusive="true" />
+
     </fragment>
 
     <!--
@@ -106,6 +112,23 @@
              así el botón "atrás" cierra la app en vez de volver al login. -->
         <action
             android:id="@+id/action_login_to_home"
+            app:destination="@id/homeFragment"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true" />
+
+        <action
+            android:id="@+id/action_login_to_codigo"
+            app:destination="@id/codigoFragment" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/codigoFragment"
+        android:name="com.example.tpo.login.CodigoFragment"
+        tools:layout="@layout/fragment_codigo">
+
+        <action
+            android:id="@+id/action_codigo_to_home"
             app:destination="@id/homeFragment"
             app:popUpTo="@id/loginFragment"
             app:popUpToInclusive="true" />

@@ -66,6 +66,11 @@ public class MainActivity extends AppCompatActivity {
                 .findFragmentById(R.id.nav_host_fragment);
         NavController navController = navHostFragment.getNavController();
         NavigationUI.setupWithNavController(bottomNav, navController);
+        navController.addOnDestinationChangedListener((controller, destino, argumentos) -> {
+            boolean enLogin = destino.getId() == R.id.loginFragment
+                    || destino.getId() == R.id.codigoFragment;
+            bottomNav.setVisibility(enLogin ? View.GONE : View.VISIBLE);
+        });
 
         // RECEIVER_EXPORTED porque el broadcast de prueba llega desde `adb shell am
         // broadcast`, que corre como shell y no como este mismo paquete.

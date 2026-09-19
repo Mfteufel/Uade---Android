@@ -10,31 +10,40 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="@dimen/espaciado_grande"
-        android:text="@string/app_name"
-        android:textAppearance="?attr/textAppearanceHeadlineMedium" />
-
-    <EditText
-        android:id="@+id/campoEmail"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="@string/login_email"
-        android:inputType="textEmailAddress" />
-
-    <EditText
-        android:id="@+id/campoClave"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/espaciado_chico"
-        android:hint="@string/login_clave"
-        android:inputType="textPassword" />
+        android:layout_marginBottom="@dimen/espaciado_chico"
+        android:text="@string/codigo_titulo"
+        android:textAppearance="?attr/textAppearanceHeadlineSmall" />
 
     <TextView
-        android:id="@+id/textoError"
+        android:id="@+id/textoEnviado"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal" />
+
+    <TextView
+        android:id="@+id/textoCodigoDePrueba"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/espaciado_chico"
-        android:textColor="?attr/colorError"
+        android:gravity="center_horizontal"
+        android:textColor="?attr/colorPrimary"
+        android:visibility="gone" />
+
+    <EditText
+        android:id="@+id/campoCodigo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/espaciado_pantalla"
+        android:gravity="center_horizontal"
+        android:hint="@string/codigo_hint"
+        android:inputType="number"
+        android:maxLength="6" />
+
+    <TextView
+        android:id="@+id/textoMensaje"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/espaciado_chico"
         android:visibility="gone" />
 
     <ProgressBar
@@ -45,18 +54,18 @@
         android:visibility="gone" />
 
     <Button
-        android:id="@+id/botonIngresar"
+        android:id="@+id/botonVerificar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/espaciado_pantalla"
-        android:text="@string/login_ingresar" />
+        android:text="@string/codigo_verificar" />
 
     <Button
-        android:id="@+id/botonCodigo"
+        android:id="@+id/botonReenviar"
         style="@style/Widget.Material3.Button.TextButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/espaciado_chico"
-        android:text="@string/login_ingresar_con_codigo" />
+        android:text="@string/codigo_reenviar" />
 
 </LinearLayout>

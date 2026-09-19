@@ -13,4 +13,9 @@
         android:title="@string/menu_ver_guardados"
         app:showAsAction="never" />
 
+    <item
+        android:id="@+id/menuCerrarSesion"
+        android:title="@string/menu_cerrar_sesion"
+        app:showAsAction="never" />
+
 </menu>
