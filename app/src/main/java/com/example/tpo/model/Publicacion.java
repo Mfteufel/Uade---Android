@@ -3,15 +3,15 @@ package com.example.tpo.model;
 import java.io.Serializable;
 
 /**
- * Una publicación del listado del Home.
+ * Una publicación del listado del Home y del Detalle.
  * <p>
- * Modela solo lo que el Punto 3 necesita mostrar y filtrar (título, precio,
- * estado, zona, categoría, descripción y fecha). El Punto 4 (Detalle) va a
- * necesitar más campos —galería de fotos, reputación del vendedor, etc.—; se
- * agregan cuando se implemente esa pantalla para no adelantar trabajo.
+ * Modela título, precio, estado, zona, categoría, descripción, fecha, vendedor
+ * y cantidad de fotos. El vendedor es un {@link Vendedor} (no un String suelto):
+ * así el Detalle puede mostrar su reputación y abrir su perfil público, y decidir
+ * las "acciones según rol" comparando por id contra el usuario logueado.
  * <p>
  * Implementa {@link Serializable} para poder viajar en un Bundle como argumento
- * de navegación hacia el Detalle.
+ * de navegación (por ejemplo, con el filtro del Home hacia el bottom sheet).
  */
 public class Publicacion implements Serializable {
 
@@ -34,7 +34,30 @@ public class Publicacion implements Serializable {
      * java.time recién está disponible desde API 26 (haría falta desugaring).
      */
     private final long fechaPublicacion;
-    private final String nombreVendedor;
+    private final Vendedor vendedor;
+    /**
+     * Cantidad de fotos de la publicación, para la galería del Detalle.
+     * <p>
+     * Todavía no hay librería de carga de imágenes (Glide/Picasso) ni fotos
+     * reales: la galería muestra este número de placeholders (ver
+     * {@code ic_imagen}). Cuando se suba la foto de verdad en el Punto 5 esto
+     * pasa a ser una lista de URLs.
+     */
+    private final int cantidadFotos;
+    /**
+     * Estado de la publicación (activa / pausada / vendida) — Punto 4,
+     * "gestión de la publicación".
+     * <p>
+     * Es el único campo no {@code final} de la clase: todo lo demás describe el
+     * artículo tal como se publicó y no cambia, pero el estado es justamente lo
+     * que el vendedor puede modificar después de publicar (pausar, reactivar,
+     * marcar como vendida). Contra la API real este campo llegaría en el
+     * {@code GET} y se actualizaría con un {@code PUT
+     * /publicaciones/{id}/estado}; acá lo muta directamente el repositorio mock.
+     * No se agrega al constructor a propósito: todas las publicaciones del
+     * catálogo de prueba arrancan {@link EstadoPublicacion#ACTIVA}.
+     */
+    private EstadoPublicacion estadoPublicacion = EstadoPublicacion.ACTIVA;
 
     public Publicacion(String id,
                        String titulo,
@@ -44,7 +67,8 @@ public class Publicacion implements Serializable {
                        Categoria categoria,
                        Zona zona,
                        long fechaPublicacion,
-                       String nombreVendedor) {
+                       Vendedor vendedor,
+                       int cantidadFotos) {
         this.id = id;
         this.titulo = titulo;
         this.descripcion = descripcion;
@@ -53,7 +77,8 @@ public class Publicacion implements Serializable {
         this.categoria = categoria;
         this.zona = zona;
         this.fechaPublicacion = fechaPublicacion;
-        this.nombreVendedor = nombreVendedor;
+        this.vendedor = vendedor;
+        this.cantidadFotos = cantidadFotos;
     }
 
     public String getId() {
@@ -97,7 +122,19 @@ public class Publicacion implements Serializable {
         return fechaPublicacion;
     }
 
-    public String getNombreVendedor() {
-        return nombreVendedor;
+    public Vendedor getVendedor() {
+        return vendedor;
+    }
+
+    public int getCantidadFotos() {
+        return cantidadFotos;
+    }
+
+    public EstadoPublicacion getEstadoPublicacion() {
+        return estadoPublicacion;
+    }
+
+    public void setEstadoPublicacion(EstadoPublicacion estadoPublicacion) {
+        this.estadoPublicacion = estadoPublicacion;
     }
 }

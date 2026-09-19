@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Miniatura de una foto en la galería del Detalle. Placeholder: ver ic_imagen. -->
+<ImageView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="@dimen/detalle_foto_tamano"
+    android:layout_height="@dimen/detalle_foto_tamano"
+    android:layout_marginEnd="@dimen/espaciado_chico"
+    android:background="@drawable/bg_foto_publicacion"
+    android:contentDescription="@string/item_foto_descripcion"
+    android:scaleType="center"
+    android:src="@drawable/ic_imagen" />

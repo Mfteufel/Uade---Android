@@ -10,5 +10,5 @@ Repositorio para la materia de Android en la UADE.
 - Elliff Juan Cruz
 
 ## Tecnologías
-- Java/Kotlin
+- Java
 - Android Studio

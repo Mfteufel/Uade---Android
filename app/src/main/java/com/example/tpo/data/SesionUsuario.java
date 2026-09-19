@@ -37,7 +37,22 @@ public class SesionUsuario {
      */
     private Zona zona = Zona.CABALLITO;
 
-    private String nombre = "Invitado";
+    /**
+     * Nombre del usuario logueado. Hasta que exista el login se arranca con el
+     * nombre de un vendedor del catálogo de prueba ("Martina G."): así el Detalle
+     * (Punto 4) puede mostrar la vista de "acciones según rol" del vendedor sin
+     * necesitar todavía un login real.
+     */
+    private String nombre = "Martina G.";
+
+    /**
+     * Id del usuario logueado. Coincide con el id del vendedor "Martina G." en el
+     * catálogo mock ({@code PublicacionRepositoryMock}), que es dueño de varias
+     * publicaciones: así el Detalle puede comparar por id (y no por nombre, que es
+     * frágil ante homónimos) para decidir si mostrás la vista de vendedor o la de
+     * interesado. El Punto 1 (Autenticación) lo va a completar con el id real.
+     */
+    private String idUsuario = "v1";
 
     private SesionUsuario() {
         // Constructor privado: se accede siempre por getInstancia().
@@ -74,6 +89,19 @@ public class SesionUsuario {
         this.nombre = nombre;
     }
 
+    // TODO: idUsuario (Punto 4, ids "v1".."v12" del catálogo mock) y usuarioId
+    // (Punto 1/2, ids "u0".."u2" del catálogo de perfiles) modelan la misma
+    // idea — quién está logueado — con dos catálogos separados. Quedan los
+    // dos por ahora para no romper ninguno de los dos lados; unificarlos es
+    // parte de la reconciliación pendiente del merge (ver PR).
+    public String getIdUsuario() {
+        return idUsuario;
+    }
+
+    public void setIdUsuario(String idUsuario) {
+        this.idUsuario = idUsuario;
+    }
+
     /**
      * Sincroniza la copia local con el perfil que quedó guardado.
      * <p>
@@ -87,5 +115,4 @@ public class SesionUsuario {
         this.nombre = usuario.getNombre();
         this.zona = usuario.getZona();
     }
-
 }

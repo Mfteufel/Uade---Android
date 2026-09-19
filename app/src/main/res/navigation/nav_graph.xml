@@ -12,19 +12,9 @@
         android:label="@string/home_titulo"
         tools:layout="@layout/fragment_home">
 
-        <!--
-            TODO (Punto 4 - Detalle de publicación): cuando exista DetailFragment,
-            descomentar esta action y el destino de abajo, y reemplazar el Snackbar
-            de HomeFragment.alAbrirPublicacion() por:
-
-            Bundle args = new Bundle();
-            args.putString("publicacionId", publicacion.getId());
-            navController.navigate(R.id.action_home_to_detalle, args);
-
         <action
             android:id="@+id/action_home_to_detalle"
             app:destination="@id/detalleFragment" />
-        -->
 
         <!-- Punto 5: FAB del Home abre el wizard de publicar. -->
         <action
@@ -36,25 +26,68 @@
             android:id="@+id/action_home_to_misPublicaciones"
             app:destination="@id/misPublicacionesFragment" />
 
+        <!-- Punto 4: item "Ver guardados" del menú de la toolbar. -->
+        <action
+            android:id="@+id/action_home_to_guardados"
+            app:destination="@id/guardadosFragment" />
+
     </fragment>
 
     <!--
+        Detalle de publicación (Punto 4). Colgado de homeFragment: se llega
+        tocando una tarjeta del Home, y desde acá se puede ir al perfil público
+        del vendedor.
+    -->
     <fragment
         android:id="@+id/detalleFragment"
         android:name="com.example.tpo.ui.detalle.DetalleFragment"
-        android:label="@string/detalle_titulo">
+        android:label="@string/detalle_titulo"
+        tools:layout="@layout/fragment_detalle">
         <argument
             android:name="publicacionId"
             app:argType="string" />
+
+        <action
+            android:id="@+id/action_detalle_to_perfil"
+            app:destination="@id/perfilVendedorFragment" />
     </fragment>
+
+    <!--
+        Perfil público del vendedor (Punto 4) — no confundir con perfilFragment
+        (Punto 2, el perfil propio del bottom nav). Detalle y Perfil se pueden
+        encadenar (ver un perfil, entrar a otra publicación suya, ver ese
+        perfil...), así que la pila puede crecer. Se deja crecer a propósito:
+        el "atrás" devuelve al usuario exactamente por donde vino, que es lo
+        que espera. NO poner popUpTo para "cortar el ciclo": eso saca de la
+        pila una pantalla que el usuario sí vio y el "atrás" termina saltando
+        a otro lado.
     -->
+    <fragment
+        android:id="@+id/perfilVendedorFragment"
+        android:name="com.example.tpo.ui.perfil.PerfilVendedorFragment"
+        android:label="@string/perfil_vendedor_titulo"
+        tools:layout="@layout/fragment_perfil_vendedor">
+        <argument
+            android:name="vendedorId"
+            app:argType="string" />
+
+        <action
+            android:id="@+id/action_perfil_to_detalle"
+            app:destination="@id/detalleFragment" />
+    </fragment>
 
     <!-- Favoritos: destino de la bottom nav, ver menu_navegacion.xml. -->
     <fragment
         android:id="@+id/favoritosFragment"
         android:name="com.example.tpo.ui.favoritos.FavoritosFragment"
         android:label="@string/favoritos_titulo"
-        tools:layout="@layout/fragment_favoritos" />
+        tools:layout="@layout/fragment_favoritos">
+
+        <action
+            android:id="@+id/action_favoritos_to_detalle"
+            app:destination="@id/detalleFragment" />
+
+    </fragment>
 
     <!-- Punto 2 - Perfil y Reputación -->
     <fragment
@@ -87,5 +120,18 @@
         android:name="com.example.tpo.ui.mispublicaciones.MisPublicacionesFragment"
         android:label="@string/mis_publicaciones_titulo"
         tools:layout="@layout/fragment_mis_publicaciones" />
+
+    <!-- Punto 4: lista de publicaciones guardadas (bookmark del Detalle). -->
+    <fragment
+        android:id="@+id/guardadosFragment"
+        android:name="com.example.tpo.ui.guardados.GuardadosFragment"
+        android:label="@string/guardados_titulo"
+        tools:layout="@layout/fragment_guardados">
+
+        <action
+            android:id="@+id/action_guardados_to_detalle"
+            app:destination="@id/detalleFragment" />
+
+    </fragment>
 
 </navigation>

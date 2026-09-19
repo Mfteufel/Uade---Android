@@ -1,0 +1,454 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Pantalla Detalle de publicación (Punto 4 del TPO).
+
+    De arriba hacia abajo:
+      1. Toolbar con flecha para volver y acción "Guardar" (solo para interesados).
+      2. Contenido scrolleable: galería, título, precio, estado/categoría, zona y
+         antigüedad, fecha de publicación, descripción y tarjeta del vendedor
+         (reputación + acceso al perfil público).
+      3. Barra de acciones fija al pie, que cambia según el rol: "Preguntar" y
+         "Ofertar" para cualquier otro usuario, o "Gestionar publicación" si el
+         usuario logueado es quien la publicó.
+
+    El contenido, el spinner de carga y el estado de error se superponen en el
+    mismo FrameLayout y el Fragment muestra uno solo por vez, igual que en el
+    Home.
+
+    El root es un CoordinatorLayout para que los Snackbar se posicionen bien.
+-->
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/contenedorDetalle"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface"
+    tools:context=".ui.detalle.DetalleFragment">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- ============ 1. Encabezado ============ -->
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:menu="@menu/menu_detalle"
+            app:navigationIcon="@drawable/ic_flecha_atras"
+            app:title="@string/detalle_titulo" />
+
+        <!-- ============ 2. Contenido ============ -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <androidx.core.widget.NestedScrollView
+                android:id="@+id/scrollContenido"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingBottom="@dimen/espaciado_pantalla"
+                tools:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- Galería: lista simple de placeholders, uno por foto. Sin swipe,
+                         pero con contador ("2 de 3") para que se note cuántas hay y en
+                         cuál se está, tanto a la vista como para TalkBack. -->
+                    <HorizontalScrollView
+                        android:id="@+id/scrollFotos"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:clipToPadding="false"
+                        android:paddingHorizontal="@dimen/espaciado_pantalla"
+                        android:scrollbars="none">
+
+                        <LinearLayout
+                            android:id="@+id/grupoFotos"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            tools:ignore="UselessParent" />
+                    </HorizontalScrollView>
+
+                    <!-- Oculto cuando hay una sola foto: no aporta nada contar "1 de 1". -->
+                    <TextView
+                        android:id="@+id/contadorFotos"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:gravity="center"
+                        android:textAppearance="?attr/textAppearanceLabelMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:visibility="gone"
+                        tools:text="1 de 3"
+                        tools:visibility="visible" />
+
+                    <TextView
+                        android:id="@+id/tituloDetalle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+                        android:layout_marginTop="@dimen/espaciado_mediano"
+                        android:textAppearance="?attr/textAppearanceTitleLarge"
+                        tools:text="Notebook Lenovo IdeaPad 15" />
+
+                    <TextView
+                        android:id="@+id/precioDetalle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+                        android:layout_marginTop="4dp"
+                        android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                        android:textColor="?attr/colorPrimary"
+                        tools:text="$ 480.000" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+                        android:layout_marginTop="@dimen/espaciado_chico"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <!-- Badge del estado de la PUBLICACIÓN (pausada/vendida). Oculto
+                             para "Activa": no necesita destacarse. Va antes que el badge
+                             de conservación del artículo para llamar más la atención. -->
+                        <TextView
+                            android:id="@+id/estadoPublicacionDetalle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="@dimen/espaciado_chico"
+                            android:background="@drawable/bg_estado_publicacion"
+                            android:paddingHorizontal="@dimen/espaciado_chico"
+                            android:paddingVertical="4dp"
+                            android:textAppearance="?attr/textAppearanceLabelSmall"
+                            android:textColor="?attr/colorOnErrorContainer"
+                            android:visibility="gone"
+                            tools:text="Pausada"
+                            tools:visibility="visible" />
+
+                        <TextView
+                            android:id="@+id/estadoDetalle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_estado_articulo"
+                            android:paddingHorizontal="@dimen/espaciado_chico"
+                            android:paddingVertical="4dp"
+                            android:textAppearance="?attr/textAppearanceLabelSmall"
+                            android:textColor="?attr/colorOnSecondaryContainer"
+                            tools:text="Usado" />
+
+                        <TextView
+                            android:id="@+id/categoriaDetalle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/espaciado_chico"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            tools:text="Tecnología" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/zonaYFechaDetalle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+                        android:layout_marginTop="@dimen/espaciado_chico"
+                        android:drawablePadding="4dp"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        app:drawableStartCompat="@drawable/ic_zona"
+                        tools:text="Caballito · hace 5 h" />
+
+                    <!-- Fecha exacta de publicación. El renglón de arriba muestra la
+                         antigüedad relativa ("hace 5 h"), más útil de un vistazo, pero
+                         el enunciado del Punto 4 pide la fecha de publicación explícita. -->
+                    <TextView
+                        android:id="@+id/fechaPublicacionDetalle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+                        android:layout_marginTop="4dp"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        tools:text="Publicado el 5 de septiembre de 2026" />
+
+                    <com.google.android.material.divider.MaterialDivider
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+                        android:layout_marginTop="@dimen/espaciado_pantalla" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+                        android:layout_marginTop="@dimen/espaciado_pantalla"
+                        android:text="@string/detalle_descripcion_titulo"
+                        android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+                    <TextView
+                        android:id="@+id/descripcionDetalle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+                        android:layout_marginTop="@dimen/espaciado_chico"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        tools:text="Batería al 89%, funda y cargador original incluidos. Sin detalles en pantalla." />
+
+                    <!-- Lo que el interesado ya le mandó al vendedor: sus preguntas y su
+                         oferta vigente. Oculto si todavía no mandó nada, y también para
+                         el vendedor (él las ve desde "Gestionar publicación"). -->
+                    <LinearLayout
+                        android:id="@+id/bloqueMisInteracciones"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone"
+                        tools:visibility="visible">
+
+                        <com.google.android.material.divider.MaterialDivider
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+                            android:layout_marginTop="@dimen/espaciado_pantalla" />
+
+                        <LinearLayout
+                            android:id="@+id/grupoMisInteracciones"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+                            android:layout_marginTop="@dimen/espaciado_pantalla"
+                            android:orientation="vertical" />
+                    </LinearLayout>
+
+                    <com.google.android.material.divider.MaterialDivider
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+                        android:layout_marginTop="@dimen/espaciado_pantalla" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+                        android:layout_marginTop="@dimen/espaciado_pantalla"
+                        android:text="@string/detalle_vendedor_titulo"
+                        android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+                    <!-- Tarjeta del vendedor: avatar con iniciales, reputación, antigüedad
+                         y acceso al perfil público. Toda la tarjeta y el botón navegan
+                         al perfil. -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/tarjetaVendedor"
+                        style="@style/Widget.Material3.CardView.Outlined"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="@dimen/espaciado_pantalla"
+                        android:layout_marginTop="@dimen/espaciado_chico"
+                        android:clickable="true"
+                        android:focusable="true"
+                        app:cardCornerRadius="16dp">
+
+                        <androidx.constraintlayout.widget.ConstraintLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:padding="@dimen/espaciado_mediano">
+
+                            <!-- Avatar: iniciales sobre un círculo. Sin foto real porque no
+                                 hay librería de imágenes (no se vio Glide/Picasso en clase). -->
+                            <TextView
+                                android:id="@+id/inicialesVendedor"
+                                android:layout_width="@dimen/avatar_vendedor_tamano"
+                                android:layout_height="@dimen/avatar_vendedor_tamano"
+                                android:background="@drawable/bg_avatar_vendedor"
+                                android:contentDescription="@string/vendedor_avatar_descripcion"
+                                android:gravity="center"
+                                android:textAppearance="?attr/textAppearanceTitleMedium"
+                                android:textColor="?attr/colorOnPrimaryContainer"
+                                app:layout_constraintBottom_toBottomOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toTopOf="parent"
+                                tools:text="MG" />
+
+                            <TextView
+                                android:id="@+id/nombreVendedorDetalle"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="@dimen/espaciado_mediano"
+                                android:ellipsize="end"
+                                android:maxLines="1"
+                                android:textAppearance="?attr/textAppearanceTitleMedium"
+                                app:layout_constraintEnd_toStartOf="@id/botonVerPerfil"
+                                app:layout_constraintStart_toEndOf="@id/inicialesVendedor"
+                                app:layout_constraintTop_toTopOf="parent"
+                                tools:text="Martina G." />
+
+                            <!-- "4,8 · 23 ventas". La estrella va como drawableStart y se
+                                 saca por código si el vendedor todavía no tiene ventas. -->
+                            <TextView
+                                android:id="@+id/reputacionVendedorDetalle"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="@dimen/espaciado_mediano"
+                                android:layout_marginTop="2dp"
+                                android:drawablePadding="4dp"
+                                android:textAppearance="?attr/textAppearanceBodyMedium"
+                                app:drawableStartCompat="@drawable/ic_estrella"
+                                app:layout_constraintEnd_toStartOf="@id/botonVerPerfil"
+                                app:layout_constraintStart_toEndOf="@id/inicialesVendedor"
+                                app:layout_constraintTop_toBottomOf="@id/nombreVendedorDetalle"
+                                tools:text="4,8 · 23 ventas" />
+
+                            <TextView
+                                android:id="@+id/miembroDesdeVendedorDetalle"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="@dimen/espaciado_mediano"
+                                android:layout_marginTop="2dp"
+                                android:textAppearance="?attr/textAppearanceBodySmall"
+                                android:textColor="?attr/colorOnSurfaceVariant"
+                                app:layout_constraintEnd_toStartOf="@id/botonVerPerfil"
+                                app:layout_constraintStart_toEndOf="@id/inicialesVendedor"
+                                app:layout_constraintTop_toBottomOf="@id/reputacionVendedorDetalle"
+                                tools:text="En Ronda desde julio de 2024" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/botonVerPerfil"
+                                style="@style/Widget.Material3.Button.TextButton.Icon"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/detalle_ver_perfil"
+                                app:icon="@drawable/ic_flecha_derecha"
+                                app:iconGravity="textEnd"
+                                app:layout_constraintBottom_toBottomOf="parent"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintTop_toTopOf="parent" />
+                        </androidx.constraintlayout.widget.ConstraintLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                </LinearLayout>
+            </androidx.core.widget.NestedScrollView>
+
+            <!-- Spinner de carga inicial -->
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/progresoInicial"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:indeterminate="true"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <!-- Estado de error: la publicación no se pudo cargar o no existe -->
+            <LinearLayout
+                android:id="@+id/estadoError"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:paddingHorizontal="32dp"
+                android:visibility="gone"
+                tools:visibility="gone">
+
+                <ImageView
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_error" />
+
+                <TextView
+                    android:id="@+id/textoError"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaciado_pantalla"
+                    android:gravity="center"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    tools:text="No encontramos esta publicación" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botonReintentar"
+                    style="@style/Widget.Material3.Button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaciado_pantalla"
+                    android:text="@string/error_reintentar" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <!-- ============ 3. Barra de acciones (según rol) ============ -->
+        <LinearLayout
+            android:id="@+id/barraAcciones"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/colorSurfaceContainer"
+            android:elevation="8dp"
+            android:orientation="vertical"
+            android:padding="@dimen/espaciado_pantalla"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <TextView
+                android:id="@+id/textoRolAviso"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/espaciado_chico"
+                android:gravity="center"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:visibility="gone"
+                tools:text="Esta es tu publicación"
+                tools:visibility="visible" />
+
+            <!-- Vista de interesado: dos acciones al 50%. "Ofertar" va como botón
+                 lleno porque es la acción principal de la pantalla. Nunca se
+                 muestra junto con botonGestionar. -->
+            <LinearLayout
+                android:id="@+id/accionesInteresado"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:baselineAligned="false"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botonPreguntar"
+                    style="@style/Widget.Material3.Button.OutlinedButton.Icon"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/detalle_preguntar"
+                    app:icon="@drawable/ic_preguntar" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botonOfertar"
+                    style="@style/Widget.Material3.Button.Icon"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/espaciado_mediano"
+                    android:layout_weight="1"
+                    android:text="@string/detalle_ofertar"
+                    app:icon="@drawable/ic_ofertar" />
+            </LinearLayout>
+
+            <!-- Vista de vendedor. Oculto de arranque; el Fragment lo muestra y
+                 esconde accionesInteresado cuando la publicación es del usuario. -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/botonGestionar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/detalle_gestionar_publicacion"
+                android:visibility="gone"
+                tools:visibility="gone" />
+        </LinearLayout>
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

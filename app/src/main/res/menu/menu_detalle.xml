@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Acción "Guardar" del Detalle.
+
+    Va en la toolbar y no en la barra inferior porque es un toggle persistente,
+    no una acción de flujo: conviene que esté siempre visible sin competir con
+    "Preguntar" y "Ofertar". El icono se cambia por código (borde <-> lleno) y el
+    título también, porque el título es lo que anuncia TalkBack.
+
+    android:visible="false" de arranque: no tiene sentido ofrecer "Guardar"
+    mientras la publicación se está cargando o si falló. El Fragment lo muestra
+    en mostrarPublicacion(), y solo si el usuario no es el vendedor.
+-->
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/accionGuardar"
+        android:icon="@drawable/ic_guardar_borde"
+        android:title="@string/detalle_guardar"
+        android:visible="false"
+        app:showAsAction="always" />
+</menu>

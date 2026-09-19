@@ -5,12 +5,17 @@ import androidx.annotation.StringRes;
 import com.example.tpo.R;
 
 /**
- * Estado de una publicación dentro del ciclo de vida de "Mis publicaciones" (Punto 5).
+ * Estado de la publicación en sí: si sigue en pie de venta, si el vendedor la
+ * pausó o si ya se vendió. Es el mismo estado que se ve y se cambia tanto
+ * desde el Detalle (Punto 4, {@code GestionPublicacionBottomSheet}) como
+ * desde "Mis publicaciones" (Punto 5): una publicación {@code VENDIDA} no
+ * tiene acciones disponibles; {@code ACTIVA} se puede pausar y
+ * {@code PAUSADA} se puede reactivar.
  * <p>
- * No confundir con {@link EstadoArticulo}: ese describe la conservación del
- * artículo (nuevo, usado, etc.), mientras que este describe si la publicación
- * está visible en el Home. Una publicación {@code VENDIDA} no tiene acciones
- * disponibles; {@code ACTIVA} se puede pausar y {@code PAUSADA} se puede reactivar.
+ * <b>Ojo, no confundir con {@link EstadoArticulo}</b>: ese enum describe la
+ * conservación del artículo (nuevo, como nuevo, usado); este describe el
+ * <em>ciclo de vida de la publicación</em>. Los nombres se parecen a
+ * propósito porque hablan del mismo objeto, pero son dos cosas independientes.
  */
 public enum EstadoPublicacion {
 
