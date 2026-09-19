@@ -15,7 +15,7 @@ val propiedadesLocales = Properties().apply {
     }
 }
 val apiBaseUrl: String = (propiedadesLocales.getProperty("API_BASE_URL")
-    ?: "https://api.ronda.tpo.uade.edu.ar/")
+    ?: "https://ronda-api-production.up.railway.app/")
 
 android {
     namespace = "com.example.tpo"
@@ -71,6 +71,7 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp)
+    implementation(libs.security.crypto)
     implementation(libs.okhttp.logging.interceptor)
     implementation(libs.gson)
     testImplementation(libs.junit)
