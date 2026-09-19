@@ -37,25 +37,50 @@
 
             <!-- - Encabezado: avatar + nombre - -->
 
-            <TextView
-                android:id="@+id/textoInicial"
+            <!--
+                Avatar: foto de perfil o iniciales (ver view_avatar.xml). El
+                progreso se superpone mientras se sube una foto nueva.
+            -->
+            <FrameLayout
                 android:layout_width="@dimen/perfil_avatar_tamanio"
                 android:layout_height="@dimen/perfil_avatar_tamanio"
+                android:layout_gravity="center_horizontal">
+
+                <include
+                    android:id="@+id/avatarPerfil"
+                    layout="@layout/view_avatar"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+
+                <com.google.android.material.progressindicator.CircularProgressIndicator
+                    android:id="@+id/progresoFoto"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:indeterminate="true"
+                    android:visibility="gone" />
+
+            </FrameLayout>
+
+            <!--
+                La foto se cambia aparte del formulario: se sube apenas se elige,
+                sin pasar por "Editar"/"Guardar", como en cualquier app.
+            -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/botonCambiarFoto"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
-                android:background="@drawable/fondo_avatar"
-                android:gravity="center"
-                android:textAppearance="?attr/textAppearanceHeadlineMedium"
-                android:textColor="?attr/colorOnPrimaryContainer"
-                tools:text="J" />
+                android:text="@string/perfil_cambiar_foto" />
 
             <TextView
                 android:id="@+id/textoNombre"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/espaciado_mediano"
                 android:gravity="center"
                 android:textAppearance="?attr/textAppearanceHeadlineSmall"
-                tools:text="Juan Elliff" />
+                tools:text="Walter" />
 
             <TextView
                 android:id="@+id/textoAntiguedad"
@@ -68,133 +93,22 @@
                 tools:text="En Ronda desde julio de 2025" />
 
             <!--- Reputación - -->
-            <!--
-                Es solo lectura en las dos modalidades: la reputación la calcula el
-                sistema interno de Ronda a partir de las calificaciones recibidas,
-                el usuario nunca la edita.
-            -->
-
-            <com.google.android.material.card.MaterialCardView
+            <!-- Mismo bloque que el perfil público: ver view_reputacion.xml. -->
+            <include
+                android:id="@+id/bloqueReputacion"
+                layout="@layout/view_reputacion"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/espaciado_grande"
-                app:cardElevation="0dp"
-                app:strokeColor="?attr/colorOutlineVariant"
-                app:strokeWidth="1dp">
+                android:layout_marginTop="@dimen/espaciado_grande" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="@dimen/espaciado_pantalla">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/perfil_reputacion"
-                        android:textAppearance="?attr/textAppearanceTitleMedium" />
-
-                    <!--
-                        Promedio: estrellas + número.
-                        Cuando el usuario todavía no tiene calificaciones se oculta
-                        este bloque entero y se muestra textoSinCalificaciones, para
-                        no mostrar "0,0" y que parezca una mala reputación.
-                    -->
-                    <LinearLayout
-                        android:id="@+id/contenedorPromedio"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/espaciado_mediano"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <RatingBar
-                            android:id="@+id/barraEstrellas"
-                            style="?android:attr/ratingBarStyleSmall"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:isIndicator="true"
-                            android:numStars="5"
-                            android:stepSize="0.1"
-                            tools:rating="4.6" />
-
-                        <TextView
-                            android:id="@+id/textoPromedio"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="@dimen/espaciado_chico"
-                            android:textAppearance="?attr/textAppearanceTitleMedium"
-                            tools:text="4,6" />
-
-                    </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/textoSinCalificaciones"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/espaciado_mediano"
-                        android:text="@string/perfil_sin_calificaciones"
-                        android:textAppearance="?attr/textAppearanceBodyMedium"
-                        android:textColor="?attr/colorOnSurfaceVariant"
-                        android:visibility="gone"
-                        tools:visibility="visible" />
-
-                    <!-- Operaciones concretadas, separadas por rol como pide el enunciado. -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/espaciado_pantalla"
-                        android:orientation="horizontal">
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:id="@+id/textoOperacionesVendedor"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:textAppearance="?attr/textAppearanceHeadlineSmall"
-                                tools:text="7" />
-
-                            <TextView
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:text="@string/perfil_como_vendedor"
-                                android:textAppearance="?attr/textAppearanceBodySmall"
-                                android:textColor="?attr/colorOnSurfaceVariant" />
-
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:id="@+id/textoOperacionesComprador"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:textAppearance="?attr/textAppearanceHeadlineSmall"
-                                tools:text="12" />
-
-                            <TextView
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:text="@string/perfil_como_comprador"
-                                android:textAppearance="?attr/textAppearanceBodySmall"
-                                android:textColor="?attr/colorOnSurfaceVariant" />
-
-                        </LinearLayout>
-
-                    </LinearLayout>
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
+            <!-- - Perfil público - -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/botonVerPerfilPublico"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaciado_pantalla"
+                android:text="@string/perfil_ver_perfil_publico" />
 
             <!-- - Datos personales - -->
             <!--
@@ -224,7 +138,7 @@
                     android:layout_height="wrap_content"
                     android:enabled="false"
                     android:inputType="textPersonName"
-                    tools:text="Juan Elliff" />
+                    tools:text="Walter" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -242,7 +156,7 @@
                     android:layout_height="wrap_content"
                     android:enabled="false"
                     android:inputType="textEmailAddress"
-                    tools:text="juan.elliff@ronda.com" />
+                    tools:text="walter@uade.edu.ar" />
 
             </com.google.android.material.textfield.TextInputLayout>
 

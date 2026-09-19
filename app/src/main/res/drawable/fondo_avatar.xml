@@ -2,9 +2,8 @@
 <!--
     Círculo de fondo del avatar del perfil.
 
-    El enunciado no pide foto de perfil, así que en lugar de una imagen se muestra
-    la inicial del nombre sobre este círculo. Evita tener que pedir permisos de
-    galería y cargar archivos, que es trabajo del Punto 5.
+    Se ve cuando el usuario todavía no cargó foto de perfil: muestra sus
+    iniciales sobre este círculo (ver view_avatar.xml).
 
     El color sale del tema (?attr/colorPrimaryContainer) y no de colors.xml
     directamente, para que acompañe el modo claro y el oscuro sin duplicar nada.

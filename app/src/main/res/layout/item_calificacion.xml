@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Una calificación recibida, en el perfil público (Punto 9: "quedan visibles en
+    su perfil público"). Arriba quién calificó y cuándo, después las estrellas, de
+    qué operación habla y el comentario si dejó uno.
+
+    Tocar la fila abre el perfil público del autor: ayuda a decidir cuánto pesa
+    su opinión.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:orientation="vertical"
+    android:paddingHorizontal="@dimen/espaciado_pantalla"
+    android:paddingVertical="@dimen/espaciado_mediano">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/textoAutorCalificacion"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAppearance="?attr/textAppearanceTitleSmall"
+            tools:text="Nicolás P." />
+
+        <TextView
+            android:id="@+id/textoFechaCalificacion"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/espaciado_chico"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            tools:text="16 de septiembre de 2026" />
+    </LinearLayout>
+
+    <RatingBar
+        android:id="@+id/barraEstrellasCalificacion"
+        style="?android:attr/ratingBarStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:isIndicator="true"
+        android:numStars="5"
+        android:stepSize="1"
+        tools:rating="5" />
+
+    <TextView
+        android:id="@+id/textoArticuloCalificacion"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        tools:text="Por: Bicicleta rodado 26" />
+
+    <TextView
+        android:id="@+id/textoComentarioCalificacion"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        tools:text="Excelente vendedor, súper puntual" />
+
+</LinearLayout>
