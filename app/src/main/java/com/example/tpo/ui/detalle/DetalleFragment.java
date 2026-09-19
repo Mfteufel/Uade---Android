@@ -1,5 +1,6 @@
 package com.example.tpo.ui.detalle;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -75,6 +76,16 @@ public class DetalleFragment extends Fragment {
     private final PublicacionRepository repositorio = PublicacionRepositoryMock.getInstancia();
     private String publicacionId;
 
+    /**
+     * Las tres necesitan un {@code Context} para Room, que todavía no existe cuando se
+     * inicializan los campos del Fragment; por eso se obtienen recién en {@link #onAttach},
+     * que es el primer momento del ciclo de vida en el que hay uno disponible (mismo patrón
+     * que {@code MisPublicacionesFragment.onAttach()}, Punto 5).
+     */
+    private PublicacionesGuardadas publicacionesGuardadas;
+    private PreguntasPublicacion preguntasPublicacion;
+    private OfertasPublicacion ofertasPublicacion;
+
     /** Última publicación cargada. La usan el ítem de menú y los diálogos, que viven fuera del callback. */
     @Nullable
     private Publicacion publicacionCargada;
@@ -121,6 +132,14 @@ public class DetalleFragment extends Fragment {
     /** Diálogo abierto, si hay. Se cierra en onDestroyView para no filtrar la Activity. */
     @Nullable
     private AlertDialog dialogoActivo;
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        publicacionesGuardadas = PublicacionesGuardadas.getInstancia(context);
+        preguntasPublicacion = PreguntasPublicacion.getInstancia(context);
+        ofertasPublicacion = OfertasPublicacion.getInstancia(context);
+    }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -453,14 +472,47 @@ public class DetalleFragment extends Fragment {
      * mandó al vendedor sobre esta publicación. Si no mandó nada, el bloque
      * entero queda oculto. No se llama para el propio vendedor: sus
      * preguntas/ofertas recibidas se ven desde "Gestionar publicación", no acá.
+     * <p>
+     * Las dos consultas están anidadas (la de oferta arranca en el
+     * {@code onExito} de la de preguntas) y no en paralelo: son lecturas locales
+     * de Room sobre datasets chicos, así que el costo de encadenarlas es
+     * despreciable, y anidarlas evita coordinar dos callbacks independientes
+     * para saber cuándo terminaron los dos.
      */
     private void mostrarMisInteracciones(Publicacion publicacion) {
         String idUsuario = SesionUsuario.getInstancia().getIdUsuario();
-        List<Pregunta> misPreguntas = PreguntasPublicacion.getInstancia()
-                .delUsuario(publicacion.getId(), idUsuario);
-        Oferta miOferta = OfertasPublicacion.getInstancia()
-                .delUsuario(publicacion.getId(), idUsuario);
+        preguntasPublicacion.delUsuario(publicacion.getId(), idUsuario,
+                new RepositorioCallback<List<Pregunta>>() {
+                    @Override
+                    public void onExito(List<Pregunta> misPreguntas) {
+                        if (grupoMisInteracciones == null) {
+                            return; // la vista ya se destruyó
+                        }
+                        ofertasPublicacion.delUsuario(publicacion.getId(), idUsuario,
+                                new RepositorioCallback<Oferta>() {
+                                    @Override
+                                    public void onExito(Oferta miOferta) {
+                                        if (grupoMisInteracciones == null) {
+                                            return;
+                                        }
+                                        pintarMisInteracciones(misPreguntas, miOferta);
+                                    }
 
+                                    @Override
+                                    public void onError(String mensaje) {
+                                        // No hay nada que romper: si falla, el bloque de "lo
+                                        // mío" simplemente no se completa con la oferta.
+                                    }
+                                });
+                    }
+
+                    @Override
+                    public void onError(String mensaje) {
+                    }
+                });
+    }
+
+    private void pintarMisInteracciones(List<Pregunta> misPreguntas, @Nullable Oferta miOferta) {
         grupoMisInteracciones.removeAllViews();
         LayoutInflater inflater = LayoutInflater.from(requireContext());
 
@@ -511,24 +563,52 @@ public class DetalleFragment extends Fragment {
         if (publicacionCargada == null) {
             return; // el ítem no debería estar visible sin publicación, pero por las dudas
         }
-        boolean quedoGuardada = PublicacionesGuardadas.getInstancia()
-                .alternar(publicacionCargada.getId());
-        actualizarIconoGuardar();
-        mostrarSnackbar(getString(quedoGuardada
-                ? R.string.detalle_guardada_ok
-                : R.string.detalle_guardada_quitada));
+        publicacionesGuardadas.alternar(publicacionCargada.getId(), new RepositorioCallback<Boolean>() {
+            @Override
+            public void onExito(Boolean quedoGuardada) {
+                pintarIconoGuardar(quedoGuardada);
+                mostrarSnackbar(getString(quedoGuardada
+                        ? R.string.detalle_guardada_ok
+                        : R.string.detalle_guardada_quitada));
+            }
+
+            @Override
+            public void onError(String mensaje) {
+                if (barraAcciones == null) {
+                    return;
+                }
+                mostrarSnackbar(mensaje);
+            }
+        });
     }
 
     /**
-     * Pinta el ítem del menú según el estado guardado. El estado sale del
-     * singleton, no de la vista: por eso al volver a entrar al Detalle el
-     * bookmark ya aparece lleno sin hacer nada especial.
+     * Pinta el ítem del menú según el estado guardado. El estado sale de Room, no de la
+     * vista: por eso al volver a entrar al Detalle el bookmark ya aparece lleno sin hacer
+     * nada especial.
      */
     private void actualizarIconoGuardar() {
         if (itemGuardar == null) {
             return;
         }
-        boolean guardada = PublicacionesGuardadas.getInstancia().estaGuardada(publicacionId);
+        publicacionesGuardadas.estaGuardada(publicacionId, new RepositorioCallback<Boolean>() {
+            @Override
+            public void onExito(Boolean guardada) {
+                pintarIconoGuardar(guardada);
+            }
+
+            @Override
+            public void onError(String mensaje) {
+                // No hay nada crítico que mostrar acá: el ítem se queda con el icono
+                // por defecto (no guardada) hasta el próximo intento.
+            }
+        });
+    }
+
+    private void pintarIconoGuardar(boolean guardada) {
+        if (itemGuardar == null) {
+            return;
+        }
         itemGuardar.setIcon(guardada ? R.drawable.ic_guardar_lleno : R.drawable.ic_guardar_borde);
         // El título es lo que anuncia TalkBack y lo que se ve al mantener presionado.
         itemGuardar.setTitle(guardada ? R.string.detalle_quitar_guardada : R.string.detalle_guardar);
@@ -579,6 +659,32 @@ public class DetalleFragment extends Fragment {
     }
 
     private void mostrarDialogoOferta(Publicacion publicacion) {
+        // Si ya había una oferta hecha, se avisa: mandar una nueva la reemplaza. Se pide
+        // primero y se arma el diálogo recién en el callback: mostrarlo antes y completar
+        // el aviso después dejaría ver el diálogo "saltar" apenas se abre.
+        ofertasPublicacion.delUsuario(publicacion.getId(), SesionUsuario.getInstancia().getIdUsuario(),
+                new RepositorioCallback<Oferta>() {
+                    @Override
+                    public void onExito(Oferta ofertaVigente) {
+                        if (barraAcciones == null) {
+                            return; // la vista ya se destruyó
+                        }
+                        armarYMostrarDialogoOferta(publicacion, ofertaVigente);
+                    }
+
+                    @Override
+                    public void onError(String mensaje) {
+                        if (barraAcciones == null) {
+                            return;
+                        }
+                        // No bloquea la acción principal: se muestra el diálogo igual, solo
+                        // que sin el aviso de "ya ofertaste".
+                        armarYMostrarDialogoOferta(publicacion, null);
+                    }
+                });
+    }
+
+    private void armarYMostrarDialogoOferta(Publicacion publicacion, @Nullable Oferta ofertaVigente) {
         View contenido = LayoutInflater.from(requireContext())
                 .inflate(R.layout.dialogo_oferta, null, false);
         TextView precioPedido = contenido.findViewById(R.id.textoPrecioPedido);
@@ -589,9 +695,6 @@ public class DetalleFragment extends Fragment {
         precioPedido.setText(getString(R.string.detalle_oferta_ayuda,
                 FormatoUtils.precio(publicacion.getPrecio())));
 
-        // Si ya había una oferta hecha, se avisa: mandar una nueva la reemplaza.
-        Oferta ofertaVigente = OfertasPublicacion.getInstancia().delUsuario(
-                publicacion.getId(), SesionUsuario.getInstancia().getIdUsuario());
         if (ofertaVigente != null) {
             textoOfertaVigente.setText(getString(
                     R.string.detalle_oferta_vigente, FormatoUtils.precio(ofertaVigente.getMonto())));
@@ -654,7 +757,7 @@ public class DetalleFragment extends Fragment {
         return contenido == null ? "" : contenido.toString().trim();
     }
 
-    /** Guarda la pregunta en memoria y refresca "lo que ya le enviaste" de la pantalla. */
+    /** Guarda la pregunta en Room y refresca "lo que ya le enviaste" de la pantalla. */
     private void registrarPregunta(String texto) {
         if (publicacionCargada == null) {
             return; // no debería pasar: el diálogo solo se abre con una publicación cargada
@@ -663,22 +766,52 @@ public class DetalleFragment extends Fragment {
         Pregunta pregunta = new Pregunta(
                 publicacionCargada.getId(), sesion.getIdUsuario(), sesion.getNombre(),
                 texto, System.currentTimeMillis());
-        PreguntasPublicacion.getInstancia().agregar(pregunta);
-        mostrarMisInteracciones(publicacionCargada);
+        preguntasPublicacion.agregar(pregunta, new RepositorioCallback<Void>() {
+            @Override
+            public void onExito(Void resultado) {
+                if (grupoMisInteracciones == null) {
+                    return;
+                }
+                mostrarMisInteracciones(publicacionCargada);
+            }
+
+            @Override
+            public void onError(String mensaje) {
+                if (barraAcciones == null) {
+                    return;
+                }
+                mostrarSnackbar(mensaje);
+            }
+        });
     }
 
     /**
-     * Guarda la oferta en memoria (reemplazando la anterior del usuario, si
-     * tenía una — ver {@link OfertasPublicacion#guardar}) y refresca "lo que ya
-     * le enviaste".
+     * Guarda la oferta en Room (reemplazando la anterior del usuario, si tenía
+     * una — ver {@link OfertasPublicacion#guardar}) y refresca "lo que ya le
+     * enviaste".
      */
     private void registrarOferta(Publicacion publicacion, double monto) {
         SesionUsuario sesion = SesionUsuario.getInstancia();
         Oferta oferta = new Oferta(
                 publicacion.getId(), sesion.getIdUsuario(), sesion.getNombre(),
                 monto, System.currentTimeMillis());
-        OfertasPublicacion.getInstancia().guardar(oferta);
-        mostrarMisInteracciones(publicacion);
+        ofertasPublicacion.guardar(oferta, new RepositorioCallback<Void>() {
+            @Override
+            public void onExito(Void resultado) {
+                if (grupoMisInteracciones == null) {
+                    return;
+                }
+                mostrarMisInteracciones(publicacion);
+            }
+
+            @Override
+            public void onError(String mensaje) {
+                if (barraAcciones == null) {
+                    return;
+                }
+                mostrarSnackbar(mensaje);
+            }
+        });
     }
 
     // ------------------------------------------------------------------

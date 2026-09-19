@@ -1,5 +1,6 @@
 package com.example.tpo.ui.detalle;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -60,6 +61,14 @@ public class GestionPublicacionBottomSheet extends BottomSheetDialogFragment {
     private final PublicacionRepository repositorio = PublicacionRepositoryMock.getInstancia();
     private String publicacionId;
 
+    /**
+     * Necesitan un {@code Context} para Room; se obtienen en {@link #onAttach}, igual que
+     * en {@link DetalleFragment}. No hace falta {@code PublicacionesGuardadas} acá: el
+     * vendedor no guarda su propia publicación.
+     */
+    private PreguntasPublicacion preguntasPublicacion;
+    private OfertasPublicacion ofertasPublicacion;
+
     /** Estado con el que se mostró la publicación la última vez: decide qué botones se ven. */
     @Nullable
     private EstadoPublicacion estadoActual;
@@ -96,6 +105,13 @@ public class GestionPublicacionBottomSheet extends BottomSheetDialogFragment {
         argumentos.putString(ARG_PUBLICACION_ID, publicacionId);
         hoja.setArguments(argumentos);
         return hoja;
+    }
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        preguntasPublicacion = PreguntasPublicacion.getInstancia(context);
+        ofertasPublicacion = OfertasPublicacion.getInstancia(context);
     }
 
     @Override
@@ -250,7 +266,24 @@ public class GestionPublicacionBottomSheet extends BottomSheetDialogFragment {
     }
 
     private void mostrarPreguntasRecibidas() {
-        List<Pregunta> preguntas = PreguntasPublicacion.getInstancia().deLaPublicacion(publicacionId);
+        preguntasPublicacion.deLaPublicacion(publicacionId, new RepositorioCallback<List<Pregunta>>() {
+            @Override
+            public void onExito(List<Pregunta> preguntas) {
+                if (grupoPreguntasGestion == null) {
+                    return; // la vista ya se destruyó
+                }
+                pintarPreguntasRecibidas(preguntas);
+            }
+
+            @Override
+            public void onError(String mensaje) {
+                // No corta la pantalla: el resto de la gestión (pausar/reactivar/vender)
+                // sigue disponible aunque no se hayan podido traer las preguntas.
+            }
+        });
+    }
+
+    private void pintarPreguntasRecibidas(List<Pregunta> preguntas) {
         int cantidad = preguntas.size();
         cantidadPreguntasGestion.setText(getResources().getQuantityString(
                 R.plurals.gestion_preguntas_cantidad, cantidad, cantidad));
@@ -271,7 +304,23 @@ public class GestionPublicacionBottomSheet extends BottomSheetDialogFragment {
     }
 
     private void mostrarOfertasRecibidas() {
-        List<Oferta> ofertas = OfertasPublicacion.getInstancia().deLaPublicacion(publicacionId);
+        ofertasPublicacion.deLaPublicacion(publicacionId, new RepositorioCallback<List<Oferta>>() {
+            @Override
+            public void onExito(List<Oferta> ofertas) {
+                if (grupoOfertasGestion == null) {
+                    return;
+                }
+                pintarOfertasRecibidas(ofertas);
+            }
+
+            @Override
+            public void onError(String mensaje) {
+                // Ídem mostrarPreguntasRecibidas: no corta el resto de la pantalla.
+            }
+        });
+    }
+
+    private void pintarOfertasRecibidas(List<Oferta> ofertas) {
         int cantidad = ofertas.size();
         cantidadOfertasGestion.setText(getResources().getQuantityString(
                 R.plurals.gestion_ofertas_cantidad, cantidad, cantidad));

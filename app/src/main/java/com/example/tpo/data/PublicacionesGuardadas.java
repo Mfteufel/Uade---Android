@@ -1,66 +1,78 @@
 package com.example.tpo.data;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
+import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
+
+import com.example.tpo.data.local.AppDatabase;
+import com.example.tpo.data.local.PublicacionGuardadaDao;
+import com.example.tpo.data.local.PublicacionGuardadaEntity;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
- * Publicaciones que el usuario marcó como guardadas, en memoria.
+ * Publicaciones que el usuario marcó como guardadas — Punto 4 del TPO.
  * <p>
- * Simplificación acordada para las primeras entregas, igual que
- * {@link SesionUsuario}: el estado vive en un singleton y se pierde al cerrar la
- * app. Cuando la cátedra vea {@code SharedPreferences} (o {@code Room}) hay que
- * persistir esto de verdad; contra la API real sería un {@code POST/DELETE
- * /publicaciones/{id}/guardada}.
+ * Persistido con Room, mismo patrón que {@link MisPublicacionesRepositoryLocal} (Punto 5):
+ * un DAO, un {@link ExecutorService} de un solo hilo para no tocar la base en el Main
+ * Thread, y el resultado siempre entregado por {@link RepositorioCallback} en el Main
+ * Thread. Contra la API real sería un {@code POST/DELETE /publicaciones/{id}/guardada}.
  * <p>
- * Se modela aparte de {@link SesionUsuario} a propósito: esa clase modela
- * <em>quién</em> es el usuario (el Punto 1 la va a llenar con email y token),
- * mientras que las guardadas son <em>datos</em> suyos. Tenerlas separadas hace
- * que el reemplazo futuro sea un archivo nuevo y no una cirugía.
+ * Se filtra por {@link SesionUsuario#getUsuarioId()}, igual que
+ * {@link MisPublicacionesRepositoryLocal#listar}: sin esto, dos usuarios que probaran la
+ * app en el mismo dispositivo verían los guardados del otro.
+ * <p>
+ * Se modela aparte de {@link SesionUsuario} a propósito: esa clase modela <em>quién</em>
+ * es el usuario, mientras que las guardadas son <em>datos</em> suyos.
  */
 public class PublicacionesGuardadas {
 
     private static PublicacionesGuardadas instancia;
 
-    /**
-     * Ids de las publicaciones guardadas. {@link LinkedHashSet} y no
-     * {@code HashSet} para conservar el orden en que se guardaron: la futura
-     * pantalla "Guardadas" las va a querer mostrar con la última arriba.
-     */
-    private final Set<String> ids = new LinkedHashSet<>();
+    private final PublicacionGuardadaDao dao;
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final Handler handlerPrincipal = new Handler(Looper.getMainLooper());
 
-    private PublicacionesGuardadas() {
-        // Constructor privado: se accede siempre por getInstancia().
+    private PublicacionesGuardadas(Context context) {
+        dao = AppDatabase.getInstancia(context).publicacionGuardadaDao();
     }
 
-    public static synchronized PublicacionesGuardadas getInstancia() {
+    public static synchronized PublicacionesGuardadas getInstancia(Context context) {
         if (instancia == null) {
-            instancia = new PublicacionesGuardadas();
+            instancia = new PublicacionesGuardadas(context.getApplicationContext());
         }
         return instancia;
     }
 
-    public boolean estaGuardada(String publicacionId) {
-        return ids.contains(publicacionId);
+    public void estaGuardada(String publicacionId, RepositorioCallback<Boolean> callback) {
+        String usuarioId = SesionUsuario.getInstancia().getUsuarioId();
+        executor.execute(() -> {
+            boolean guardada = dao.estaGuardada(usuarioId, publicacionId);
+            handlerPrincipal.post(() -> callback.onExito(guardada));
+        });
     }
 
     /**
-     * Alterna el estado de una publicación y devuelve el nuevo:
-     * {@code true} si quedó guardada, {@code false} si se quitó.
+     * Alterna el estado de una publicación. El {@code Boolean} que recibe
+     * {@link RepositorioCallback#onExito} es el estado nuevo: {@code true} si quedó
+     * guardada, {@code false} si se quitó.
      */
-    public boolean alternar(String publicacionId) {
-        if (ids.remove(publicacionId)) {
-            return false;
-        }
-        ids.add(publicacionId);
-        return true;
-    }
-
-    public int cantidad() {
-        return ids.size();
-    }
-
-    /** Copia defensiva: nadie modifica el set interno desde afuera. */
-    public Set<String> getIds() {
-        return new LinkedHashSet<>(ids);
+    public void alternar(String publicacionId, RepositorioCallback<Boolean> callback) {
+        String usuarioId = SesionUsuario.getInstancia().getUsuarioId();
+        executor.execute(() -> {
+            boolean estabaGuardada = dao.estaGuardada(usuarioId, publicacionId);
+            if (estabaGuardada) {
+                dao.quitar(usuarioId, publicacionId);
+            } else {
+                PublicacionGuardadaEntity entity = new PublicacionGuardadaEntity();
+                entity.usuarioId = usuarioId;
+                entity.publicacionId = publicacionId;
+                entity.fechaGuardado = System.currentTimeMillis();
+                dao.guardar(entity);
+            }
+            boolean quedoGuardada = !estabaGuardada;
+            handlerPrincipal.post(() -> callback.onExito(quedoGuardada));
+        });
     }
 }

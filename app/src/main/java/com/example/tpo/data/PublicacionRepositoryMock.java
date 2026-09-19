@@ -5,6 +5,10 @@ import android.os.Looper;
 
 import androidx.annotation.Nullable;
 
+import com.example.tpo.data.local.AppDatabase;
+import com.example.tpo.data.local.PublicacionEstadoDao;
+import com.example.tpo.data.local.PublicacionEstadoEntity;
+import com.example.tpo.login.RondaApp;
 import com.example.tpo.model.Categoria;
 import com.example.tpo.model.Cercania;
 import com.example.tpo.model.EstadoArticulo;
@@ -19,6 +23,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Implementación de {@link PublicacionRepository} con datos fijos en memoria.
@@ -62,6 +68,22 @@ public class PublicacionRepositoryMock implements PublicacionRepository {
     /** Handler del Main Thread: garantiza que el callback llegue donde se puede tocar la UI. */
     private final Handler handlerPrincipal = new Handler(Looper.getMainLooper());
 
+    /**
+     * Un solo hilo de fondo para tocar Room (nunca en el Main Thread), mismo criterio que
+     * {@link MisPublicacionesRepositoryLocal}.
+     */
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+
+    private final PublicacionEstadoDao estadoDao =
+            AppDatabase.getInstancia(RondaApp.getContextoApp()).publicacionEstadoDao();
+
+    /**
+     * true una vez que se aplicaron sobre {@link #catalogo} los overrides de estado
+     * persistidos (pausada/vendida) que sobrevivieron a un reinicio del proceso. Se
+     * consulta Room una sola vez por proceso, no en cada operación.
+     */
+    private volatile boolean estadosPersistidosAplicados = false;
+
     private PublicacionRepositoryMock() {
         catalogo = crearCatalogoDePrueba();
     }
@@ -73,38 +95,69 @@ public class PublicacionRepositoryMock implements PublicacionRepository {
         return instancia;
     }
 
+    /**
+     * Pisa {@code estadoPublicacion} sobre los objetos de {@link #catalogo} que tengan un
+     * override guardado en Room (el vendedor los pausó, vendió o reactivó en una sesión
+     * anterior). Solo persiste el override, no el catálogo entero: la búsqueda, el
+     * filtrado y la paginación del Home siguen siendo responsabilidad de esta misma clase
+     * en memoria, eso no cambia acá (ver Punto 6 para el cacheo del catálogo completo).
+     */
+    private void aplicarEstadosPersistidosSiHaceFalta() {
+        if (estadosPersistidosAplicados) {
+            return;
+        }
+        synchronized (this) {
+            if (estadosPersistidosAplicados) {
+                return;
+            }
+            for (PublicacionEstadoEntity override : estadoDao.obtenerTodos()) {
+                Publicacion publicacion = buscarPorId(override.publicacionId);
+                if (publicacion != null) {
+                    publicacion.setEstadoPublicacion(EstadoPublicacion.valueOf(override.estado));
+                }
+            }
+            estadosPersistidosAplicados = true;
+        }
+    }
+
     @Override
     public void buscarPublicaciones(FiltroPublicaciones filtro,
                                     int pagina,
                                     RepositorioCallback<PaginaPublicaciones> callback) {
-        // postDelayed simula la latencia de red. El callback termina ejecutándose
-        // en el Main Thread, igual que onResponse() de Retrofit.
-        handlerPrincipal.postDelayed(() -> {
-            if (SIMULAR_ERROR) {
-                callback.onError("No pudimos cargar las publicaciones");
-                return;
-            }
+        executor.execute(() -> {
+            aplicarEstadosPersistidosSiHaceFalta();
+            // postDelayed simula la latencia de red. El callback termina ejecutándose
+            // en el Main Thread, igual que onResponse() de Retrofit.
+            handlerPrincipal.postDelayed(() -> {
+                if (SIMULAR_ERROR) {
+                    callback.onError("No pudimos cargar las publicaciones");
+                    return;
+                }
 
-            List<Publicacion> resultado = aplicarFiltros(filtro);
-            ordenar(resultado, filtro);
-            callback.onExito(recortarPagina(resultado, pagina));
-        }, DEMORA_SIMULADA_MS);
+                List<Publicacion> resultado = aplicarFiltros(filtro);
+                ordenar(resultado, filtro);
+                callback.onExito(recortarPagina(resultado, pagina));
+            }, DEMORA_SIMULADA_MS);
+        });
     }
 
     @Override
     public void obtenerPublicacion(String id, RepositorioCallback<Publicacion> callback) {
-        handlerPrincipal.postDelayed(() -> {
-            if (SIMULAR_ERROR) {
-                callback.onError("No pudimos cargar la publicación");
-                return;
-            }
-            Publicacion encontrada = buscarPorId(id);
-            if (encontrada == null) {
-                callback.onError("No encontramos esta publicación");
-                return;
-            }
-            callback.onExito(encontrada);
-        }, DEMORA_SIMULADA_MS);
+        executor.execute(() -> {
+            aplicarEstadosPersistidosSiHaceFalta();
+            handlerPrincipal.postDelayed(() -> {
+                if (SIMULAR_ERROR) {
+                    callback.onError("No pudimos cargar la publicación");
+                    return;
+                }
+                Publicacion encontrada = buscarPorId(id);
+                if (encontrada == null) {
+                    callback.onError("No encontramos esta publicación");
+                    return;
+                }
+                callback.onExito(encontrada);
+            }, DEMORA_SIMULADA_MS);
+        });
     }
 
     private Publicacion buscarPorId(String id) {
@@ -118,56 +171,76 @@ public class PublicacionRepositoryMock implements PublicacionRepository {
 
     @Override
     public void obtenerPerfilVendedor(String vendedorId, RepositorioCallback<PerfilVendedor> callback) {
-        handlerPrincipal.postDelayed(() -> {
-            if (SIMULAR_ERROR) {
-                callback.onError("No pudimos cargar el perfil del vendedor");
-                return;
-            }
-            Vendedor vendedor = null;
-            List<Publicacion> suyas = new ArrayList<>();
-            for (Publicacion publicacion : catalogo) {
-                if (!publicacion.getVendedor().getId().equals(vendedorId)) {
-                    continue;
+        executor.execute(() -> {
+            aplicarEstadosPersistidosSiHaceFalta();
+            handlerPrincipal.postDelayed(() -> {
+                if (SIMULAR_ERROR) {
+                    callback.onError("No pudimos cargar el perfil del vendedor");
+                    return;
                 }
-                // El vendedor se identifica igual aunque no tenga ninguna
-                // publicación activa; lo que se filtra es la lista, no el perfil.
-                vendedor = publicacion.getVendedor();
-                // El enunciado pide "sus publicaciones activas" y el contador del
-                // perfil dice justamente eso: una pausada o vendida no entra acá.
-                if (publicacion.getEstadoPublicacion() == EstadoPublicacion.ACTIVA) {
-                    suyas.add(publicacion);
+                Vendedor vendedor = null;
+                List<Publicacion> suyas = new ArrayList<>();
+                for (Publicacion publicacion : catalogo) {
+                    if (!publicacion.getVendedor().getId().equals(vendedorId)) {
+                        continue;
+                    }
+                    // El vendedor se identifica igual aunque no tenga ninguna
+                    // publicación activa; lo que se filtra es la lista, no el perfil.
+                    vendedor = publicacion.getVendedor();
+                    // El enunciado pide "sus publicaciones activas" y el contador del
+                    // perfil dice justamente eso: una pausada o vendida no entra acá.
+                    if (publicacion.getEstadoPublicacion() == EstadoPublicacion.ACTIVA) {
+                        suyas.add(publicacion);
+                    }
                 }
-            }
-            if (vendedor == null) {
-                callback.onError("No encontramos este vendedor");
-                return;
-            }
-            // Más recientes primero, igual que el orden por defecto del Home. El
-            // perfil incluye la publicación desde la que se llegó: es lo que hace
-            // cualquier marketplace; filtrarla sería decisión de la pantalla.
-            Collections.sort(suyas, (a, b) ->
-                    Long.compare(b.getFechaPublicacion(), a.getFechaPublicacion()));
-            callback.onExito(new PerfilVendedor(vendedor, suyas));
-        }, DEMORA_SIMULADA_MS);
+                if (vendedor == null) {
+                    callback.onError("No encontramos este vendedor");
+                    return;
+                }
+                // Más recientes primero, igual que el orden por defecto del Home. El
+                // perfil incluye la publicación desde la que se llegó: es lo que hace
+                // cualquier marketplace; filtrarla sería decisión de la pantalla.
+                Collections.sort(suyas, (a, b) ->
+                        Long.compare(b.getFechaPublicacion(), a.getFechaPublicacion()));
+                callback.onExito(new PerfilVendedor(vendedor, suyas));
+            }, DEMORA_SIMULADA_MS);
+        });
     }
 
     @Override
     public void cambiarEstadoPublicacion(String id,
                                          EstadoPublicacion nuevoEstado,
                                          RepositorioCallback<Publicacion> callback) {
-        handlerPrincipal.postDelayed(() -> {
-            if (SIMULAR_ERROR) {
-                callback.onError("No pudimos actualizar la publicación");
-                return;
-            }
+        executor.execute(() -> {
+            aplicarEstadosPersistidosSiHaceFalta();
+
             Publicacion encontrada = buscarPorId(id);
-            if (encontrada == null) {
-                callback.onError("No encontramos esta publicación");
-                return;
+            if (encontrada != null && !SIMULAR_ERROR) {
+                // Escribe primero en Room, todavía en el hilo de fondo: así, si el
+                // proceso se reinicia, el próximo arranque vuelve a encontrar este
+                // estado en aplicarEstadosPersistidosSiHaceFalta().
+                PublicacionEstadoEntity entity = new PublicacionEstadoEntity();
+                entity.publicacionId = id;
+                entity.estado = nuevoEstado.name();
+                estadoDao.fijarEstado(entity);
             }
-            encontrada.setEstadoPublicacion(nuevoEstado);
-            callback.onExito(encontrada);
-        }, DEMORA_SIMULADA_MS);
+
+            handlerPrincipal.postDelayed(() -> {
+                if (SIMULAR_ERROR) {
+                    callback.onError("No pudimos actualizar la publicación");
+                    return;
+                }
+                if (encontrada == null) {
+                    callback.onError("No encontramos esta publicación");
+                    return;
+                }
+                // La mutación en memoria queda para el final, ya en el Main Thread:
+                // es el mismo objeto que comparten Home y Detalle, así que el cambio
+                // se ve al instante en toda la app sin esperar a Room.
+                encontrada.setEstadoPublicacion(nuevoEstado);
+                callback.onExito(encontrada);
+            }, DEMORA_SIMULADA_MS);
+        });
     }
 
     // ---------------------------------------------------------------------
