@@ -4,6 +4,8 @@ import com.example.tpo.model.EstadoPublicacion;
 import com.example.tpo.model.FiltroPublicaciones;
 import com.example.tpo.model.Publicacion;
 
+import java.util.List;
+
 /**
  * Fuente de datos de publicaciones para el Home.
  * <p>
@@ -73,4 +75,17 @@ public interface PublicacionRepository {
     void cambiarEstadoPublicacion(String id,
                                   EstadoPublicacion nuevoEstado,
                                   RepositorioCallback<Publicacion> callback);
+
+    /**
+     * Resuelve varias publicaciones por id de una sola vez, preservando el orden de la
+     * lista de ids recibida — la necesita la pantalla "Guardados" (Punto 4), que primero
+     * le pide a Room los ids guardados y después necesita los objetos completos y
+     * actualizados (con su estado y precio vigentes) para pintarlos. Un id que ya no
+     * exista en el catálogo simplemente no aparece en el resultado: no es un error, la
+     * publicación pudo borrarse.
+     *
+     * @param ids      ids a resolver, en el orden en que tienen que volver.
+     * @param callback dónde se avisa el resultado. Siempre se invoca en el Main Thread.
+     */
+    void obtenerVarias(List<String> ids, RepositorioCallback<List<Publicacion>> callback);
 }

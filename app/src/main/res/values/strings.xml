@@ -167,6 +167,12 @@
     <string name="detalle_guardada_ok">Guardaste esta publicación</string>
     <string name="detalle_guardada_quitada">La quitaste de tus guardadas</string>
 
+    <!-- ===================== Guardados: pantalla de listado (item del menú del Home) ===================== -->
+    <string name="menu_ver_guardados">Ver guardados</string>
+    <string name="guardados_titulo">Guardados</string>
+    <string name="guardados_vacio_titulo">Todavía no guardaste nada</string>
+    <string name="guardados_vacio_mensaje">Tocá el ícono de guardar en una publicación para verla acá.</string>
+
     <!-- ===================== Detalle: preguntar ===================== -->
     <string name="detalle_preguntar">Preguntar</string>
     <string name="detalle_pregunta_titulo">Preguntarle a %1$s</string>

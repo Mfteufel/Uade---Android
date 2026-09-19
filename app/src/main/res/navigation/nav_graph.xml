@@ -26,6 +26,11 @@
             android:id="@+id/action_home_to_misPublicaciones"
             app:destination="@id/misPublicacionesFragment" />
 
+        <!-- Punto 4: item "Ver guardados" del menú de la toolbar. -->
+        <action
+            android:id="@+id/action_home_to_guardados"
+            app:destination="@id/guardadosFragment" />
+
     </fragment>
 
     <!--
@@ -115,5 +120,18 @@
         android:name="com.example.tpo.ui.mispublicaciones.MisPublicacionesFragment"
         android:label="@string/mis_publicaciones_titulo"
         tools:layout="@layout/fragment_mis_publicaciones" />
+
+    <!-- Punto 4: lista de publicaciones guardadas (bookmark del Detalle). -->
+    <fragment
+        android:id="@+id/guardadosFragment"
+        android:name="com.example.tpo.ui.guardados.GuardadosFragment"
+        android:label="@string/guardados_titulo"
+        tools:layout="@layout/fragment_guardados">
+
+        <action
+            android:id="@+id/action_guardados_to_detalle"
+            app:destination="@id/detalleFragment" />
+
+    </fragment>
 
 </navigation>

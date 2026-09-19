@@ -8,6 +8,7 @@ import com.example.tpo.data.local.AppDatabase;
 import com.example.tpo.data.local.PublicacionGuardadaDao;
 import com.example.tpo.data.local.PublicacionGuardadaEntity;
 
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -50,6 +51,21 @@ public class PublicacionesGuardadas {
         executor.execute(() -> {
             boolean guardada = dao.estaGuardada(usuarioId, publicacionId);
             handlerPrincipal.post(() -> callback.onExito(guardada));
+        });
+    }
+
+    /**
+     * Ids guardados por el usuario logueado, el más reciente primero — para la pantalla
+     * "Guardados". Devuelve solo ids (no el objeto {@link com.example.tpo.model.Publicacion}
+     * completo) a propósito: esos datos ya viven en el catálogo de
+     * {@code PublicacionRepositoryMock} y hay que pedírselo a él para no mostrar una copia
+     * vieja (precio, estado) — ver {@code PublicacionRepository#obtenerVarias}.
+     */
+    public void listar(RepositorioCallback<List<String>> callback) {
+        String usuarioId = SesionUsuario.getInstancia().getUsuarioId();
+        executor.execute(() -> {
+            List<String> ids = dao.listarIds(usuarioId);
+            handlerPrincipal.post(() -> callback.onExito(ids));
         });
     }
 

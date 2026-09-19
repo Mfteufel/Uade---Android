@@ -243,6 +243,27 @@ public class PublicacionRepositoryMock implements PublicacionRepository {
         });
     }
 
+    @Override
+    public void obtenerVarias(List<String> ids, RepositorioCallback<List<Publicacion>> callback) {
+        executor.execute(() -> {
+            aplicarEstadosPersistidosSiHaceFalta();
+            handlerPrincipal.postDelayed(() -> {
+                if (SIMULAR_ERROR) {
+                    callback.onError("No pudimos cargar las publicaciones guardadas");
+                    return;
+                }
+                List<Publicacion> resultado = new ArrayList<>();
+                for (String id : ids) {
+                    Publicacion publicacion = buscarPorId(id);
+                    if (publicacion != null) {
+                        resultado.add(publicacion);
+                    }
+                }
+                callback.onExito(resultado);
+            }, DEMORA_SIMULADA_MS);
+        });
+    }
+
     // ---------------------------------------------------------------------
     // Filtrado
     // ---------------------------------------------------------------------
