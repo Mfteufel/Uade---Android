@@ -1,5 +1,6 @@
 import os
 import sqlite3
+import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -25,11 +26,41 @@ CREATE TABLE IF NOT EXISTS codigos_otp (
 );
 
 CREATE INDEX IF NOT EXISTS indice_otp_email ON codigos_otp (email);
+
+CREATE TABLE IF NOT EXISTS publicaciones (
+    id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+    titulo             TEXT NOT NULL,
+    descripcion        TEXT NOT NULL,
+    precio             REAL NOT NULL,
+    categoria          TEXT NOT NULL,
+    estado_articulo    TEXT NOT NULL,
+    zona               TEXT NOT NULL,
+    estado_publicacion TEXT NOT NULL DEFAULT 'ACTIVA',
+    vendedor_id        TEXT NOT NULL,
+    texto_busqueda     TEXT NOT NULL,
+    fecha_publicacion  INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS fotos (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    publicacion_id INTEGER NOT NULL,
+    archivo        TEXT NOT NULL
+);
 """
+
+ORDENES = {
+    "RECIENTES": "fecha_publicacion DESC",
+    "PRECIO_MENOR": "precio ASC",
+    "PRECIO_MAYOR": "precio DESC",
+}
 
 
 def ahora():
     return datetime.now(timezone.utc)
+
+
+def ahora_en_milisegundos():
+    return int(ahora().timestamp() * 1000)
 
 
 def a_texto(momento):
@@ -38,6 +69,11 @@ def a_texto(momento):
 
 def desde_texto(texto):
     return datetime.fromisoformat(texto)
+
+
+def normalizar(texto):
+    sin_tildes = unicodedata.normalize("NFD", texto or "")
+    return "".join(c for c in sin_tildes if unicodedata.category(c) != "Mn").lower()
 
 
 def conectar():
@@ -50,19 +86,6 @@ def inicializar():
     RUTA_BASE.parent.mkdir(parents=True, exist_ok=True)
     with conectar() as conexion:
         conexion.executescript(ESQUEMA)
-    crear_usuario_demo()
-
-
-def crear_usuario_demo():
-    from seguridad import hashear_password
-
-    if buscar_usuario_por_email("walter@uade.edu.ar") is None:
-        crear_usuario(
-            email="walter@uade.edu.ar",
-            nombre="Walter",
-            password_hash=hashear_password("ronda1234"),
-            zona="CABALLITO",
-        )
 
 
 def buscar_usuario_por_email(email):
@@ -120,3 +143,108 @@ def marcar_codigo_usado(codigo_id):
         conexion.execute(
             "UPDATE codigos_otp SET usado = 1 WHERE id = ?", (codigo_id,)
         )
+
+
+def contar_publicaciones():
+    with conectar() as conexion:
+        return conexion.execute("SELECT COUNT(*) FROM publicaciones").fetchone()[0]
+
+
+def crear_publicacion(titulo, descripcion, precio, categoria, estado_articulo, zona,
+                      vendedor_id, fecha_publicacion=None):
+    if fecha_publicacion is None:
+        fecha_publicacion = ahora_en_milisegundos()
+    with conectar() as conexion:
+        cursor = conexion.execute(
+            "INSERT INTO publicaciones (titulo, descripcion, precio, categoria,"
+            " estado_articulo, zona, vendedor_id, texto_busqueda, fecha_publicacion)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (titulo, descripcion, precio, categoria, estado_articulo, zona,
+             str(vendedor_id), normalizar(titulo + " " + descripcion), fecha_publicacion),
+        )
+        return cursor.lastrowid
+
+
+def buscar_publicacion(publicacion_id):
+    with conectar() as conexion:
+        return conexion.execute(
+            "SELECT * FROM publicaciones WHERE id = ?", (publicacion_id,)
+        ).fetchone()
+
+
+def publicaciones_de(vendedor_id):
+    with conectar() as conexion:
+        return conexion.execute(
+            "SELECT * FROM publicaciones WHERE vendedor_id = ? ORDER BY fecha_publicacion DESC",
+            (str(vendedor_id),),
+        ).fetchall()
+
+
+def cambiar_estado_publicacion(publicacion_id, estado):
+    with conectar() as conexion:
+        cursor = conexion.execute(
+            "UPDATE publicaciones SET estado_publicacion = ? WHERE id = ?",
+            (estado, publicacion_id),
+        )
+        return cursor.rowcount > 0
+
+
+def buscar_publicaciones(texto, categoria, estados, zonas, precio_min, precio_max,
+                         orden, pagina, tamanio):
+    condiciones = ["estado_publicacion = 'ACTIVA'"]
+    valores = []
+    if texto:
+        condiciones.append("texto_busqueda LIKE ?")
+        valores.append("%" + normalizar(texto) + "%")
+    if categoria:
+        condiciones.append("categoria = ?")
+        valores.append(categoria)
+    if estados:
+        condiciones.append("estado_articulo IN (" + ",".join("?" * len(estados)) + ")")
+        valores.extend(estados)
+    if zonas:
+        condiciones.append("zona IN (" + ",".join("?" * len(zonas)) + ")")
+        valores.extend(zonas)
+    if precio_min is not None:
+        condiciones.append("precio >= ?")
+        valores.append(precio_min)
+    if precio_max is not None:
+        condiciones.append("precio <= ?")
+        valores.append(precio_max)
+
+    donde = " AND ".join(condiciones)
+    with conectar() as conexion:
+        total = conexion.execute(
+            "SELECT COUNT(*) FROM publicaciones WHERE " + donde, valores
+        ).fetchone()[0]
+        filas = conexion.execute(
+            "SELECT * FROM publicaciones WHERE " + donde
+            + " ORDER BY " + ORDENES[orden] + " LIMIT ? OFFSET ?",
+            valores + [tamanio, pagina * tamanio],
+        ).fetchall()
+    return filas, total
+
+
+def agregar_foto(publicacion_id, archivo):
+    with conectar() as conexion:
+        conexion.execute(
+            "INSERT INTO fotos (publicacion_id, archivo) VALUES (?, ?)",
+            (publicacion_id, archivo),
+        )
+
+
+def fotos_de(publicacion_id):
+    with conectar() as conexion:
+        filas = conexion.execute(
+            "SELECT archivo FROM fotos WHERE publicacion_id = ? ORDER BY id",
+            (publicacion_id,),
+        ).fetchall()
+    return [fila["archivo"] for fila in filas]
+
+
+def nombre_de_vendedor(vendedor_id):
+    if str(vendedor_id).isdigit():
+        usuario = buscar_usuario_por_id(int(vendedor_id))
+        if usuario is not None:
+            return usuario["nombre"]
+    return "Usuario"
