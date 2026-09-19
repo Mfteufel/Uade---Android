@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -110,10 +111,10 @@ public class FavoritosFragment extends Fragment implements
 
     @Override
     public void onPublicacionClick(Publicacion publicacion) {
-        Snackbar.make(
-                requireView(),
-                getString(R.string.detalle_proximamente, publicacion.getTitulo()),
-                Snackbar.LENGTH_SHORT).show();
+        Bundle argumentos = new Bundle();
+        argumentos.putString("publicacionId", publicacion.getId());
+        NavHostFragment.findNavController(this)
+                .navigate(R.id.action_favoritos_to_detalle, argumentos);
     }
 
     /**

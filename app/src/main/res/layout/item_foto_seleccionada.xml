@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Miniatura de una foto ya elegida, en el paso 1 del wizard de publicar.
+
+    setImageURI (y no una librería de carga de imágenes) porque el proyecto no
+    tiene Glide/Picasso: ver el comentario de ic_imagen.xml. Para miniaturas de
+    este tamaño alcanza sin problema.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="@dimen/espaciado_chico">
+
+    <ImageView
+        android:id="@+id/imagenFoto"
+        android:layout_width="@dimen/item_foto_ancho"
+        android:layout_height="@dimen/item_foto_alto"
+        android:background="@drawable/bg_foto_publicacion"
+        android:contentDescription="@string/item_foto_descripcion"
+        android:scaleType="centerCrop" />
+
+    <ImageButton
+        android:id="@+id/botonQuitarFoto"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="4dp"
+        android:background="@drawable/bg_boton_quitar_foto"
+        android:contentDescription="@string/publicar_quitar_foto"
+        android:padding="4dp"
+        android:src="@drawable/ic_cerrar" />
+
+</FrameLayout>

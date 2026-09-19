@@ -1,7 +1,21 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.hilt)
 }
+
+// URL del backend (FastAPI) leída de local.properties, que no se versiona:
+// cada dev la apunta a su propio servidor (ej. la IP local mientras se
+// desarrolla) sin tocar código ni pisarle la config a nadie más.
+val propiedadesLocales = Properties().apply {
+    val archivo = rootProject.file("local.properties")
+    if (archivo.exists()) {
+        load(archivo.inputStream())
+    }
+}
+val apiBaseUrl: String = (propiedadesLocales.getProperty("API_BASE_URL")
+    ?: "https://api.ronda.tpo.uade.edu.ar/")
 
 android {
     namespace = "com.example.tpo"
@@ -17,6 +31,11 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
@@ -42,11 +61,18 @@ dependencies {
     implementation(libs.navigation.ui)
     // RecyclerView para el listado de publicaciones del Home.
     implementation(libs.recyclerview)
+    // Hilt: inyeccion de dependencias (TokenManager, NetworkModule, RondaApp)
     implementation(libs.hilt.android)
     annotationProcessor(libs.hilt.compiler)
+    // Room: persistencia del borrador de publicación (Punto 5)
+    implementation(libs.room.runtime)
+    annotationProcessor(libs.room.compiler)
+    // Retrofit/OkHttp/Gson: consumo de la API (login, publicaciones, mis publicaciones)
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp)
+    implementation(libs.okhttp.logging.interceptor)
+    implementation(libs.gson)
     testImplementation(libs.junit)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.ext.junit)
