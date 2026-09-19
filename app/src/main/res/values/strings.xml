@@ -280,4 +280,31 @@
     <string name="perfil_cancelar">Cancelar</string>
     <string name="perfil_guardado">Perfil actualizado</string>
     <string name="perfil_zona_invalida">Elegí una zona de la lista</string>
+    <string name="perfil_foto_descripcion">Foto de perfil</string>
+    <string name="perfil_cambiar_foto">Cambiar foto</string>
+    <string name="perfil_foto_actualizada">Foto actualizada</string>
+    <plurals name="perfil_cantidad_calificaciones">
+        <item quantity="one">(%d calificación)</item>
+        <item quantity="other">(%d calificaciones)</item>
+    </plurals>
+    <string name="perfil_ver_perfil_publico">Ver mi perfil público</string>
+
+    <!-- Perfil público (se llega desde el Detalle, una calificación o "Ver mi perfil público") -->
+    <string name="perfil_publico_titulo">Perfil</string>
+    <string name="perfil_publico_titulo_propio">Tu perfil público</string>
+    <string name="perfil_publico_sin_calificaciones">Todavía no recibió calificaciones</string>
+    <string name="perfil_publico_sin_publicaciones">No tiene publicaciones activas</string>
+    <string name="perfil_publico_zona">Zona: %1$s</string>
+    <string name="perfil_tab_publicaciones">Publicaciones</string>
+    <string name="perfil_tab_calificaciones">Calificaciones</string>
+    <string name="perfil_tab_publicaciones_cantidad">Publicaciones (%1$d)</string>
+    <string name="perfil_tab_calificaciones_cantidad">Calificaciones (%1$d)</string>
+    <string name="perfil_calificaciones_error">No pudimos cargar las calificaciones</string>
+    <string name="calificacion_articulo">Por: %1$s</string>
+    <string name="calificacion_estrellas_descripcion">%1$d de 5 estrellas</string>
+
+    <!-- ===================== Historial y Calificaciones ===================== -->
+    <!-- Etiquetas de TipoOperacion (modelo compartido con la reputación del Punto 2). -->
+    <string name="historial_compras">Compras</string>
+    <string name="historial_ventas">Ventas</string>
 </resources>

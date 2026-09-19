@@ -28,7 +28,7 @@ public class SesionUsuario {
      * demo del repositorio de perfiles, para que la app tenga siempre alguien
      * logueado con quien trabajar.
      */
-    private String usuarioId = PerfilRepositoryMock.ID_USUARIO_DEMO;
+    private String usuarioId = BaseDeDatosMock.ID_USUARIO_DEMO;
 
 
     /**
@@ -113,6 +113,10 @@ public class SesionUsuario {
         if (usuario == null) return;
         this.usuarioId = usuario.getId();
         this.nombre = usuario.getNombre();
-        this.zona = usuario.getZona();
+        // Un usuario creado por OTP puede no tener zona todavía: se conserva la
+        // anterior para que el filtro de cercanía del Home no quede con null.
+        if (usuario.getZona() != null) {
+            this.zona = usuario.getZona();
+        }
     }
 }
