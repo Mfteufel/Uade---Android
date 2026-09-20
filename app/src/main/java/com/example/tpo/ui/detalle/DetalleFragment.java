@@ -29,6 +29,7 @@ import com.example.tpo.data.PublicacionRepository;
 import com.example.tpo.data.PublicacionRepositoryMock;
 import com.example.tpo.data.RepositorioCallback;
 import com.example.tpo.data.SesionUsuario;
+import com.example.tpo.model.EstadoOferta;
 import com.example.tpo.model.EstadoPublicacion;
 import com.example.tpo.model.Oferta;
 import com.example.tpo.model.Pregunta;
@@ -38,6 +39,7 @@ import com.example.tpo.ui.VendedorUi;
 import com.example.tpo.ui.perfil.PerfilVendedorFragment;
 import com.example.tpo.util.ConectividadUtils;
 import com.example.tpo.util.FormatoUtils;
+import com.example.tpo.util.MapaUtils;
 import com.example.tpo.util.TextoUtils;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
@@ -111,6 +113,10 @@ public class DetalleFragment extends Fragment {
     private TextView descripcionDetalle;
     private View bloqueMisInteracciones;
     private LinearLayout grupoMisInteracciones;
+    private View bloquePuntoEntrega;
+    private TextView textoEntregaBloqueada;
+    private TextView direccionEntregaDetalle;
+    private MaterialButton botonComoLlegar;
     private View tarjetaVendedor;
     private TextView inicialesVendedor;
     private TextView nombreVendedorDetalle;
@@ -175,6 +181,10 @@ public class DetalleFragment extends Fragment {
         descripcionDetalle = view.findViewById(R.id.descripcionDetalle);
         bloqueMisInteracciones = view.findViewById(R.id.bloqueMisInteracciones);
         grupoMisInteracciones = view.findViewById(R.id.grupoMisInteracciones);
+        bloquePuntoEntrega = view.findViewById(R.id.bloquePuntoEntrega);
+        textoEntregaBloqueada = view.findViewById(R.id.textoEntregaBloqueada);
+        direccionEntregaDetalle = view.findViewById(R.id.direccionEntregaDetalle);
+        botonComoLlegar = view.findViewById(R.id.botonComoLlegar);
         tarjetaVendedor = view.findViewById(R.id.tarjetaVendedor);
         inicialesVendedor = view.findViewById(R.id.inicialesVendedor);
         nombreVendedorDetalle = view.findViewById(R.id.nombreVendedorDetalle);
@@ -278,6 +288,10 @@ public class DetalleFragment extends Fragment {
         descripcionDetalle = null;
         bloqueMisInteracciones = null;
         grupoMisInteracciones = null;
+        bloquePuntoEntrega = null;
+        textoEntregaBloqueada = null;
+        direccionEntregaDetalle = null;
+        botonComoLlegar = null;
         tarjetaVendedor = null;
         inicialesVendedor = null;
         nombreVendedorDetalle = null;
@@ -449,6 +463,8 @@ public class DetalleFragment extends Fragment {
             // El propio vendedor no le pregunta ni le oferta a su publicación; eso
             // lo ve del otro lado, en "Gestionar publicación".
             bloqueMisInteracciones.setVisibility(View.GONE);
+            // Es su propia dirección: la ve siempre, no depende de ninguna oferta.
+            mostrarPuntoEntrega(publicacion, true);
             return;
         }
 
@@ -509,7 +525,7 @@ public class DetalleFragment extends Fragment {
                                         if (grupoMisInteracciones == null) {
                                             return;
                                         }
-                                        pintarMisInteracciones(misPreguntas, miOferta);
+                                        pintarMisInteracciones(publicacion, misPreguntas, miOferta);
                                     }
 
                                     @Override
@@ -526,7 +542,8 @@ public class DetalleFragment extends Fragment {
                 });
     }
 
-    private void pintarMisInteracciones(List<Pregunta> misPreguntas, @Nullable Oferta miOferta) {
+    private void pintarMisInteracciones(Publicacion publicacion, List<Pregunta> misPreguntas,
+                                        @Nullable Oferta miOferta) {
         grupoMisInteracciones.removeAllViews();
         LayoutInflater inflater = LayoutInflater.from(requireContext());
 
@@ -541,12 +558,24 @@ public class DetalleFragment extends Fragment {
         if (miOferta != null) {
             grupoMisInteracciones.addView(
                     inflarEncabezado(inflater, R.string.detalle_mi_oferta_titulo));
-            grupoMisInteracciones.addView(inflarFilaInteraccion(inflater, R.drawable.ic_ofertar,
-                    FormatoUtils.precio(miOferta.getMonto()), miOferta.getFecha()));
+            // Se suma el estado (Pendiente/Aceptada/Rechazada/Vencida) junto a la
+            // antigüedad para que se note en pantalla por qué se desbloqueó (o no)
+            // el punto de entrega, sin tener que ir hasta "Mis ofertas".
+            String antiguedadYEstado = getString(R.string.detalle_mi_oferta_estado,
+                    FormatoUtils.antiguedad(requireContext(), miOferta.getFecha()),
+                    getString(miOferta.getEstado().getEtiqueta()));
+            View filaOferta = inflater.inflate(R.layout.item_interaccion, grupoMisInteracciones, false);
+            ((ImageView) filaOferta.findViewById(R.id.iconoInteraccion)).setImageResource(R.drawable.ic_ofertar);
+            ((TextView) filaOferta.findViewById(R.id.textoInteraccion))
+                    .setText(FormatoUtils.precio(miOferta.getMonto()));
+            ((TextView) filaOferta.findViewById(R.id.autorInteraccion)).setText(antiguedadYEstado);
+            grupoMisInteracciones.addView(filaOferta);
         }
 
         boolean hayAlgoQueMostrar = !misPreguntas.isEmpty() || miOferta != null;
         bloqueMisInteracciones.setVisibility(hayAlgoQueMostrar ? View.VISIBLE : View.GONE);
+
+        mostrarPuntoEntrega(publicacion, puedeVerPuntoDeEntrega(miOferta));
     }
 
     private View inflarEncabezado(LayoutInflater inflater, @StringRes int texto) {
@@ -567,6 +596,56 @@ public class DetalleFragment extends Fragment {
         ((TextView) fila.findViewById(R.id.autorInteraccion))
                 .setText(FormatoUtils.antiguedad(requireContext(), fecha));
         return fila;
+    }
+
+    // ------------------------------------------------------------------
+    // Punto de entrega y "Cómo llegar" (Punto 8)
+    // ------------------------------------------------------------------
+
+    /**
+     * Pinta el bloque de punto de entrega. Si la publicación no tiene
+     * dirección cargada todavía, el bloque entero queda oculto: no tiene sentido
+     * mostrar ni siquiera el aviso de "bloqueada" si no hay ninguna dirección
+     * esperando del otro lado.
+     * Si sí hay dirección, se ve o el aviso de bloqueado o la dirección real
+     * con su botón, nunca los dos juntos.
+     */
+    private void mostrarPuntoEntrega(Publicacion publicacion, boolean desbloqueado) {
+        if (bloquePuntoEntrega == null) {
+            return; // la vista ya se destruyó
+        }
+        String direccion = publicacion.getDireccionEntrega();
+        if (!MapaUtils.tieneDireccion(direccion)) {
+            bloquePuntoEntrega.setVisibility(View.GONE);
+            return;
+        }
+
+        bloquePuntoEntrega.setVisibility(View.VISIBLE);
+        textoEntregaBloqueada.setVisibility(desbloqueado ? View.GONE : View.VISIBLE);
+        direccionEntregaDetalle.setVisibility(desbloqueado ? View.VISIBLE : View.GONE);
+        botonComoLlegar.setVisibility(desbloqueado ? View.VISIBLE : View.GONE);
+
+        if (desbloqueado) {
+            direccionEntregaDetalle.setText(direccion);
+            botonComoLlegar.setOnClickListener(v -> {
+                if (!MapaUtils.abrirComoLlegar(requireContext(), direccion)) {
+                    // Pasa en un emulador sin Google Maps ni ninguna otra app de
+                    // mapas instalada: no es un bug, hay que avisarle al usuario.
+                    mostrarSnackbar(getString(R.string.detalle_mapa_sin_app));
+                }
+            });
+        }
+    }
+
+    /**
+     * El enunciado del Punto 8 dice "una vez aceptada una oferta". Con el
+     * ciclo completo de estados del Punto 7 ya integrado, el desbloqueo es
+     * literal: la oferta vigente de este usuario está en {@code ACEPTADA},
+     * ya sea porque el vendedor aceptó su oferta original o porque él aceptó
+     * una contraoferta del vendedor.
+     */
+    private boolean puedeVerPuntoDeEntrega(@Nullable Oferta oferta) {
+        return oferta != null && oferta.getEstado() == EstadoOferta.ACEPTADA;
     }
 
     // ------------------------------------------------------------------

@@ -320,6 +320,13 @@ public class GestionPublicacionBottomSheet extends BottomSheetDialogFragment {
         });
     }
 
+    /**
+     * Lista las ofertas recibidas en modo lectura, con su estado
+     * (Pendiente/Aceptada/Rechazada/Vencida — Punto 7). Aceptar, rechazar y
+     * contraofertar es acción de "Mis ofertas" → "Detalle de la oferta"
+     * (Punto 7), no de esta hoja: reusa {@code item_interaccion.xml}, mismo
+     * layout que el bloque de preguntas de al lado.
+     */
     private void pintarOfertasRecibidas(List<Oferta> ofertas) {
         int cantidad = ofertas.size();
         cantidadOfertasGestion.setText(getResources().getQuantityString(
@@ -333,9 +340,11 @@ public class GestionPublicacionBottomSheet extends BottomSheetDialogFragment {
             ((ImageView) fila.findViewById(R.id.iconoInteraccion)).setImageResource(R.drawable.ic_ofertar);
             ((TextView) fila.findViewById(R.id.textoInteraccion)).setText(FormatoUtils.precio(oferta.getMonto()));
             ((TextView) fila.findViewById(R.id.autorInteraccion)).setText(getString(
-                    R.string.item_zona_y_fecha,
+                    R.string.gestion_oferta_autor_fecha_estado,
                     oferta.getAutorNombre(),
-                    FormatoUtils.antiguedad(requireContext(), oferta.getFecha())));
+                    FormatoUtils.antiguedad(requireContext(), oferta.getFecha()),
+                    getString(oferta.getEstado().getEtiqueta())));
+
             grupoOfertasGestion.addView(fila);
         }
     }

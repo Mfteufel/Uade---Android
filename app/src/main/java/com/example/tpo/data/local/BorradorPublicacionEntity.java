@@ -55,6 +55,10 @@ public class BorradorPublicacionEntity {
     @Nullable
     public String zona;
 
+    /** Dirección de entrega, texto libre — Punto 8. */
+    @Nullable
+    public String direccionEntrega;
+
     public int paso;
 
     /** Momento del último guardado, en milisegundos. Solo informativo por ahora. */

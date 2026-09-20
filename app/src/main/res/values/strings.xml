@@ -121,16 +121,21 @@
     <string name="publicar_error_categoria">Elegí una categoría</string>
     <string name="publicar_error_estado">Elegí el estado del artículo</string>
 
-    <string name="publicar_paso_precio_zona">Precio y zona</string>
+    <string name="publicar_paso_precio_zona">Precio, zona y entrega</string>
     <string name="publicar_precio_hint">Precio</string>
     <string name="publicar_error_precio">Ingresá un precio válido</string>
     <string name="publicar_zona_hint">Zona de entrega</string>
     <string name="publicar_error_zona">Elegí una zona de entrega</string>
+    <!-- Punto 8: dirección exacta del punto de encuentro, cargada al publicar. -->
+    <string name="publicar_direccion_hint">Dirección de entrega</string>
+    <string name="publicar_direccion_ayuda">Se la vamos a mostrar al comprador recién cuando le aceptes una oferta.</string>
+    <string name="publicar_error_direccion">Ingresá la dirección de entrega (podés pegar coordenadas de Google Maps)</string>
 
     <string name="publicar_paso_resumen">Resumen</string>
     <string name="resumen_categoria">Categoría: %1$s</string>
     <string name="resumen_estado">Estado: %1$s</string>
     <string name="resumen_zona">Zona de entrega: %1$s</string>
+    <string name="resumen_direccion">Dirección: %1$s</string>
     <plurals name="resumen_fotos">
         <item quantity="one">%1$d foto</item>
         <item quantity="other">%1$d fotos</item>
@@ -200,6 +205,16 @@
     <!-- ===================== Detalle: lo que el interesado ya envió ===================== -->
     <string name="detalle_mis_preguntas_titulo">Tus preguntas</string>
     <string name="detalle_mi_oferta_titulo">Tu oferta</string>
+    <!-- "hace 2 h · Pendiente" — antigüedad y estado (Punto 7) de la oferta que el usuario mandó. -->
+    <string name="detalle_mi_oferta_estado">%1$s · %2$s</string>
+
+    <!-- ===================== Detalle: punto de entrega y mapa (Punto 8) ===================== -->
+    <string name="detalle_punto_entrega_titulo">Punto de entrega</string>
+    <!-- Se muestra en vez de la dirección mientras el interesado no tiene una oferta aceptada. -->
+    <string name="detalle_entrega_bloqueada">La dirección exacta se muestra cuando el vendedor acepta tu oferta</string>
+    <string name="detalle_como_llegar">Cómo llegar</string>
+    <!-- Ninguna de las apps de mapas probadas pudo abrir la dirección (o el dispositivo no tiene ninguna instalada). -->
+    <string name="detalle_mapa_sin_app">No encontramos una app de mapas para mostrar la dirección</string>
 
     <!-- ===================== Perfil del vendedor (Punto 4 — no confundir con perfil_titulo, el perfil propio del Punto 2) ===================== -->
     <string name="perfil_vendedor_titulo">Perfil del vendedor</string>
@@ -236,6 +251,8 @@
         <item quantity="one">%1$d oferta</item>
         <item quantity="other">%1$d ofertas</item>
     </plurals>
+    <!-- "Nicolás P. · hace 2 h · Pendiente" — fila de una oferta recibida en Gestionar publicación. -->
+    <string name="gestion_oferta_autor_fecha_estado">%1$s · %2$s · %3$s</string>
 
     <!-- ===================== Mis publicaciones (Punto 5) ===================== -->
     <string name="mis_publicaciones_titulo">Mis publicaciones</string>
