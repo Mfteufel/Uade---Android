@@ -70,9 +70,10 @@ public class MisPublicacionesRepositoryApi implements MisPublicacionesRepository
             RequestBody estadoArticulo = texto(borrador.getEstadoArticulo().name());
             RequestBody precio = texto(String.valueOf(borrador.getPrecio()));
             RequestBody zona = texto(borrador.getZona().name());
+            RequestBody direccionEntrega = texto(borrador.getDireccionEntrega());
 
             api.crearPublicacion(vendedorId, titulo, descripcion, categoria, estadoArticulo,
-                            precio, zona, partesFotos)
+                            precio, zona, direccionEntrega, partesFotos)
                     .enqueue(new Callback<PublicacionCreadaResponse>() {
                         @Override
                         public void onResponse(@NonNull Call<PublicacionCreadaResponse> call,

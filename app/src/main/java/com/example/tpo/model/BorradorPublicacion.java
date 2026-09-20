@@ -4,6 +4,8 @@ import android.net.Uri;
 
 import androidx.annotation.Nullable;
 
+import com.example.tpo.util.MapaUtils;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,6 +35,16 @@ public class BorradorPublicacion {
     private Double precio;
     @Nullable
     private Zona zona;
+
+    /**
+     * Dirección exacta del punto de entrega, en texto libre (dirección o
+     * coordenadas pegadas de Google Maps) — Punto 8. Se le muestra al
+     * comprador recién cuando el vendedor acepta su oferta (ver
+     * {@code OfertasPublicacion}/{@code MapaUtils}); acá solo se captura y
+     * se guarda, la regla de cuándo mostrarla vive en el Detalle.
+     */
+    @Nullable
+    private String direccionEntrega;
 
     /**
      * Último paso del wizard en el que estuvo el usuario (0 = fotos). Es lo que
@@ -100,6 +112,15 @@ public class BorradorPublicacion {
         this.zona = zona;
     }
 
+    @Nullable
+    public String getDireccionEntrega() {
+        return direccionEntrega;
+    }
+
+    public void setDireccionEntrega(@Nullable String direccionEntrega) {
+        this.direccionEntrega = direccionEntrega;
+    }
+
     public int getPaso() {
         return paso;
     }
@@ -111,7 +132,8 @@ public class BorradorPublicacion {
     /** true si hay al menos un dato cargado. Se usa para no guardar un borrador vacío apenas se abre el wizard. */
     public boolean tieneDatos() {
         return !fotos.isEmpty() || !titulo.isEmpty() || !descripcion.isEmpty()
-                || categoria != null || estadoArticulo != null || precio != null || zona != null;
+                || categoria != null || estadoArticulo != null || precio != null || zona != null
+                || MapaUtils.tieneDireccion(direccionEntrega);
     }
 
     /** true si están completos los datos obligatorios para poder publicar. */
@@ -122,6 +144,7 @@ public class BorradorPublicacion {
                 && categoria != null
                 && estadoArticulo != null
                 && precio != null && precio > 0
-                && zona != null;
+                && zona != null
+                && MapaUtils.tieneDireccion(direccionEntrega);
     }
 }

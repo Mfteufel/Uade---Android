@@ -501,6 +501,15 @@ public class PublicacionRepositoryMock implements PublicacionRepository {
      * estados, zonas, precios y fechas para que se note el efecto de cada filtro
      * y de cada criterio de ordenamiento. Cada vendedor es dueño de entre dos y
      * tres publicaciones (ver el bloque de constantes de arriba).
+     * <p>
+     * Punto 8: solo algunas publicaciones tienen cargada la dirección de
+     * entrega (último parámetro del constructor); las publicaciones 3 y 6
+     * quedan con {@code null} a propósito, para poder probar el caso
+     * "todavía no cargó dirección" (bloque de punto de entrega oculto) sin
+     * tener que inventar una publicación aparte. Las direcciones son reales
+     * (copiadas de Google Maps a mano, como pidió el profesor) y se mezclan
+     * formatos: alguna como texto y otra directamente como coordenadas, para
+     * probar que el botón "Cómo llegar" entiende los dos.
      */
     private static List<Publicacion> crearCatalogoDePrueba() {
         List<Publicacion> lista = new ArrayList<>();
@@ -508,28 +517,31 @@ public class PublicacionRepositoryMock implements PublicacionRepository {
         lista.add(new Publicacion("1", "iPhone 13 128GB",
                 "Batería al 89%, funda y cargador original incluidos. Sin detalles en pantalla.",
                 620000, EstadoArticulo.COMO_NUEVO, Categoria.TECNOLOGIA, Zona.PALERMO,
-                hace(0, 2), V1_MARTINA, 3, DIRECCION_ENTREGA_MOCK));
+                hace(0, 2), V1_MARTINA, 3, "Av. Santa Fe 3253, Palermo, CABA"));
         lista.add(new Publicacion("2", "Notebook Lenovo IdeaPad 15",
                 "i5 de 11va generación, 16GB de RAM y SSD de 512GB. Ideal para estudiar o trabajar.",
                 480000, EstadoArticulo.USADO, Categoria.TECNOLOGIA, Zona.CABALLITO,
-                hace(0, 5), V2_NICOLAS, 4, DIRECCION_ENTREGA_MOCK));
+                hace(0, 5), V2_NICOLAS, 4, "-34.6178,-58.4396"));
         lista.add(new Publicacion("3", "Monitor Samsung 24\" curvo",
                 "Full HD 75Hz. Lo uso poco desde que armé la PC nueva. Incluye cable HDMI.",
                 165000, EstadoArticulo.USADO, Categoria.TECNOLOGIA, Zona.BELGRANO,
-                hace(1, 3), V2_NICOLAS, 1, DIRECCION_ENTREGA_MOCK));
+                // Sin dirección cargada a propósito: caso "el vendedor todavía no
+                // definió el punto de entrega" (Punto 8, bloque completo oculto).
+                hace(1, 3), V2_NICOLAS, 1, null));
         lista.add(new Publicacion("4", "Teclado mecánico Redragon",
                 "Switches red, retroiluminado RGB. Sin uso, me lo regalaron repetido.",
                 52000, EstadoArticulo.NUEVO, Categoria.TECNOLOGIA, Zona.ALMAGRO,
-                hace(2, 1), V3_SOFIA, 2, DIRECCION_ENTREGA_MOCK));
+                hace(2, 1), V3_SOFIA, 2, "Av. Corrientes 4802, Almagro, CABA"));
 
         lista.add(new Publicacion("5", "Sillón de dos cuerpos",
                 "Tapizado en pana gris. Muy cómodo, lo vendo por mudanza. Retira en el día.",
                 210000, EstadoArticulo.USADO, Categoria.HOGAR, Zona.VILLA_CRESPO,
-                hace(0, 8), V4_FAMILIA_RUIZ, 3, DIRECCION_ENTREGA_MOCK));
+                hace(0, 8), V4_FAMILIA_RUIZ, 3, "Av. Corrientes 4802, Villa Crespo, CABA"));
         lista.add(new Publicacion("6", "Mesa de comedor extensible",
                 "Madera de paraíso, para 6 u 8 personas. Tiene marcas de uso en la tapa.",
                 175000, EstadoArticulo.USADO, Categoria.HOGAR, Zona.FLORES,
-                hace(3, 6), V4_FAMILIA_RUIZ, 4, DIRECCION_ENTREGA_MOCK));
+                // Ídem publicación 3: sin dirección, para el mismo caso borde.
+                hace(3, 6), V4_FAMILIA_RUIZ, 4, null));
         lista.add(new Publicacion("7", "Cafetera express Philips",
                 "La usé menos de diez veces. Está impecable, con manual y caja.",
                 145000, EstadoArticulo.COMO_NUEVO, Categoria.HOGAR, Zona.SAN_ISIDRO,
@@ -555,7 +567,7 @@ public class PublicacionRepositoryMock implements PublicacionRepository {
         lista.add(new Publicacion("12", "Bicicleta mountain bike rodado 29",
                 "Cuadro de aluminio, 21 cambios Shimano. Recién service completo.",
                 320000, EstadoArticulo.USADO, Categoria.DEPORTES, Zona.TIGRE,
-                hace(1, 1), V7_CLUB_SAN_MARTIN, 2, DIRECCION_ENTREGA_MOCK));
+                hace(1, 1), V7_CLUB_SAN_MARTIN, 2, "-34.4260,-58.5800"));
         lista.add(new Publicacion("13", "Set de mancuernas 20kg",
                 "Discos de goma con barra ajustable. Las uso desde que armé el gimnasio en casa.",
                 78000, EstadoArticulo.USADO, Categoria.DEPORTES, Zona.BOEDO,

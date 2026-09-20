@@ -17,6 +17,8 @@ import androidx.navigation.Navigation;
 
 import com.example.tpo.R;
 import com.example.tpo.data.AuthRepository;
+import com.example.tpo.data.BusquedaGuardadaRepositoryMock;
+import com.example.tpo.data.FavoritoRepositoryMock;
 import com.example.tpo.data.RepositorioCallback;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
@@ -79,6 +81,16 @@ public class LoginFragment extends Fragment {
 
     @Nullable
     private CountDownTimer temporizadorReenvio;
+
+    private static final RepositorioCallback<Void> SIN_RESULTADO = new RepositorioCallback<Void>() {
+        @Override
+        public void onExito(Void resultado) {
+        }
+
+        @Override
+        public void onError(String mensaje) {
+        }
+    };
 
     @Nullable
     @Override
@@ -229,6 +241,7 @@ public class LoginFragment extends Fragment {
                     return;
                 }
                 mostrarCargando(false);
+                precargarFavoritosYBusquedas();
                 irAHome();
             }
 
@@ -267,6 +280,7 @@ public class LoginFragment extends Fragment {
                     return;
                 }
                 mostrarCargando(false);
+                precargarFavoritosYBusquedas();
                 irAHome();
             }
 
@@ -356,6 +370,7 @@ public class LoginFragment extends Fragment {
                     return;
                 }
                 mostrarCargando(false);
+                precargarFavoritosYBusquedas();
                 irAHome();
             }
 
@@ -397,6 +412,16 @@ public class LoginFragment extends Fragment {
 
     private void irAHome() {
         Navigation.findNavController(requireView()).navigate(R.id.action_login_to_home);
+    }
+
+    /**
+     * Deja precargados favoritos y búsquedas guardadas apenas se loguea, para
+     * que el indicador de novedad (Punto 10) esté listo desde el primer
+     * segundo en Home y no recién después de la primera consulta.
+     */
+    private void precargarFavoritosYBusquedas() {
+        FavoritoRepositoryMock.getInstancia().precargar(SIN_RESULTADO);
+        BusquedaGuardadaRepositoryMock.getInstancia().precargar(SIN_RESULTADO);
     }
 
     /** Texto del campo, sin espacios sobrantes y nunca null. */

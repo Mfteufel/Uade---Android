@@ -7,6 +7,7 @@ import com.example.tpo.model.Publicacion;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -21,8 +22,8 @@ public class FavoritoRepositoryMock implements FavoritoRepository {
 
     private static FavoritoRepositoryMock instancia;
 
-    private final Map<String, Publicacion> favoritos = new LinkedHashMap<>();
-    private final Set<String> conNovedad = new HashSet<>();
+    private final Map<String, Map<String, Publicacion>> favoritosPorUsuario = new HashMap<>();
+    private final Map<String, Set<String>> conNovedadPorUsuario = new HashMap<>();
     private final Handler handlerPrincipal = new Handler(Looper.getMainLooper());
 
     private FavoritoRepositoryMock() {
@@ -37,12 +38,28 @@ public class FavoritoRepositoryMock implements FavoritoRepository {
     }
 
     @Override
+    public void precargar(RepositorioCallback<Void> callback) {
+        handlerPrincipal.post(() -> callback.onExito(null));
+    }
+
+    private Map<String, Publicacion> favoritosDelUsuario() {
+        String usuarioId = SesionUsuario.getInstancia().getUsuarioId();
+        return favoritosPorUsuario.computeIfAbsent(usuarioId, id -> new LinkedHashMap<>());
+    }
+
+    private Set<String> conNovedadDelUsuario() {
+        String usuarioId = SesionUsuario.getInstancia().getUsuarioId();
+        return conNovedadPorUsuario.computeIfAbsent(usuarioId, id -> new HashSet<>());
+    }
+
+    @Override
     public boolean esFavorito(String publicacionId) {
-        return favoritos.containsKey(publicacionId);
+        return favoritosDelUsuario().containsKey(publicacionId);
     }
 
     @Override
     public void marcar(Publicacion publicacion, RepositorioCallback<Void> callback) {
+        Map<String, Publicacion> favoritos = favoritosDelUsuario();
         handlerPrincipal.postDelayed(() -> {
             if (SIMULAR_ERROR) {
                 callback.onError("No pudimos guardar el favorito");
@@ -55,6 +72,8 @@ public class FavoritoRepositoryMock implements FavoritoRepository {
 
     @Override
     public void desmarcar(String publicacionId, RepositorioCallback<Void> callback) {
+        Map<String, Publicacion> favoritos = favoritosDelUsuario();
+        Set<String> conNovedad = conNovedadDelUsuario();
         handlerPrincipal.postDelayed(() -> {
             if (SIMULAR_ERROR) {
                 callback.onError("No pudimos quitar el favorito");
@@ -68,6 +87,7 @@ public class FavoritoRepositoryMock implements FavoritoRepository {
 
     @Override
     public void listar(RepositorioCallback<List<Publicacion>> callback) {
+        Map<String, Publicacion> favoritos = favoritosDelUsuario();
         handlerPrincipal.postDelayed(() -> {
             if (SIMULAR_ERROR) {
                 callback.onError("No pudimos cargar tus favoritos");
@@ -82,24 +102,25 @@ public class FavoritoRepositoryMock implements FavoritoRepository {
 
     @Override
     public boolean tieneNovedad(String publicacionId) {
-        return conNovedad.contains(publicacionId);
+        return conNovedadDelUsuario().contains(publicacionId);
     }
 
     @Override
     public boolean hayAlgunaNovedad() {
-        return !conNovedad.isEmpty();
+        return !conNovedadDelUsuario().isEmpty();
     }
 
     @Override
     public void marcarTodoVisto() {
-        conNovedad.clear();
+        conNovedadDelUsuario().clear();
     }
 
     /**
-     * Simula una baja de precio en el favorito marcado más recientemente, para
-     * poder probar el indicador de novedad sin backend. Se dispara vía ADB.
+     * Simula una baja de precio en el favorito marcado más recientemente del usuario
+     * logueado, para poder probar el indicador de novedad sin backend. Se dispara vía ADB.
      */
     public void simularCambioDePrecio() {
+        Map<String, Publicacion> favoritos = favoritosDelUsuario();
         if (favoritos.isEmpty()) {
             return;
         }
@@ -109,6 +130,6 @@ public class FavoritoRepositoryMock implements FavoritoRepository {
         }
         Publicacion publicacion = favoritos.get(idMasReciente);
         publicacion.actualizarPrecio(publicacion.getPrecio() * 0.85);
-        conNovedad.add(idMasReciente);
+        conNovedadDelUsuario().add(idMasReciente);
     }
 }

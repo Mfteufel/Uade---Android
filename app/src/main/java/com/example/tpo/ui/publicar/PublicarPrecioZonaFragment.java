@@ -15,12 +15,14 @@ import androidx.navigation.fragment.NavHostFragment;
 import com.example.tpo.R;
 import com.example.tpo.model.BorradorPublicacion;
 import com.example.tpo.model.Zona;
+import com.example.tpo.util.MapaUtils;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
 /**
- * Paso 4 del wizard de "Publicar artículo" (Punto 5): precio y zona de entrega.
+ * Paso 4 del wizard de "Publicar artículo" (Punto 5): precio, zona y dirección
+ * de entrega (Punto 8, agregado sobre este mismo paso en vez de uno nuevo).
  */
 public class PublicarPrecioZonaFragment extends PublicarPasoFragment {
 
@@ -28,6 +30,8 @@ public class PublicarPrecioZonaFragment extends PublicarPasoFragment {
     private TextInputEditText campoPrecio;
     private AutoCompleteTextView campoZona;
     private TextView textoErrorZona;
+    private TextInputEditText campoDireccion;
+    private TextView textoErrorDireccion;
 
     @Nullable
     @Override
@@ -45,6 +49,8 @@ public class PublicarPrecioZonaFragment extends PublicarPasoFragment {
         campoPrecio = view.findViewById(R.id.campoPrecio);
         campoZona = view.findViewById(R.id.campoZona);
         textoErrorZona = view.findViewById(R.id.textoErrorZona);
+        campoDireccion = view.findViewById(R.id.campoDireccion);
+        textoErrorDireccion = view.findViewById(R.id.textoErrorDireccion);
         MaterialButton botonAtras = view.findViewById(R.id.botonAtras);
         MaterialButton botonSiguiente = view.findViewById(R.id.botonSiguiente);
 
@@ -63,6 +69,9 @@ public class PublicarPrecioZonaFragment extends PublicarPasoFragment {
             if (borrador.getZona() != null) {
                 campoZona.setText(borrador.getZona().getNombre(), false);
             }
+            if (borrador.getDireccionEntrega() != null) {
+                campoDireccion.setText(borrador.getDireccionEntrega());
+            }
         }
 
         botonAtras.setOnClickListener(v -> NavHostFragment.findNavController(this).navigateUp());
@@ -76,6 +85,8 @@ public class PublicarPrecioZonaFragment extends PublicarPasoFragment {
         campoPrecio = null;
         campoZona = null;
         textoErrorZona = null;
+        campoDireccion = null;
+        textoErrorDireccion = null;
     }
 
     private static String[] nombresDeZonas() {
@@ -105,6 +116,7 @@ public class PublicarPrecioZonaFragment extends PublicarPasoFragment {
 
         Double precio = leerPrecio();
         Zona zona = zonaPorNombre(campoZona.getText().toString().trim());
+        String direccion = leerDireccion();
 
         boolean valido = true;
         if (precio == null || precio <= 0) {
@@ -115,12 +127,16 @@ public class PublicarPrecioZonaFragment extends PublicarPasoFragment {
         }
         textoErrorZona.setVisibility(zona == null ? View.VISIBLE : View.GONE);
         valido &= zona != null;
+        boolean hayDireccion = MapaUtils.tieneDireccion(direccion);
+        textoErrorDireccion.setVisibility(hayDireccion ? View.GONE : View.VISIBLE);
+        valido &= hayDireccion;
         if (!valido) {
             return;
         }
 
         borrador.setPrecio(precio);
         borrador.setZona(zona);
+        borrador.setDireccionEntrega(direccion);
         viewModel.guardarPaso(4);
         NavHostFragment.findNavController(this).navigate(R.id.action_precioZona_to_resumen);
     }
@@ -137,5 +153,12 @@ public class PublicarPrecioZonaFragment extends PublicarPasoFragment {
         } catch (NumberFormatException excepcion) {
             return null;
         }
+    }
+
+    @Nullable
+    private String leerDireccion() {
+        CharSequence contenido = campoDireccion.getText();
+        String texto = contenido == null ? "" : contenido.toString().trim();
+        return texto.isEmpty() ? null : texto;
     }
 }

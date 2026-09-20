@@ -1,5 +1,7 @@
 package com.example.tpo.model;
 
+import androidx.annotation.Nullable;
+
 import java.io.Serializable;
 
 /**
@@ -58,15 +60,18 @@ public class Publicacion implements Serializable {
      * catálogo de prueba arrancan {@link EstadoPublicacion#ACTIVA}.
      */
     private EstadoPublicacion estadoPublicacion = EstadoPublicacion.ACTIVA;
-
     /**
-     * Dirección exacta de entrega — Punto 5, gestión de la publicación por parte
-     * del vendedor. Solo se le debería mostrar al comprador cuando tiene una
-     * {@link com.example.tpo.model.Oferta} en estado {@code ACEPTADA} para esta
-     * publicación (ver {@code OfertasPublicacion#tieneOfertaAceptada}, Punto 7);
-     * esta clase no impone esa regla, solo guarda el dato — la UI que decide
-     * mostrarlo o no vive en el Detalle de Publicación.
+     * Dirección exacta del punto de entrega, en texto libre (puede ser una
+     * dirección o directamente coordenadas pegadas de Google Maps) — cargada
+     * por el vendedor al publicar (Punto 5). Solo se le debería mostrar al
+     * comprador cuando tiene una {@link Oferta} en estado {@code ACEPTADA}
+     * para esta publicación (ver {@code OfertasPublicacion}, Punto 7); esta
+     * clase no impone esa regla, solo guarda el dato — la UI que decide
+     * mostrarlo o no vive en el Detalle de Publicación (Punto 8).
+     * <p>
+     * {@code null} en las publicaciones que todavía no la cargaron.
      */
+    @Nullable
     private final String direccionEntrega;
 
     public Publicacion(String id,
@@ -79,7 +84,7 @@ public class Publicacion implements Serializable {
                        long fechaPublicacion,
                        Vendedor vendedor,
                        int cantidadFotos,
-                       String direccionEntrega) {
+                       @Nullable String direccionEntrega) {
         this.id = id;
         this.titulo = titulo;
         this.descripcion = descripcion;
@@ -150,6 +155,7 @@ public class Publicacion implements Serializable {
         this.estadoPublicacion = estadoPublicacion;
     }
 
+    @Nullable
     public String getDireccionEntrega() {
         return direccionEntrega;
     }

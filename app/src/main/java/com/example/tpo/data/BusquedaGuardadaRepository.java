@@ -8,6 +8,8 @@ import java.util.Set;
 
 public interface BusquedaGuardadaRepository {
 
+    void precargar(RepositorioCallback<Void> callback);
+
     void guardar(String nombre, FiltroPublicaciones filtro, RepositorioCallback<Void> callback);
 
     /** Búsquedas guardadas del usuario, la más reciente primero. */

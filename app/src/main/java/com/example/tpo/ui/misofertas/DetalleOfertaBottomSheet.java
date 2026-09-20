@@ -22,6 +22,7 @@ import com.example.tpo.model.EstadoOferta;
 import com.example.tpo.model.Oferta;
 import com.example.tpo.model.Publicacion;
 import com.example.tpo.util.FormatoUtils;
+import com.example.tpo.util.MapaUtils;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -46,6 +47,10 @@ import com.google.android.material.textfield.TextInputLayout;
  *     (me contraofertó) → Aceptar esa contraoferta, o Contraofertar de nuevo.</li>
  *     <li>Cualquier otro caso (terminal, o estoy esperando respuesta) → solo lectura.</li>
  * </ul>
+ * <p>
+ * Punto 8: apenas la oferta queda ACEPTADA, esta hoja también muestra el punto de
+ * entrega de la publicación con su botón "Cómo llegar" (ver {@link #mostrarPuntoEntrega}) —
+ * mismo bloque, mismo criterio, que el Detalle de publicación.
  */
 public class DetalleOfertaBottomSheet extends BottomSheetDialogFragment {
 
@@ -75,6 +80,9 @@ public class DetalleOfertaBottomSheet extends BottomSheetDialogFragment {
     private TextView estadoDetalleOferta;
     private TextView mensajeDetalleOferta;
     private TextView vencimientoDetalleOferta;
+    private View bloquePuntoEntregaOferta;
+    private TextView direccionEntregaDetalleOferta;
+    private MaterialButton botonComoLlegarOferta;
     private MaterialButton botonAceptarOferta;
     private MaterialButton botonRechazarOferta;
     private MaterialButton botonContraofertar;
@@ -120,6 +128,9 @@ public class DetalleOfertaBottomSheet extends BottomSheetDialogFragment {
         estadoDetalleOferta = view.findViewById(R.id.estadoDetalleOferta);
         mensajeDetalleOferta = view.findViewById(R.id.mensajeDetalleOferta);
         vencimientoDetalleOferta = view.findViewById(R.id.vencimientoDetalleOferta);
+        bloquePuntoEntregaOferta = view.findViewById(R.id.bloquePuntoEntregaOferta);
+        direccionEntregaDetalleOferta = view.findViewById(R.id.direccionEntregaDetalleOferta);
+        botonComoLlegarOferta = view.findViewById(R.id.botonComoLlegarOferta);
         botonAceptarOferta = view.findViewById(R.id.botonAceptarOferta);
         botonRechazarOferta = view.findViewById(R.id.botonRechazarOferta);
         botonContraofertar = view.findViewById(R.id.botonContraofertar);
@@ -141,6 +152,9 @@ public class DetalleOfertaBottomSheet extends BottomSheetDialogFragment {
         estadoDetalleOferta = null;
         mensajeDetalleOferta = null;
         vencimientoDetalleOferta = null;
+        bloquePuntoEntregaOferta = null;
+        direccionEntregaDetalleOferta = null;
+        botonComoLlegarOferta = null;
         botonAceptarOferta = null;
         botonRechazarOferta = null;
         botonContraofertar = null;
@@ -221,10 +235,35 @@ public class DetalleOfertaBottomSheet extends BottomSheetDialogFragment {
                 FormatoUtils.tiempoRestante(requireContext(), oferta.getFechaVencimiento())));
 
         configurarBotonesSegunRolYEstado(oferta, publicacion);
+        mostrarPuntoEntrega(oferta, publicacion);
 
         progresoDetalleOferta.setVisibility(View.GONE);
         estadoErrorDetalleOferta.setVisibility(View.GONE);
         scrollDetalleOferta.setVisibility(View.VISIBLE);
+    }
+
+    /**
+     * Punto 8: acá es donde el comprador (o el vendedor, viendo su propia
+     * dirección) se entera del punto de entrega apenas la oferta pasa a
+     * ACEPTADA — mismo criterio y misma utilidad ({@link MapaUtils}) que el
+     * bloque equivalente del Detalle de publicación.
+     */
+    private void mostrarPuntoEntrega(Oferta oferta, Publicacion publicacion) {
+        String direccion = publicacion.getDireccionEntrega();
+        boolean desbloqueado = oferta.getEstado() == EstadoOferta.ACEPTADA
+                && MapaUtils.tieneDireccion(direccion);
+
+        bloquePuntoEntregaOferta.setVisibility(desbloqueado ? View.VISIBLE : View.GONE);
+        if (!desbloqueado) {
+            return;
+        }
+
+        direccionEntregaDetalleOferta.setText(direccion);
+        botonComoLlegarOferta.setOnClickListener(v -> {
+            if (!MapaUtils.abrirComoLlegar(requireContext(), direccion)) {
+                mostrarSnackbarSiSigueAbierta(getString(R.string.detalle_mapa_sin_app));
+            }
+        });
     }
 
     /**
