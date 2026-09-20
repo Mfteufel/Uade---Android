@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Hoja "Detalle de la oferta" — negociación del Punto 7. Mismo esqueleto que
+    bottom_sheet_gestion.xml: contenido/spinner/error superpuestos en un
+    FrameLayout, con la botonera armada según rol y estado en el .java
+    (configurarBotonesSegunRolYEstado()).
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <com.google.android.material.bottomsheet.BottomSheetDragHandleView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="220dp">
+
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/scrollDetalleOferta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="@dimen/espaciado_pantalla"
+                android:paddingBottom="@dimen/espaciado_pantalla">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/detalle_oferta_neg_titulo"
+                    android:textAppearance="?attr/textAppearanceHeadlineSmall" />
+
+                <TextView
+                    android:id="@+id/tituloPublicacionDetalleOferta"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaciado_mediano"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    tools:text="iPhone 13 128GB" />
+
+                <TextView
+                    android:id="@+id/montoDetalleOferta"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorPrimary"
+                    tools:text="Monto propuesto: $ 550.000" />
+
+                <TextView
+                    android:id="@+id/estadoDetalleOferta"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    tools:text="Estado: Pendiente" />
+
+                <TextView
+                    android:id="@+id/mensajeDetalleOferta"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:visibility="gone"
+                    tools:text="Mensaje: ¿Aceptás $550.000?"
+                    tools:visibility="visible" />
+
+                <TextView
+                    android:id="@+id/vencimientoDetalleOferta"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    tools:text="Vence en 2 días" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botonAceptarOferta"
+                    style="@style/Widget.Material3.Button.Icon"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaciado_pantalla"
+                    android:text="@string/detalle_oferta_neg_aceptar"
+                    android:visibility="gone"
+                    app:icon="@drawable/ic_reactivar" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botonContraofertar"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaciado_chico"
+                    android:text="@string/detalle_oferta_neg_contraofertar"
+                    android:visibility="gone" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/botonRechazarOferta"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaciado_chico"
+                    android:text="@string/detalle_oferta_neg_rechazar"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/progresoDetalleOferta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:indeterminate="true"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <LinearLayout
+            android:id="@+id/estadoErrorDetalleOferta"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingHorizontal="32dp"
+            android:visibility="gone"
+            tools:visibility="gone">
+
+            <ImageView
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_error" />
+
+            <TextView
+                android:id="@+id/textoErrorDetalleOferta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaciado_pantalla"
+                android:gravity="center"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                tools:text="No pudimos cargar esta oferta" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/botonReintentarDetalleOferta"
+                style="@style/Widget.Material3.Button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaciado_pantalla"
+                android:text="@string/error_reintentar" />
+        </LinearLayout>
+
+    </FrameLayout>
+</LinearLayout>

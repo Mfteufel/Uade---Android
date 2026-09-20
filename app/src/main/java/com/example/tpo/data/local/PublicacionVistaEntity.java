@@ -48,6 +48,7 @@ public class PublicacionVistaEntity {
 
     public int cantidadFotos;
     public String estadoPublicacion;
+    public String direccionEntrega;
 
     /** Cuándo se cacheó (no confundir con {@link #fechaPublicacion}). Ordena el LRU. */
     public long guardadoEn;
@@ -73,6 +74,7 @@ public class PublicacionVistaEntity {
 
         entidad.cantidadFotos = publicacion.getCantidadFotos();
         entidad.estadoPublicacion = publicacion.getEstadoPublicacion().name();
+        entidad.direccionEntrega = publicacion.getDireccionEntrega();
         entidad.guardadoEn = guardadoEn;
         return entidad;
     }
@@ -85,7 +87,7 @@ public class PublicacionVistaEntity {
                 EstadoArticulo.valueOf(estado),
                 Categoria.valueOf(categoria),
                 Zona.valueOf(zona),
-                fechaPublicacion, vendedor, cantidadFotos);
+                fechaPublicacion, vendedor, cantidadFotos, direccionEntrega);
         publicacion.setEstadoPublicacion(EstadoPublicacion.valueOf(estadoPublicacion));
         return publicacion;
     }

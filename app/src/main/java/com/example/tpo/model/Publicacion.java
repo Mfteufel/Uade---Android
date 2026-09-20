@@ -59,6 +59,16 @@ public class Publicacion implements Serializable {
      */
     private EstadoPublicacion estadoPublicacion = EstadoPublicacion.ACTIVA;
 
+    /**
+     * Dirección exacta de entrega — Punto 5, gestión de la publicación por parte
+     * del vendedor. Solo se le debería mostrar al comprador cuando tiene una
+     * {@link com.example.tpo.model.Oferta} en estado {@code ACEPTADA} para esta
+     * publicación (ver {@code OfertasPublicacion#tieneOfertaAceptada}, Punto 7);
+     * esta clase no impone esa regla, solo guarda el dato — la UI que decide
+     * mostrarlo o no vive en el Detalle de Publicación.
+     */
+    private final String direccionEntrega;
+
     public Publicacion(String id,
                        String titulo,
                        String descripcion,
@@ -68,7 +78,8 @@ public class Publicacion implements Serializable {
                        Zona zona,
                        long fechaPublicacion,
                        Vendedor vendedor,
-                       int cantidadFotos) {
+                       int cantidadFotos,
+                       String direccionEntrega) {
         this.id = id;
         this.titulo = titulo;
         this.descripcion = descripcion;
@@ -79,6 +90,7 @@ public class Publicacion implements Serializable {
         this.fechaPublicacion = fechaPublicacion;
         this.vendedor = vendedor;
         this.cantidadFotos = cantidadFotos;
+        this.direccionEntrega = direccionEntrega;
     }
 
     public String getId() {
@@ -136,5 +148,9 @@ public class Publicacion implements Serializable {
 
     public void setEstadoPublicacion(EstadoPublicacion estadoPublicacion) {
         this.estadoPublicacion = estadoPublicacion;
+    }
+
+    public String getDireccionEntrega() {
+        return direccionEntrega;
     }
 }

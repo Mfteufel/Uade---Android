@@ -60,6 +60,14 @@ public class PublicacionRepositoryMock implements PublicacionRepository {
      */
     private static final boolean SIMULAR_ERROR = false;
 
+    /**
+     * Dirección de entrega mock para todo el catálogo de prueba — Punto 5.
+     * Todavía no hay una pantalla que la cargue por publicación; alcanza un
+     * valor fijo para poder probar de punta a punta la regla del Punto 7 de
+     * "la dirección exacta solo se ve con una oferta aceptada".
+     */
+    private static final String DIRECCION_ENTREGA_MOCK = "Av. Corrientes 1234, CABA";
+
     private static PublicacionRepositoryMock instancia;
 
     /** Catálogo completo. Se arma una sola vez para que las fechas no cambien entre consultas. */
@@ -399,7 +407,7 @@ public class PublicacionRepositoryMock implements PublicacionRepository {
                 titulo != null ? titulo : "Publicación nueva de prueba",
                 "Generada a mano para probar el indicador de novedad del Punto 10.",
                 50000, EstadoArticulo.NUEVO, categoria != null ? categoria : Categoria.OTROS, Zona.CABALLITO,
-                System.currentTimeMillis(), V1_MARTINA, 1);
+                System.currentTimeMillis(), V1_MARTINA, 1, DIRECCION_ENTREGA_MOCK);
         catalogo.add(nueva);
         return nueva;
     }
@@ -469,122 +477,122 @@ public class PublicacionRepositoryMock implements PublicacionRepository {
         lista.add(new Publicacion("1", "iPhone 13 128GB",
                 "Batería al 89%, funda y cargador original incluidos. Sin detalles en pantalla.",
                 620000, EstadoArticulo.COMO_NUEVO, Categoria.TECNOLOGIA, Zona.PALERMO,
-                hace(0, 2), V1_MARTINA, 3));
+                hace(0, 2), V1_MARTINA, 3, DIRECCION_ENTREGA_MOCK));
         lista.add(new Publicacion("2", "Notebook Lenovo IdeaPad 15",
                 "i5 de 11va generación, 16GB de RAM y SSD de 512GB. Ideal para estudiar o trabajar.",
                 480000, EstadoArticulo.USADO, Categoria.TECNOLOGIA, Zona.CABALLITO,
-                hace(0, 5), V2_NICOLAS, 4));
+                hace(0, 5), V2_NICOLAS, 4, DIRECCION_ENTREGA_MOCK));
         lista.add(new Publicacion("3", "Monitor Samsung 24\" curvo",
                 "Full HD 75Hz. Lo uso poco desde que armé la PC nueva. Incluye cable HDMI.",
                 165000, EstadoArticulo.USADO, Categoria.TECNOLOGIA, Zona.BELGRANO,
-                hace(1, 3), V2_NICOLAS, 1));
+                hace(1, 3), V2_NICOLAS, 1, DIRECCION_ENTREGA_MOCK));
         lista.add(new Publicacion("4", "Teclado mecánico Redragon",
                 "Switches red, retroiluminado RGB. Sin uso, me lo regalaron repetido.",
                 52000, EstadoArticulo.NUEVO, Categoria.TECNOLOGIA, Zona.ALMAGRO,
-                hace(2, 1), V3_SOFIA, 2));
+                hace(2, 1), V3_SOFIA, 2, DIRECCION_ENTREGA_MOCK));
 
         lista.add(new Publicacion("5", "Sillón de dos cuerpos",
                 "Tapizado en pana gris. Muy cómodo, lo vendo por mudanza. Retira en el día.",
                 210000, EstadoArticulo.USADO, Categoria.HOGAR, Zona.VILLA_CRESPO,
-                hace(0, 8), V4_FAMILIA_RUIZ, 3));
+                hace(0, 8), V4_FAMILIA_RUIZ, 3, DIRECCION_ENTREGA_MOCK));
         lista.add(new Publicacion("6", "Mesa de comedor extensible",
                 "Madera de paraíso, para 6 u 8 personas. Tiene marcas de uso en la tapa.",
                 175000, EstadoArticulo.USADO, Categoria.HOGAR, Zona.FLORES,
-                hace(3, 6), V4_FAMILIA_RUIZ, 4));
+                hace(3, 6), V4_FAMILIA_RUIZ, 4, DIRECCION_ENTREGA_MOCK));
         lista.add(new Publicacion("7", "Cafetera express Philips",
                 "La usé menos de diez veces. Está impecable, con manual y caja.",
                 145000, EstadoArticulo.COMO_NUEVO, Categoria.HOGAR, Zona.SAN_ISIDRO,
-                hace(1, 10), V5_VALERIA, 1));
+                hace(1, 10), V5_VALERIA, 1, DIRECCION_ENTREGA_MOCK));
         lista.add(new Publicacion("8", "Juego de sábanas queen",
                 "Algodón 200 hilos, sin estrenar. Color blanco.",
                 38000, EstadoArticulo.NUEVO, Categoria.HOGAR, Zona.QUILMES,
-                hace(4, 2), V5_VALERIA, 2));
+                hace(4, 2), V5_VALERIA, 2, DIRECCION_ENTREGA_MOCK));
 
         lista.add(new Publicacion("9", "Campera de cuero negra",
                 "Talle M, cuero ecológico. Muy poco uso, quedó chica.",
                 85000, EstadoArticulo.COMO_NUEVO, Categoria.INDUMENTARIA, Zona.RECOLETA,
-                hace(0, 14), V1_MARTINA, 3));
+                hace(0, 14), V1_MARTINA, 3, DIRECCION_ENTREGA_MOCK));
         lista.add(new Publicacion("10", "Zapatillas Nike Air Max 90",
                 "Talle 42, usadas un par de veces. Vienen con la caja original.",
                 95000, EstadoArticulo.COMO_NUEVO, Categoria.INDUMENTARIA, Zona.NUNEZ,
-                hace(2, 7), V9_BRUNO, 4));
+                hace(2, 7), V9_BRUNO, 4, DIRECCION_ENTREGA_MOCK));
         lista.add(new Publicacion("11", "Vestido de fiesta largo",
                 "Talle S, azul noche. Usado una sola vez en un casamiento.",
                 62000, EstadoArticulo.COMO_NUEVO, Categoria.INDUMENTARIA, Zona.VICENTE_LOPEZ,
-                hace(5, 4), V3_SOFIA, 1));
+                hace(5, 4), V3_SOFIA, 1, DIRECCION_ENTREGA_MOCK));
 
         lista.add(new Publicacion("12", "Bicicleta mountain bike rodado 29",
                 "Cuadro de aluminio, 21 cambios Shimano. Recién service completo.",
                 320000, EstadoArticulo.USADO, Categoria.DEPORTES, Zona.TIGRE,
-                hace(1, 1), V7_CLUB_SAN_MARTIN, 2));
+                hace(1, 1), V7_CLUB_SAN_MARTIN, 2, DIRECCION_ENTREGA_MOCK));
         lista.add(new Publicacion("13", "Set de mancuernas 20kg",
                 "Discos de goma con barra ajustable. Las uso desde que armé el gimnasio en casa.",
                 78000, EstadoArticulo.USADO, Categoria.DEPORTES, Zona.BOEDO,
-                hace(3, 9), V8_GONZALO, 3));
+                hace(3, 9), V8_GONZALO, 3, DIRECCION_ENTREGA_MOCK));
         lista.add(new Publicacion("14", "Cinta de correr plegable",
                 "Motor 2HP, se pliega para guardar. Funciona perfecto, la vendo por espacio.",
                 410000, EstadoArticulo.USADO, Categoria.DEPORTES, Zona.LOMAS_DE_ZAMORA,
-                hace(6, 3), V8_GONZALO, 4));
+                hace(6, 3), V8_GONZALO, 4, DIRECCION_ENTREGA_MOCK));
         lista.add(new Publicacion("15", "Pelota de fútbol profesional",
                 "Nueva, todavía en la bolsa. Número 5, cosida a mano.",
                 29000, EstadoArticulo.NUEVO, Categoria.DEPORTES, Zona.AVELLANEDA,
-                hace(7, 5), V7_CLUB_SAN_MARTIN, 1));
+                hace(7, 5), V7_CLUB_SAN_MARTIN, 1, DIRECCION_ENTREGA_MOCK));
 
         lista.add(new Publicacion("16", "Colección Harry Potter completa",
                 "Los siete libros en tapa dura, edición Salamandra. Muy bien cuidados.",
                 115000, EstadoArticulo.COMO_NUEVO, Categoria.LIBROS, Zona.CABALLITO,
-                hace(0, 20), V1_MARTINA, 2));
+                hace(0, 20), V1_MARTINA, 2, DIRECCION_ENTREGA_MOCK));
         lista.add(new Publicacion("17", "Rayuela - Julio Cortázar",
                 "Edición de bolsillo, con algunas anotaciones al margen en lápiz.",
                 12000, EstadoArticulo.USADO, Categoria.LIBROS, Zona.ALMAGRO,
-                hace(2, 12), V9_BRUNO, 3));
+                hace(2, 12), V9_BRUNO, 3, DIRECCION_ENTREGA_MOCK));
         lista.add(new Publicacion("18", "Manual de Anatomía de Rouvière",
                 "Tomo 1 y 2. Los usé toda la carrera, están completos y sin hojas sueltas.",
                 68000, EstadoArticulo.USADO, Categoria.LIBROS, Zona.BARRACAS,
-                hace(8, 1), V10_ROCIO, 4));
+                hace(8, 1), V10_ROCIO, 4, DIRECCION_ENTREGA_MOCK));
 
         lista.add(new Publicacion("19", "Guitarra criolla Fonseca",
                 "Modelo 40, con funda acolchada. Encordado nuevo puesto la semana pasada.",
                 135000, EstadoArticulo.USADO, Categoria.INSTRUMENTOS, Zona.PALERMO,
-                hace(1, 16), V6_ESCUELA_MUSICA, 1));
+                hace(1, 16), V6_ESCUELA_MUSICA, 1, DIRECCION_ENTREGA_MOCK));
         lista.add(new Publicacion("20", "Teclado Yamaha PSR-E373",
                 "61 teclas sensibles, con fuente y atril. Comprado hace seis meses.",
                 295000, EstadoArticulo.COMO_NUEVO, Categoria.INSTRUMENTOS, Zona.BELGRANO,
-                hace(4, 8), V6_ESCUELA_MUSICA, 2));
+                hace(4, 8), V6_ESCUELA_MUSICA, 2, DIRECCION_ENTREGA_MOCK));
         lista.add(new Publicacion("21", "Amplificador Marshall 15W",
                 "Ideal para practicar en casa. Tiene distorsión y reverb.",
                 160000, EstadoArticulo.USADO, Categoria.INSTRUMENTOS, Zona.VILLA_CRESPO,
-                hace(9, 2), V6_ESCUELA_MUSICA, 3));
+                hace(9, 2), V6_ESCUELA_MUSICA, 3, DIRECCION_ENTREGA_MOCK));
 
         lista.add(new Publicacion("22", "Cochecito Infanti 3 en 1",
                 "Incluye huevito y base para auto. Usado por un solo bebé.",
                 240000, EstadoArticulo.USADO, Categoria.BEBES, Zona.SAN_ISIDRO,
-                hace(0, 11), V11_LAURA_Y_SEBA, 4));
+                hace(0, 11), V11_LAURA_Y_SEBA, 4, DIRECCION_ENTREGA_MOCK));
         lista.add(new Publicacion("23", "Cuna funcional de madera",
                 "Se convierte en cama de una plaza. Colchón incluido, sin manchas.",
                 185000, EstadoArticulo.COMO_NUEVO, Categoria.BEBES, Zona.VICENTE_LOPEZ,
-                hace(5, 15), V11_LAURA_Y_SEBA, 1));
+                hace(5, 15), V11_LAURA_Y_SEBA, 1, DIRECCION_ENTREGA_MOCK));
         lista.add(new Publicacion("24", "Lote de ropa de bebé 0 a 6 meses",
                 "Aproximadamente 30 prendas, todas lavadas y en buen estado.",
                 35000, EstadoArticulo.USADO, Categoria.BEBES, Zona.QUILMES,
-                hace(10, 4), V11_LAURA_Y_SEBA, 2));
+                hace(10, 4), V11_LAURA_Y_SEBA, 2, DIRECCION_ENTREGA_MOCK));
 
         lista.add(new Publicacion("25", "Caja de herramientas completa",
                 "Llaves, destornilladores, pinzas y taladro. Todo en su maletín.",
                 125000, EstadoArticulo.USADO, Categoria.OTROS, Zona.BARRACAS,
-                hace(6, 18), V10_ROCIO, 3));
+                hace(6, 18), V10_ROCIO, 3, DIRECCION_ENTREGA_MOCK));
         lista.add(new Publicacion("26", "Rompecabezas 3000 piezas",
                 "Armado una sola vez, están todas las piezas. Motivo: mapa antiguo.",
                 18000, EstadoArticulo.COMO_NUEVO, Categoria.OTROS, Zona.FLORES,
-                hace(11, 6), V12_HERNAN, 4));
+                hace(11, 6), V12_HERNAN, 4, DIRECCION_ENTREGA_MOCK));
         lista.add(new Publicacion("27", "Escritorio con estantería",
                 "Melamina blanca, 120cm de ancho. Se desarma para el traslado.",
                 98000, EstadoArticulo.USADO, Categoria.HOGAR, Zona.BOEDO,
-                hace(12, 3), V12_HERNAN, 1));
+                hace(12, 3), V12_HERNAN, 1, DIRECCION_ENTREGA_MOCK));
         lista.add(new Publicacion("28", "Aire acondicionado split 3000 frigorías",
                 "Frío/calor, funcionando perfecto. Se retira ya desinstalado.",
                 390000, EstadoArticulo.USADO, Categoria.HOGAR, Zona.AVELLANEDA,
-                hace(13, 9), V12_HERNAN, 2));
+                hace(13, 9), V12_HERNAN, 2, DIRECCION_ENTREGA_MOCK));
 
         return lista;
     }

@@ -1,17 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Perfil público del vendedor (Punto 4).
+    Perfil público de un usuario (Puntos 2, 4 y 9).
 
     De arriba hacia abajo:
       1. Toolbar con flecha para volver.
-      2. Contenido: ficha del vendedor (avatar, reputación, antigüedad) fija
-         arriba + listado de sus publicaciones activas.
+      2. Contenido:
+         - ficha (avatar, nombre, antigüedad, zona) + reputación completa
+           (view_reputacion.xml, el mismo bloque que el perfil propio);
+         - pestañas "Publicaciones | Calificaciones";
+         - una sola lista que muestra las publicaciones activas o las
+           calificaciones recibidas según la pestaña.
       3. El spinner de carga y el estado de error se superponen al contenido y el
          Fragment muestra uno solo por vez, igual que en el Home y el Detalle.
 
-    La ficha del vendedor queda FUERA de un scroll y el RecyclerView tiene el
-    suyo propio: meter un RecyclerView adentro de un NestedScrollView lo obliga a
-    medir todos sus ítems y anula el reciclado.
+    La ficha y la reputación viven en un AppBarLayout con scrollFlags="scroll":
+    al deslizar la lista se van hacia arriba y dejan fijas las pestañas. Así la
+    lista tiene lugar aun en pantallas chicas y no hace falta meter un
+    RecyclerView adentro de un NestedScrollView (que anularía el reciclado).
 -->
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -34,7 +39,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:navigationIcon="@drawable/ic_flecha_atras"
-            app:title="@string/perfil_vendedor_titulo" />
+            app:title="@string/perfil_publico_titulo" />
 
         <!-- ============ 2. Contenido ============ -->
         <FrameLayout
@@ -42,121 +47,129 @@
             android:layout_height="0dp"
             android:layout_weight="1">
 
-            <LinearLayout
+            <androidx.coordinatorlayout.widget.CoordinatorLayout
                 android:id="@+id/contenidoPerfil"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:orientation="vertical"
                 android:visibility="gone"
                 tools:visibility="visible">
 
-                <!-- Ficha del vendedor -->
-                <androidx.constraintlayout.widget.ConstraintLayout
+                <com.google.android.material.appbar.AppBarLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:padding="@dimen/espaciado_pantalla">
+                    android:background="?attr/colorSurface"
+                    app:liftOnScroll="false">
 
-                    <TextView
-                        android:id="@+id/inicialesPerfil"
-                        android:layout_width="@dimen/avatar_perfil_tamano"
-                        android:layout_height="@dimen/avatar_perfil_tamano"
-                        android:background="@drawable/bg_avatar_vendedor"
-                        android:contentDescription="@string/vendedor_avatar_descripcion"
-                        android:gravity="center"
-                        android:textAppearance="?attr/textAppearanceHeadlineSmall"
-                        android:textColor="?attr/colorOnPrimaryContainer"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent"
-                        tools:text="MG" />
-
-                    <TextView
-                        android:id="@+id/nombrePerfil"
-                        android:layout_width="0dp"
+                    <!-- Ficha + reputación: se desplazan con la lista. -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="@dimen/espaciado_pantalla"
-                        android:ellipsize="end"
-                        android:maxLines="1"
-                        android:textAppearance="?attr/textAppearanceHeadlineSmall"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintStart_toEndOf="@id/inicialesPerfil"
-                        app:layout_constraintTop_toTopOf="parent"
-                        tools:text="Martina G." />
+                        android:orientation="vertical"
+                        android:padding="@dimen/espaciado_pantalla"
+                        app:layout_scrollFlags="scroll">
 
-                    <TextView
-                        android:id="@+id/reputacionPerfil"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="@dimen/espaciado_pantalla"
-                        android:layout_marginTop="4dp"
-                        android:drawablePadding="4dp"
-                        android:textAppearance="?attr/textAppearanceBodyMedium"
-                        app:drawableStartCompat="@drawable/ic_estrella"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintStart_toEndOf="@id/inicialesPerfil"
-                        app:layout_constraintTop_toBottomOf="@id/nombrePerfil"
-                        tools:text="4,8 · 23 ventas" />
+                        <androidx.constraintlayout.widget.ConstraintLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
 
-                    <TextView
-                        android:id="@+id/miembroDesdePerfil"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="@dimen/espaciado_pantalla"
-                        android:layout_marginTop="2dp"
-                        android:textAppearance="?attr/textAppearanceBodySmall"
-                        android:textColor="?attr/colorOnSurfaceVariant"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintStart_toEndOf="@id/inicialesPerfil"
-                        app:layout_constraintTop_toBottomOf="@id/reputacionPerfil"
-                        tools:text="En Ronda desde julio de 2024" />
-                </androidx.constraintlayout.widget.ConstraintLayout>
+                            <include
+                                android:id="@+id/avatarPerfil"
+                                layout="@layout/view_avatar"
+                                android:layout_width="@dimen/avatar_perfil_tamano"
+                                android:layout_height="@dimen/avatar_perfil_tamano"
+                                app:layout_constraintBottom_toBottomOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toTopOf="parent" />
 
-                <com.google.android.material.divider.MaterialDivider
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="@dimen/espaciado_pantalla" />
+                            <TextView
+                                android:id="@+id/nombrePerfil"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="@dimen/espaciado_pantalla"
+                                android:ellipsize="end"
+                                android:maxLines="1"
+                                android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toEndOf="@id/avatarPerfil"
+                                app:layout_constraintTop_toTopOf="parent"
+                                tools:text="Martina G." />
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="@dimen/espaciado_pantalla"
-                    android:layout_marginTop="@dimen/espaciado_pantalla"
-                    android:text="@string/perfil_publicaciones_titulo"
-                    android:textAppearance="?attr/textAppearanceTitleSmall" />
+                            <TextView
+                                android:id="@+id/miembroDesdePerfil"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="@dimen/espaciado_pantalla"
+                                android:layout_marginTop="2dp"
+                                android:textAppearance="?attr/textAppearanceBodyMedium"
+                                android:textColor="?attr/colorOnSurfaceVariant"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toEndOf="@id/avatarPerfil"
+                                app:layout_constraintTop_toBottomOf="@id/nombrePerfil"
+                                tools:text="En Ronda desde julio de 2024" />
 
-                <TextView
-                    android:id="@+id/cantidadPublicacionesPerfil"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="@dimen/espaciado_pantalla"
-                    android:layout_marginTop="2dp"
-                    android:textAppearance="?attr/textAppearanceLabelLarge"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    tools:text="3 publicaciones activas" />
+                            <TextView
+                                android:id="@+id/zonaPerfil"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="@dimen/espaciado_pantalla"
+                                android:layout_marginTop="2dp"
+                                android:textAppearance="?attr/textAppearanceBodySmall"
+                                android:textColor="?attr/colorOnSurfaceVariant"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintStart_toEndOf="@id/avatarPerfil"
+                                app:layout_constraintTop_toBottomOf="@id/miembroDesdePerfil"
+                                tools:text="Zona: Palermo" />
+                        </androidx.constraintlayout.widget.ConstraintLayout>
+
+                        <include
+                            android:id="@+id/bloqueReputacion"
+                            layout="@layout/view_reputacion"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/espaciado_pantalla" />
+                    </LinearLayout>
+
+                    <!-- Sin scrollFlags: queda fija arriba cuando la ficha se va. -->
+                    <com.google.android.material.tabs.TabLayout
+                        android:id="@+id/tabsPerfil"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+                </com.google.android.material.appbar.AppBarLayout>
 
                 <FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:layout_weight="1">
+                    android:layout_height="match_parent"
+                    app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
                     <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/listaPublicacionesVendedor"
+                        android:id="@+id/listaPerfil"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:clipToPadding="false"
                         android:paddingTop="@dimen/espaciado_chico"
                         android:paddingBottom="@dimen/lista_padding_inferior"
                         tools:itemCount="3"
-                        tools:listitem="@layout/item_publicacion" />
+                        tools:listitem="@layout/item_calificacion" />
 
-                    <!-- Vendedor sin publicaciones activas -->
+                    <!-- La pestaña elegida todavía está cargando. -->
+                    <com.google.android.material.progressindicator.CircularProgressIndicator
+                        android:id="@+id/progresoLista"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginTop="@dimen/espaciado_grande"
+                        android:indeterminate="true"
+                        android:visibility="gone" />
+
+                    <!-- Sin publicaciones activas o sin calificaciones, según la pestaña. -->
                     <LinearLayout
                         android:id="@+id/estadoVacioPerfil"
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"
+                        android:layout_height="wrap_content"
                         android:gravity="center"
                         android:orientation="vertical"
                         android:paddingHorizontal="32dp"
+                        android:paddingTop="@dimen/espaciado_grande"
                         android:visibility="gone"
                         tools:visibility="gone">
 
@@ -168,15 +181,16 @@
                             android:src="@drawable/ic_persona" />
 
                         <TextView
+                            android:id="@+id/textoVacioPerfil"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="@dimen/espaciado_pantalla"
                             android:gravity="center"
-                            android:text="@string/perfil_sin_publicaciones"
-                            android:textAppearance="?attr/textAppearanceTitleMedium" />
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            tools:text="No tiene publicaciones activas" />
                     </LinearLayout>
                 </FrameLayout>
-            </LinearLayout>
+            </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
             <!-- Spinner de la carga inicial -->
             <com.google.android.material.progressindicator.CircularProgressIndicator

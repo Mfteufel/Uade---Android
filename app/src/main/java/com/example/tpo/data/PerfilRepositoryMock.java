@@ -1,26 +1,31 @@
 package com.example.tpo.data;
 
+import android.content.ContentResolver;
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Patterns;
 
-import com.example.tpo.model.Reputacion;
+import com.example.tpo.model.Calificacion;
 import com.example.tpo.model.Usuario;
-import com.example.tpo.model.Zona;
+import com.example.tpo.util.ImagenUtils;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
- * Implementación de {@link PerfilRepository} con datos fijos en memoria.
+ * Implementación de {@link PerfilRepository} sin servidor, sobre
+ * {@link BaseDeDatosMock}.
  * <p>
- * Misma simplificación acordada que en {@link PublicacionRepositoryMock}: la
- * API_Rest del TPO todavía no existe, así que los perfiles viven acá.
- * <p>
- * <b>Cómo se reemplaza por la API de verdad:</b> se crea un
- * {@code PerfilRepositoryApi} que implemente la misma interfaz y que adentro haga
- * {@code call.enqueue(...)} con Retrofit, validando {@code response.isSuccessful()}
- * antes de leer el body. Las pantallas no se modifican.
+ * Simula todo lo que va a hacer la API: una demora de red, la identidad del que
+ * pide (el servidor la saca del token; acá sale de {@link SesionUsuario}), las
+ * validaciones y los mensajes de error. Así, reemplazarla por
+ * {@code PerfilRepositoryApi} en {@code di/RepositoryModule} no cambia nada en
+ * las pantallas: el camino de éxito y el de error son los mismos.
  * <p>
  * Las validaciones de los datos editados también se hacen acá y no en el Fragment.
  * En la app final esa responsabilidad es del backend, así que dejarla del lado del
@@ -38,30 +43,19 @@ public class PerfilRepositoryMock implements PerfilRepository {
      */
     private static final boolean SIMULAR_ERROR = false;
 
-    /** Id del usuario logueado mientras el Punto 1 (Autenticación) no exista. */
-    public static final String ID_USUARIO_DEMO = "u0";
+    private final BaseDeDatosMock base = BaseDeDatosMock.getInstancia();
 
-    private static PerfilRepositoryMock instancia;
-
-    /**
-     * Perfiles indexados por id. Es un LinkedHashMap para que el orden de alta se
-     * mantenga estable entre consultas, igual que las fechas del catálogo de
-     * publicaciones.
-     */
-    private final Map<String, Usuario> perfiles;
+    /** Para leer la foto elegida en la galería. Es el de la aplicación: no retiene ninguna pantalla. */
+    private final ContentResolver resolver;
 
     /** Handler del Main Thread: garantiza que el callback llegue donde se puede tocar la UI. */
     private final Handler handlerPrincipal = new Handler(Looper.getMainLooper());
 
-    private PerfilRepositoryMock() {
-        perfiles = crearPerfilesDePrueba();
-    }
+    /** Un solo hilo alcanza para comprimir y decodificar fotos: nunca hay dos a la vez. */
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
-    public static synchronized PerfilRepositoryMock getInstancia() {
-        if (instancia == null) {
-            instancia = new PerfilRepositoryMock();
-        }
-        return instancia;
+    public PerfilRepositoryMock(Context context) {
+        this.resolver = context.getApplicationContext().getContentResolver();
     }
 
     // ---------------------------------------------------------------------
@@ -75,13 +69,15 @@ public class PerfilRepositoryMock implements PerfilRepository {
                 callback.onError("No pudimos cargar tu perfil");
                 return;
             }
-            Usuario yo = perfiles.get(SesionUsuario.getInstancia().getUsuarioId());
+            Usuario yo = base.perfilPropio(idLogueado(), System.currentTimeMillis());
             if (yo == null) {
-                // No debería pasar con la sesión demo, pero si el Punto 1 setea un
-                // id que no existe conviene un mensaje claro y no un crash.
+                // Equivale a un 401: el token apunta a un usuario que ya no existe.
                 callback.onError("No encontramos tu perfil");
                 return;
             }
+            // Deja en la sesión el nombre y la zona reales (el login solo conoce el
+            // email): el Home filtra por esa zona y el Detalle firma con ese nombre.
+            SesionUsuario.getInstancia().actualizarDesdePerfil(yo);
             callback.onExito(yo);
         });
     }
@@ -103,13 +99,19 @@ public class PerfilRepositoryMock implements PerfilRepository {
             // Se normaliza igual que lo haría el backend: sin espacios sobrantes y
             // el email en minúsculas, así dos altas con distinto casing no generan
             // usuarios distintos.
-            Usuario guardado = usuario.conDatosPersonales(
+            String email = usuario.getEmail().trim().toLowerCase();
+            if (base.emailEnUso(email, idLogueado())) {
+                // Equivale al 409 de la API.
+                callback.onError("Ese email ya está en uso por otra cuenta");
+                return;
+            }
+            base.actualizarDatosPersonales(idLogueado(),
                     usuario.getNombre().trim(),
-                    usuario.getEmail().trim().toLowerCase(),
-                    usuario.getTelefono().trim(),
+                    email,
+                    usuario.getTelefono() == null ? "" : usuario.getTelefono().trim(),
                     usuario.getZona());
 
-            perfiles.put(guardado.getId(), guardado);
+            Usuario guardado = base.perfilPropio(idLogueado(), System.currentTimeMillis());
 
             // La sesión guarda su propia copia de nombre y zona (el Home la usa para
             // el filtro de cercanía). Si no se sincroniza acá, el usuario cambia su
@@ -127,7 +129,7 @@ public class PerfilRepositoryMock implements PerfilRepository {
                 callback.onError("No pudimos cargar el perfil");
                 return;
             }
-            Usuario usuario = perfiles.get(usuarioId);
+            Usuario usuario = base.perfilPublico(usuarioId);
             if (usuario == null) {
                 // Equivale al 404 de la API: el recurso no existe.
                 callback.onError("Este usuario ya no está disponible");
@@ -137,9 +139,74 @@ public class PerfilRepositoryMock implements PerfilRepository {
         });
     }
 
+    @Override
+    public void actualizarFoto(Uri foto, RepositorioCallback<Usuario> callback) {
+        String usuarioId = idLogueado();
+        // Leer y comprimir la imagen es lento: va al executor. El resultado vuelve
+        // al Main Thread, que es donde vive la base simulada y donde se llama al callback.
+        executor.execute(() -> {
+            byte[] jpeg;
+            try {
+                jpeg = ImagenUtils.comprimirJpeg(resolver, foto, ImagenUtils.LADO_MAXIMO_FOTO_PERFIL);
+            } catch (IOException | RuntimeException excepcion) {
+                handlerPrincipal.post(() -> callback.onError("No pudimos leer la imagen elegida"));
+                return;
+            }
+            responderDemorado(() -> {
+                if (SIMULAR_ERROR) {
+                    callback.onError("No pudimos subir la foto");
+                    return;
+                }
+                base.guardarFoto(usuarioId, jpeg);
+                callback.onExito(base.perfilPropio(usuarioId, System.currentTimeMillis()));
+            });
+        });
+    }
+
+    @Override
+    public void obtenerFoto(Usuario usuario, RepositorioCallback<Bitmap> callback) {
+        byte[] bytes = base.foto(usuario.getId());
+        if (bytes == null) {
+            // Equivale al 404: el usuario no tiene foto.
+            responderDemorado(() -> callback.onError("Este usuario no tiene foto"));
+            return;
+        }
+        executor.execute(() -> {
+            Bitmap imagen = ImagenUtils.decodificar(bytes);
+            handlerPrincipal.post(() -> {
+                if (imagen == null) {
+                    callback.onError("No pudimos mostrar la foto");
+                } else {
+                    callback.onExito(imagen);
+                }
+            });
+        });
+    }
+
+    @Override
+    public void obtenerCalificacionesRecibidas(String usuarioId,
+                                               RepositorioCallback<List<Calificacion>> callback) {
+        responderDemorado(() -> {
+            if (SIMULAR_ERROR) {
+                callback.onError("No pudimos cargar las calificaciones");
+                return;
+            }
+            if (!base.existeUsuario(usuarioId)) {
+                callback.onError("Este usuario ya no está disponible");
+                return;
+            }
+            callback.onExito(base.calificacionesRecibidas(usuarioId));
+        });
+    }
+
     // ---------------------------------------------------------------------
     // Apoyo
     // ---------------------------------------------------------------------
+
+    /** Quién está pidiendo. Contra la API real lo resuelve el servidor a partir del JWT. */
+    private static String idLogueado() {
+        return SesionUsuario.getInstancia().getUsuarioId();
+    }
 
     /** postDelayed simula la latencia de red y deja el callback en el Main Thread. */
     private void responderDemorado(Runnable accion) {
@@ -172,63 +239,5 @@ public class PerfilRepositoryMock implements PerfilRepository {
             return "El teléfono debe tener al menos 8 dígitos";
         }
         return null;
-    }
-
-    // ---------------------------------------------------------------------
-    // Datos de prueba
-    // ---------------------------------------------------------------------
-
-    /** Milisegundos correspondientes a "hace N días". */
-    private static long haceDias(int dias) {
-        return System.currentTimeMillis() - dias * 24L * 60L * 60L * 1000L;
-    }
-
-    /**
-     * Perfiles de prueba.
-     * <p>
-     * Los nombres coinciden con los vendedores del catálogo de
-     * {@link PublicacionRepositoryMock} para que, cuando el Punto 4 (Detalle)
-     * enlace la publicación con su vendedor, el perfil público muestre a la
-     * persona correcta y no a un usuario inventado.
-     * <p>
-     * Hay variedad a propósito: usuarios con mucha reputación, con poca, y uno
-     * recién registrado sin calificaciones, para poder ver los tres casos en pantalla.
-     */
-    private static Map<String, Usuario> crearPerfilesDePrueba() {
-        Map<String, Usuario> mapa = new LinkedHashMap<>();
-
-        // Usuario logueado.
-        mapa.put(ID_USUARIO_DEMO, new Usuario(ID_USUARIO_DEMO,
-                "Juan Elliff", "juan.elliff@ronda.com", "1145678901",
-                Zona.CABALLITO, haceDias(420),
-                new Reputacion(4.6, 12, 7)));
-
-        mapa.put("u1", new Usuario("u1",
-                "Martina G.", "martina.g@ronda.com", "1156781234",
-                Zona.PALERMO, haceDias(730),
-                new Reputacion(4.9, 8, 31)));
-
-        mapa.put("u2", new Usuario("u2",
-                "Nicolás P.", "nicolas.p@ronda.com", "1134567890",
-                Zona.CABALLITO, haceDias(210),
-                new Reputacion(4.2, 5, 9)));
-
-        mapa.put("u3", new Usuario("u3",
-                "Luciano R.", "luciano.r@ronda.com", "1167894321",
-                Zona.BELGRANO, haceDias(95),
-                new Reputacion(3.8, 2, 4)));
-
-        mapa.put("u4", new Usuario("u4",
-                "Sofía M.", "sofia.m@ronda.com", "",
-                Zona.ALMAGRO, haceDias(1100),
-                new Reputacion(5.0, 24, 18)));
-
-        // Recién registrado: sin operaciones ni calificaciones todavía.
-        mapa.put("u5", new Usuario("u5",
-                "Bruno T.", "bruno.t@ronda.com", "1198765432",
-                Zona.NUNEZ, haceDias(3),
-                new Reputacion(0, 0, 0)));
-
-        return mapa;
     }
 }

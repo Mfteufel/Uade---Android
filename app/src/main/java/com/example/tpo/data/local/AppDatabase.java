@@ -25,7 +25,7 @@ import androidx.room.RoomDatabase;
         PreguntaEntity.class,
         OfertaEntity.class,
         PublicacionVistaEntity.class
-}, version = 4, exportSchema = false)
+}, version = 5, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
     private static final String NOMBRE_ARCHIVO = "ronda.db";
