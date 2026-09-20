@@ -26,6 +26,7 @@
     <!-- Renglón inferior de la tarjeta: "Palermo · hace 2 h" -->
     <string name="item_zona_y_fecha">%1$s · %2$s</string>
     <string name="publicado_recien">recién publicado</string>
+    <string name="vencimiento_en_menos_de_un_minuto">en menos de un minuto</string>
     <string name="item_favorito_agregar">Agregar a favoritos</string>
     <string name="item_favorito_quitar">Quitar de favoritos</string>
     <!-- Punto 10, indicador de novedad: favorito bajó de precio desde que se marcó. -->
@@ -307,4 +308,40 @@
     <!-- Etiquetas de TipoOperacion (modelo compartido con la reputación del Punto 2). -->
     <string name="historial_compras">Compras</string>
     <string name="historial_ventas">Ventas</string>
+
+    <!-- ===================== Negociación de ofertas (Punto 7) ===================== -->
+    <string name="estado_oferta_pendiente">Pendiente</string>
+    <string name="estado_oferta_aceptada">Aceptada</string>
+    <string name="estado_oferta_rechazada">Rechazada</string>
+    <string name="estado_oferta_vencida">Vencida</string>
+
+    <!-- "Mis ofertas": item del menú del Home -->
+    <string name="menu_mis_ofertas">Mis ofertas</string>
+    <string name="mis_ofertas_titulo">Mis ofertas</string>
+    <string name="mis_ofertas_tab_enviadas">Enviadas</string>
+    <string name="mis_ofertas_tab_recibidas">Recibidas</string>
+    <string name="mis_ofertas_vacio_enviadas">Todavía no ofertaste en ninguna publicación</string>
+    <string name="mis_ofertas_vacio_recibidas">Todavía no recibiste ofertas</string>
+    <!-- Fila de la lista: "De Martina G." (recibidas) o "A Martina G." (enviadas) -->
+    <string name="item_oferta_de">De %1$s</string>
+    <string name="item_oferta_a">A %1$s</string>
+
+    <!-- Detalle de oferta (BottomSheet) -->
+    <string name="detalle_oferta_neg_titulo">Detalle de la oferta</string>
+    <string name="detalle_oferta_neg_estado">Estado: %1$s</string>
+    <string name="detalle_oferta_neg_monto_actual">Monto propuesto: %1$s</string>
+    <string name="detalle_oferta_neg_mensaje">Mensaje: %1$s</string>
+    <string name="detalle_oferta_neg_vencimiento">Vence %1$s</string>
+    <string name="detalle_oferta_neg_aceptar">Aceptar</string>
+    <string name="detalle_oferta_neg_rechazar">Rechazar</string>
+    <string name="detalle_oferta_neg_contraofertar">Contraofertar</string>
+    <string name="detalle_oferta_neg_aceptar_ok">Aceptaste la oferta</string>
+    <string name="detalle_oferta_neg_rechazar_ok">Rechazaste la oferta</string>
+    <string name="detalle_oferta_neg_contraoferta_ok">Enviaste tu contraoferta</string>
+    <string name="detalle_oferta_neg_contraoferta_titulo">Hacer una contraoferta</string>
+    <string name="detalle_oferta_neg_monto_hint">Nuevo monto</string>
+    <string name="detalle_oferta_neg_mensaje_hint">Mensaje (opcional)</string>
+    <string name="detalle_oferta_neg_monto_vacio">Ingresá un monto</string>
+    <string name="detalle_oferta_neg_monto_invalido">El monto tiene que ser mayor a cero</string>
+    <string name="detalle_oferta_neg_error">No pudimos cargar esta oferta</string>
 </resources>

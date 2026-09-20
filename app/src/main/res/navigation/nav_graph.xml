@@ -31,6 +31,11 @@
             android:id="@+id/action_home_to_guardados"
             app:destination="@id/guardadosFragment" />
 
+        <!-- Punto 7: item "Mis ofertas" del menú de la toolbar. -->
+        <action
+            android:id="@+id/action_home_to_misOfertas"
+            app:destination="@id/misOfertasFragment" />
+
     </fragment>
 
     <!--
@@ -148,5 +153,12 @@
             app:destination="@id/detalleFragment" />
 
     </fragment>
+
+    <!-- Punto 7: "Mis ofertas", negociación de ofertas. -->
+    <fragment
+        android:id="@+id/misOfertasFragment"
+        android:name="com.example.tpo.ui.misofertas.MisOfertasFragment"
+        android:label="@string/mis_ofertas_titulo"
+        tools:layout="@layout/fragment_mis_ofertas" />
 
 </navigation>
