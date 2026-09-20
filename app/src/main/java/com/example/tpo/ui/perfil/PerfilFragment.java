@@ -1,45 +1,49 @@
 package com.example.tpo.ui.perfil;
 
+import android.net.Uri;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.RatingBar;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.TextView;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.PickVisualMediaRequest;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.Navigation;
 
 import com.example.tpo.R;
 import com.example.tpo.data.PerfilRepository;
-import com.example.tpo.data.PerfilRepositoryMock;
 import com.example.tpo.data.RepositorioCallback;
-import com.example.tpo.model.Reputacion;
 import com.example.tpo.model.Usuario;
-import com.google.android.material.progressindicator.CircularProgressIndicator;
-import com.google.android.material.textfield.TextInputEditText;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-
-import android.widget.ArrayAdapter;
-import android.widget.AutoCompleteTextView;
-
 import com.example.tpo.model.Zona;
+import com.example.tpo.util.FormatoUtils;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.progressindicator.CircularProgressIndicator;
+import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.textfield.TextInputEditText;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.android.material.button.MaterialButton;
+import javax.inject.Inject;
 
-import android.text.TextUtils;
-import com.google.android.material.snackbar.Snackbar;
+import dagger.hilt.android.AndroidEntryPoint;
 
 /**
  * Mi perfil y reputación — Punto 2 del TPO.
+ * <p>
+ * Muestra y edita los datos personales, cambia la foto de perfil y muestra la
+ * reputación. Desde acá se llega al propio perfil público, para ver lo mismo
+ * que ven los demás.
  */
+@AndroidEntryPoint
 public class PerfilFragment extends Fragment {
 
     // --- Vistas. Son null fuera del rango onCreateView..onDestroyView ---
@@ -48,16 +52,13 @@ public class PerfilFragment extends Fragment {
     private View estadoError;
     private TextView textoError;
 
-    private TextView textoInicial;
+    private View avatar;
+    private CircularProgressIndicator progresoFoto;
+    private MaterialButton botonCambiarFoto;
     private TextView textoNombre;
     private TextView textoAntiguedad;
 
-    private View contenedorPromedio;
-    private RatingBar barraEstrellas;
-    private TextView textoPromedio;
-    private TextView textoSinCalificaciones;
-    private TextView textoOperacionesVendedor;
-    private TextView textoOperacionesComprador;
+    private View bloqueReputacion;
 
     private TextInputEditText campoNombre;
     private TextInputEditText campoEmail;
@@ -73,11 +74,22 @@ public class PerfilFragment extends Fragment {
     /** true mientras la pantalla está en modo edición. */
     private boolean editando = false;
 
-    private final PerfilRepository repositorio = PerfilRepositoryMock.getInstancia();
+    /** Lo inyecta Hilt: la pantalla no sabe si del otro lado hay un mock o Retrofit. */
+    @Inject
+    PerfilRepository repositorio;
 
     /** Último perfil traído del repositorio. Es la referencia para editar y para cancelar. */
     @Nullable
     private Usuario usuarioActual;
+
+    /**
+     * Selector de fotos del sistema (Photo Picker). No pide permisos de
+     * almacenamiento: el sistema le da acceso a la app solo a la imagen elegida.
+     * Se registra como campo porque los launchers tienen que existir antes de que
+     * el Fragment llegue a STARTED.
+     */
+    private final ActivityResultLauncher<PickVisualMediaRequest> selectorFoto =
+            registerForActivityResult(new ActivityResultContracts.PickVisualMedia(), this::alElegirFoto);
 
     @Nullable
     @Override
@@ -98,16 +110,13 @@ public class PerfilFragment extends Fragment {
         estadoError = view.findViewById(R.id.estadoErrorPerfil);
         textoError = view.findViewById(R.id.textoErrorPerfil);
 
-        textoInicial = view.findViewById(R.id.textoInicial);
+        avatar = view.findViewById(R.id.avatarPerfil);
+        progresoFoto = view.findViewById(R.id.progresoFoto);
+        botonCambiarFoto = view.findViewById(R.id.botonCambiarFoto);
         textoNombre = view.findViewById(R.id.textoNombre);
         textoAntiguedad = view.findViewById(R.id.textoAntiguedad);
 
-        contenedorPromedio = view.findViewById(R.id.contenedorPromedio);
-        barraEstrellas = view.findViewById(R.id.barraEstrellas);
-        textoPromedio = view.findViewById(R.id.textoPromedio);
-        textoSinCalificaciones = view.findViewById(R.id.textoSinCalificaciones);
-        textoOperacionesVendedor = view.findViewById(R.id.textoOperacionesVendedor);
-        textoOperacionesComprador = view.findViewById(R.id.textoOperacionesComprador);
+        bloqueReputacion = view.findViewById(R.id.bloqueReputacion);
 
         campoNombre = view.findViewById(R.id.campoNombre);
         campoEmail = view.findViewById(R.id.campoEmail);
@@ -122,8 +131,12 @@ public class PerfilFragment extends Fragment {
 
         botonEditar.setOnClickListener(v -> entrarEnEdicion());
         botonCancelar.setOnClickListener(v -> cancelarEdicion());
-
         botonGuardar.setOnClickListener(v -> guardarCambios());
+
+        botonCambiarFoto.setOnClickListener(v -> selectorFoto.launch(new PickVisualMediaRequest.Builder()
+                .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
+                .build()));
+        view.findViewById(R.id.botonVerPerfilPublico).setOnClickListener(v -> irAMiPerfilPublico());
 
         view.findViewById(R.id.botonReintentarPerfil)
                 .setOnClickListener(v -> cargarPerfil());
@@ -141,15 +154,12 @@ public class PerfilFragment extends Fragment {
         progreso = null;
         estadoError = null;
         textoError = null;
-        textoInicial = null;
+        avatar = null;
+        progresoFoto = null;
+        botonCambiarFoto = null;
         textoNombre = null;
         textoAntiguedad = null;
-        contenedorPromedio = null;
-        barraEstrellas = null;
-        textoPromedio = null;
-        textoSinCalificaciones = null;
-        textoOperacionesVendedor = null;
-        textoOperacionesComprador = null;
+        bloqueReputacion = null;
         campoNombre = null;
         campoEmail = null;
         campoTelefono = null;
@@ -198,43 +208,26 @@ public class PerfilFragment extends Fragment {
         estadoError.setVisibility(View.GONE);
         contenedorPerfil.setVisibility(View.VISIBLE);
 
-        textoInicial.setText(inicialDe(usuario.getNombre()));
+        PerfilUi.pintarAvatar(this, avatar, usuario, repositorio);
         textoNombre.setText(usuario.getNombre());
         textoAntiguedad.setText(getString(R.string.perfil_antiguedad,
-                mesYAnioDe(usuario.getFechaAlta())));
+                FormatoUtils.mesYAnio(usuario.getFechaAlta())));
 
-        mostrarReputacion(usuario.getReputacion());
+        PerfilUi.pintarReputacion(bloqueReputacion, usuario.getReputacion(),
+                R.string.perfil_sin_calificaciones);
 
         campoNombre.setText(usuario.getNombre());
         campoEmail.setText(usuario.getEmail());
         campoTelefono.setText(usuario.getTelefono());
 
         // El segundo parámetro en false evita que el desplegable intente filtrar la
-// lista por el texto que se acaba de poner y termine mostrando una sola opción.
-        campoZona.setText(usuario.getZona().getNombre(), false);
-
+        // lista por el texto que se acaba de poner y termine mostrando una sola opción.
+        // La zona puede faltar (usuario recién creado por OTP): queda vacía y la
+        // validación pide elegirla al guardar.
+        Zona zona = usuario.getZona();
+        campoZona.setText(zona == null ? "" : zona.getNombre(), false);
 
         aplicarModo();
-    }
-
-    private void mostrarReputacion(Reputacion reputacion) {
-        // Un usuario sin historial y uno con mala reputación darían el mismo 0,0.
-        // Se distinguen mostrando bloques distintos.
-        boolean hayCalificaciones = reputacion.tieneCalificaciones();
-
-        contenedorPromedio.setVisibility(hayCalificaciones ? View.VISIBLE : View.GONE);
-        textoSinCalificaciones.setVisibility(hayCalificaciones ? View.GONE : View.VISIBLE);
-
-        if (hayCalificaciones) {
-            barraEstrellas.setRating((float) reputacion.getPromedioEstrellas());
-            textoPromedio.setText(String.format(Locale.forLanguageTag("es-AR"),
-                    "%.1f", reputacion.getPromedioEstrellas()));
-        }
-
-        textoOperacionesVendedor.setText(
-                String.valueOf(reputacion.getOperacionesComoVendedor()));
-        textoOperacionesComprador.setText(
-                String.valueOf(reputacion.getOperacionesComoComprador()));
     }
 
     private void mostrarCarga() {
@@ -251,29 +244,63 @@ public class PerfilFragment extends Fragment {
     }
 
     // ------------------------------------------------------------------
-    // Formateo
+    // Foto de perfil
     // ------------------------------------------------------------------
 
-    /** Primera letra del nombre, en mayúscula, para el avatar. */
-    private String inicialDe(String nombre) {
-        if (nombre == null || nombre.trim().isEmpty()) {
-            return "?";
+    /** Vuelve del selector. {@code uri} es null si el usuario cerró el selector sin elegir. */
+    private void alElegirFoto(@Nullable Uri uri) {
+        if (uri == null || contenedorPerfil == null) {
+            return;
         }
-        return nombre.trim().substring(0, 1).toUpperCase(Locale.ROOT);
+        progresoFoto.setVisibility(View.VISIBLE);
+        botonCambiarFoto.setEnabled(false);
+
+        repositorio.actualizarFoto(uri, new RepositorioCallback<Usuario>() {
+            @Override
+            public void onExito(Usuario actualizado) {
+                if (contenedorPerfil == null) {
+                    return;
+                }
+                progresoFoto.setVisibility(View.GONE);
+                botonCambiarFoto.setEnabled(true);
+                // Solo se repinta el avatar: si el usuario estaba editando sus
+                // datos, lo que venía escribiendo no se pisa.
+                usuarioActual = actualizado;
+                PerfilUi.pintarAvatar(PerfilFragment.this, avatar, actualizado, repositorio);
+                Snackbar.make(requireView(), R.string.perfil_foto_actualizada,
+                        Snackbar.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onError(String mensaje) {
+                if (contenedorPerfil == null) {
+                    return;
+                }
+                progresoFoto.setVisibility(View.GONE);
+                botonCambiarFoto.setEnabled(true);
+                Snackbar.make(requireView(), mensaje, Snackbar.LENGTH_LONG).show();
+            }
+        });
     }
 
-    /**
-     * Fecha de alta como "julio de 2025".
-     * <p>
-     * No se usa FormatoUtils.antiguedad() a propósito: ese método devuelve tiempo
-     * relativo ("hace 3 días"), que sirve para una publicación recién subida pero
-     * no para una antigüedad de dos años. Acá interesa desde cuándo, no hace cuánto.
-     */
-    private String mesYAnioDe(long fechaMillis) {
-        SimpleDateFormat formato =
-                new SimpleDateFormat("MMMM 'de' yyyy", Locale.forLanguageTag("es-AR"));
-        return formato.format(new Date(fechaMillis));
+    // ------------------------------------------------------------------
+    // Navegación
+    // ------------------------------------------------------------------
+
+    /** Abre el propio perfil público: lo que ven los demás, con las calificaciones recibidas. */
+    private void irAMiPerfilPublico() {
+        if (usuarioActual == null) {
+            return;
+        }
+        Bundle argumentos = new Bundle();
+        argumentos.putString(PerfilVendedorFragment.ARG_VENDEDOR_ID, usuarioActual.getId());
+        Navigation.findNavController(requireView())
+                .navigate(R.id.action_miPerfil_to_perfilPublico, argumentos);
     }
+
+    // ------------------------------------------------------------------
+    // Formateo
+    // ------------------------------------------------------------------
 
     /**
      * Carga las 16 zonas en el desplegable.
@@ -307,9 +334,10 @@ public class PerfilFragment extends Fragment {
         }
         return null;
     }
+
     // ------------------------------------------------------------------
-// Modo lectura / edición
-// ------------------------------------------------------------------
+    // Modo lectura / edición
+    // ------------------------------------------------------------------
 
     private void entrarEnEdicion() {
         editando = true;
@@ -350,8 +378,8 @@ public class PerfilFragment extends Fragment {
     }
 
     // ------------------------------------------------------------------
-// Guardado
-// ------------------------------------------------------------------
+    // Guardado
+    // ------------------------------------------------------------------
 
     private void guardarCambios() {
         if (usuarioActual == null) {
@@ -420,5 +448,4 @@ public class PerfilFragment extends Fragment {
         CharSequence texto = campo.getText();
         return TextUtils.isEmpty(texto) ? "" : texto.toString().trim();
     }
-
 }
