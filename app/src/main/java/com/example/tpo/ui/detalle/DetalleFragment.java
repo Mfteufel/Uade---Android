@@ -21,11 +21,12 @@ import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 
 import com.example.tpo.R;
+import com.example.tpo.data.FavoritoRepository;
+import com.example.tpo.data.FavoritoRepositoryMock;
 import com.example.tpo.data.OfertasPublicacion;
 import com.example.tpo.data.PreguntasPublicacion;
 import com.example.tpo.data.PublicacionRepository;
 import com.example.tpo.data.PublicacionRepositoryMock;
-import com.example.tpo.data.PublicacionesGuardadas;
 import com.example.tpo.data.RepositorioCallback;
 import com.example.tpo.data.SesionUsuario;
 import com.example.tpo.model.EstadoPublicacion;
@@ -75,15 +76,15 @@ public class DetalleFragment extends Fragment {
     private static final double PROPORCION_MINIMA_OFERTA = 0.5;
 
     private final PublicacionRepository repositorio = PublicacionRepositoryMock.getInstancia();
+    private final FavoritoRepository favoritoRepositorio = FavoritoRepositoryMock.getInstancia();
     private String publicacionId;
 
     /**
-     * Las tres necesitan un {@code Context} para Room, que todavía no existe cuando se
+     * Las dos necesitan un {@code Context} para Room, que todavía no existe cuando se
      * inicializan los campos del Fragment; por eso se obtienen recién en {@link #onAttach},
      * que es el primer momento del ciclo de vida en el que hay uno disponible (mismo patrón
      * que {@code MisPublicacionesFragment.onAttach()}, Punto 5).
      */
-    private PublicacionesGuardadas publicacionesGuardadas;
     private PreguntasPublicacion preguntasPublicacion;
     private OfertasPublicacion ofertasPublicacion;
 
@@ -137,7 +138,6 @@ public class DetalleFragment extends Fragment {
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
-        publicacionesGuardadas = PublicacionesGuardadas.getInstancia(context);
         preguntasPublicacion = PreguntasPublicacion.getInstancia(context);
         ofertasPublicacion = OfertasPublicacion.getInstancia(context);
     }
@@ -582,11 +582,12 @@ public class DetalleFragment extends Fragment {
             mostrarSnackbar(getString(R.string.error_accion_requiere_conexion));
             return;
         }
-        publicacionesGuardadas.alternar(publicacionCargada.getId(), new RepositorioCallback<Boolean>() {
+        boolean quedaraGuardada = !favoritoRepositorio.esFavorito(publicacionCargada.getId());
+        RepositorioCallback<Void> callback = new RepositorioCallback<Void>() {
             @Override
-            public void onExito(Boolean quedoGuardada) {
-                pintarIconoGuardar(quedoGuardada);
-                mostrarSnackbar(getString(quedoGuardada
+            public void onExito(Void resultado) {
+                pintarIconoGuardar(quedaraGuardada);
+                mostrarSnackbar(getString(quedaraGuardada
                         ? R.string.detalle_guardada_ok
                         : R.string.detalle_guardada_quitada));
             }
@@ -598,37 +599,26 @@ public class DetalleFragment extends Fragment {
                 }
                 mostrarSnackbar(mensaje);
             }
-        });
+        };
+        if (quedaraGuardada) {
+            favoritoRepositorio.marcar(publicacionCargada, callback);
+        } else {
+            favoritoRepositorio.desmarcar(publicacionCargada.getId(), callback);
+        }
     }
 
-    /**
-     * Pinta el ítem del menú según el estado guardado. El estado sale de Room, no de la
-     * vista: por eso al volver a entrar al Detalle el bookmark ya aparece lleno sin hacer
-     * nada especial.
-     */
     private void actualizarIconoGuardar() {
         if (itemGuardar == null) {
             return;
         }
-        publicacionesGuardadas.estaGuardada(publicacionId, new RepositorioCallback<Boolean>() {
-            @Override
-            public void onExito(Boolean guardada) {
-                pintarIconoGuardar(guardada);
-            }
-
-            @Override
-            public void onError(String mensaje) {
-                // No hay nada crítico que mostrar acá: el ítem se queda con el icono
-                // por defecto (no guardada) hasta el próximo intento.
-            }
-        });
+        pintarIconoGuardar(favoritoRepositorio.esFavorito(publicacionId));
     }
 
     private void pintarIconoGuardar(boolean guardada) {
         if (itemGuardar == null) {
             return;
         }
-        itemGuardar.setIcon(guardada ? R.drawable.ic_guardar_lleno : R.drawable.ic_guardar_borde);
+        itemGuardar.setIcon(guardada ? R.drawable.ic_favorito_lleno : R.drawable.ic_favorito_borde);
         // El título es lo que anuncia TalkBack y lo que se ve al mantener presionado.
         itemGuardar.setTitle(guardada ? R.string.detalle_quitar_guardada : R.string.detalle_guardar);
     }

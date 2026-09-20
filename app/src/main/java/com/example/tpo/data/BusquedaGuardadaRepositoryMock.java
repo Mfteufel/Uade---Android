@@ -27,8 +27,8 @@ public class BusquedaGuardadaRepositoryMock implements BusquedaGuardadaRepositor
 
     private static BusquedaGuardadaRepositoryMock instancia;
 
-    private final Map<String, BusquedaGuardada> busquedas = new LinkedHashMap<>();
-    private final Map<String, Set<String>> publicacionesNuevasPorBusqueda = new HashMap<>();
+    private final Map<String, Map<String, BusquedaGuardada>> busquedasPorUsuario = new HashMap<>();
+    private final Map<String, Map<String, Set<String>>> publicacionesNuevasPorUsuario = new HashMap<>();
     private final Handler handlerPrincipal = new Handler(Looper.getMainLooper());
 
     private BusquedaGuardadaRepositoryMock() {
@@ -43,13 +43,29 @@ public class BusquedaGuardadaRepositoryMock implements BusquedaGuardadaRepositor
     }
 
     @Override
+    public void precargar(RepositorioCallback<Void> callback) {
+        handlerPrincipal.post(() -> callback.onExito(null));
+    }
+
+    private Map<String, BusquedaGuardada> busquedasDelUsuario() {
+        String usuarioId = SesionUsuario.getInstancia().getUsuarioId();
+        return busquedasPorUsuario.computeIfAbsent(usuarioId, id -> new LinkedHashMap<>());
+    }
+
+    private Map<String, Set<String>> publicacionesNuevasDelUsuario() {
+        String usuarioId = SesionUsuario.getInstancia().getUsuarioId();
+        return publicacionesNuevasPorUsuario.computeIfAbsent(usuarioId, id -> new HashMap<>());
+    }
+
+    @Override
     public void guardar(String nombre, FiltroPublicaciones filtro, RepositorioCallback<Void> callback) {
+        Map<String, BusquedaGuardada> busquedas = busquedasDelUsuario();
         handlerPrincipal.postDelayed(() -> {
             if (SIMULAR_ERROR) {
                 callback.onError("No pudimos guardar la búsqueda");
                 return;
             }
-            if (yaExiste(filtro)) {
+            if (yaExiste(busquedas, filtro)) {
                 callback.onError("Ya tenés guardada una búsqueda con estos mismos filtros");
                 return;
             }
@@ -63,7 +79,7 @@ public class BusquedaGuardadaRepositoryMock implements BusquedaGuardadaRepositor
      * true si ya hay una búsqueda guardada con exactamente los mismos
      * criterios para evitar duplicados
      */
-    private boolean yaExiste(FiltroPublicaciones filtro) {
+    private boolean yaExiste(Map<String, BusquedaGuardada> busquedas, FiltroPublicaciones filtro) {
         for (BusquedaGuardada existente : busquedas.values()) {
             if (existente.getFiltro().equals(filtro)) {
                 return true;
@@ -74,6 +90,7 @@ public class BusquedaGuardadaRepositoryMock implements BusquedaGuardadaRepositor
 
     @Override
     public void listar(RepositorioCallback<List<BusquedaGuardada>> callback) {
+        Map<String, BusquedaGuardada> busquedas = busquedasDelUsuario();
         handlerPrincipal.postDelayed(() -> {
             if (SIMULAR_ERROR) {
                 callback.onError("No pudimos cargar tus búsquedas guardadas");
@@ -88,6 +105,8 @@ public class BusquedaGuardadaRepositoryMock implements BusquedaGuardadaRepositor
 
     @Override
     public void eliminar(String id, RepositorioCallback<Void> callback) {
+        Map<String, BusquedaGuardada> busquedas = busquedasDelUsuario();
+        Map<String, Set<String>> publicacionesNuevasPorBusqueda = publicacionesNuevasDelUsuario();
         handlerPrincipal.postDelayed(() -> {
             if (SIMULAR_ERROR) {
                 callback.onError("No pudimos eliminar la búsqueda");
@@ -101,35 +120,30 @@ public class BusquedaGuardadaRepositoryMock implements BusquedaGuardadaRepositor
 
     @Override
     public boolean tieneNovedad(String id) {
-        Set<String> nuevas = publicacionesNuevasPorBusqueda.get(id);
+        Set<String> nuevas = publicacionesNuevasDelUsuario().get(id);
         return nuevas != null && !nuevas.isEmpty();
     }
 
     @Override
     public boolean hayAlgunaNovedad() {
-        return !publicacionesNuevasPorBusqueda.isEmpty();
+        return !publicacionesNuevasDelUsuario().isEmpty();
     }
 
     @Override
     public void marcarTodoVisto() {
-        publicacionesNuevasPorBusqueda.clear();
+        publicacionesNuevasDelUsuario().clear();
     }
 
     @Override
     public Set<String> publicacionesNuevasDe(String id) {
-        Set<String> nuevas = publicacionesNuevasPorBusqueda.get(id);
+        Set<String> nuevas = publicacionesNuevasDelUsuario().get(id);
         return nuevas != null ? nuevas : Collections.emptySet();
     }
 
-    /**
-     * Agrega una publicación de prueba (con título y categoría opcionales,
-     * para poder matchear la búsqueda guardada que se esté probando) y marca
-     * con novedad cada búsqueda guardada que matchee, guardando qué
-     * publicación puntual fue. Se dispara vía ADB.
-     */
     public void simularPublicacionNueva(@Nullable String titulo, @Nullable Categoria categoria) {
         Publicacion nueva = PublicacionRepositoryMock.getInstancia().agregarPublicacionDePrueba(titulo, categoria);
-        for (BusquedaGuardada busqueda : busquedas.values()) {
+        Map<String, Set<String>> publicacionesNuevasPorBusqueda = publicacionesNuevasDelUsuario();
+        for (BusquedaGuardada busqueda : busquedasDelUsuario().values()) {
             if (PublicacionRepositoryMock.getInstancia().coincideConFiltro(nueva, busqueda.getFiltro())) {
                 publicacionesNuevasPorBusqueda
                         .computeIfAbsent(busqueda.getId(), id -> new HashSet<>())
