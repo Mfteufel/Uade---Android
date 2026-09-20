@@ -11,6 +11,7 @@ from models.usuario import (
     RespuestaToken,
     SolicitudLogin,
     SolicitudOtp,
+    SolicitudRegistro,
     UsuarioPublico,
     VerificacionOtp,
     es_email_valido,
@@ -20,6 +21,7 @@ router = APIRouter(prefix="/auth", tags=["Autenticacion"])
 
 MINUTOS_VALIDEZ_OTP = 5
 SEGUNDOS_ENTRE_REENVIOS = 30
+LARGO_MINIMO_DE_CLAVE = 6
 # en desarrollo el codigo vuelve en la respuesta; en produccion va por mail
 DEVOLVER_OTP_EN_RESPUESTA = True
 
@@ -107,6 +109,24 @@ def verificar_codigo(datos: VerificacionOtp):
     # un codigo se usa una sola vez
     database.marcar_codigo_usado(registro["id"])
     return respuesta_con_token(database.buscar_usuario_por_email(email))
+
+
+@router.post("/registro", response_model=RespuestaToken, status_code=status.HTTP_201_CREATED)
+def registrar(datos: SolicitudRegistro):
+    email = normalizar_email(datos.email)
+    nombre = (datos.nombre or "").strip()
+    if not nombre:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El nombre es obligatorio")
+    if len(datos.password or "") < LARGO_MINIMO_DE_CLAVE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La contrasena tiene que tener al menos " + str(LARGO_MINIMO_DE_CLAVE) + " caracteres",
+        )
+    # si el email ya existe nunca se le pisa la clave: cualquiera podria robar una cuenta
+    if database.buscar_usuario_por_email(email) is not None:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Ese email ya tiene una cuenta")
+    usuario = database.crear_usuario(email, nombre, seguridad.hashear_password(datos.password))
+    return respuesta_con_token(usuario)
 
 
 @router.post("/login", response_model=RespuestaToken)
