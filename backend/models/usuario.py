@@ -27,6 +27,12 @@ class SolicitudLogin(BaseModel):
     password: str
 
 
+class SolicitudRegistro(BaseModel):
+    nombre: str
+    email: str
+    password: str
+
+
 class UsuarioPublico(BaseModel):
     id: int
     email: str
