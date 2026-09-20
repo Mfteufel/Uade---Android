@@ -25,6 +25,15 @@
     <string name="codigo_esperar">Esperá unos segundos antes de pedir otro código</string>
     <string name="codigo_sin_pedido">No hay ningún pedido de código para ese email</string>
     <string name="menu_cerrar_sesion">Cerrar sesión</string>
+    <string name="login_crear_cuenta">Crear una cuenta</string>
+    <string name="registro_titulo">Crear una cuenta</string>
+    <string name="registro_nombre">Nombre</string>
+    <string name="registro_crear">Crear cuenta</string>
+    <string name="registro_ya_tengo_cuenta">Ya tengo una cuenta</string>
+    <string name="registro_completar_campos">Completá el nombre, el email y la contraseña</string>
+    <string name="registro_clave_corta">La contraseña tiene que tener al menos %1$d caracteres</string>
+    <string name="registro_email_en_uso">Ese email ya tiene una cuenta. Probá ingresar</string>
+    <string name="registro_datos_invalidos">Revisá los datos e intentá de nuevo</string>
 
     <!-- ===================== Bottom nav ===================== -->
     <string name="nav_home">Home</string>

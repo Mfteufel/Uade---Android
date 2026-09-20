@@ -68,7 +68,8 @@ public class MainActivity extends AppCompatActivity {
         NavigationUI.setupWithNavController(bottomNav, navController);
         navController.addOnDestinationChangedListener((controller, destino, argumentos) -> {
             boolean enLogin = destino.getId() == R.id.loginFragment
-                    || destino.getId() == R.id.codigoFragment;
+                    || destino.getId() == R.id.codigoFragment
+                    || destino.getId() == R.id.registroFragment;
             bottomNav.setVisibility(enLogin ? View.GONE : View.VISIBLE);
         });
 

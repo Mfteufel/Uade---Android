@@ -120,6 +120,23 @@
             android:id="@+id/action_login_to_codigo"
             app:destination="@id/codigoFragment" />
 
+        <action
+            android:id="@+id/action_login_to_registro"
+            app:destination="@id/registroFragment" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/registroFragment"
+        android:name="com.example.tpo.login.RegistroFragment"
+        tools:layout="@layout/fragment_registro">
+
+        <action
+            android:id="@+id/action_registro_to_home"
+            app:destination="@id/homeFragment"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true" />
+
     </fragment>
 
     <fragment

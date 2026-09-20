@@ -63,6 +63,8 @@ public class LoginFragment extends Fragment {
 
         botonIngresar.setOnClickListener(v -> ingresarConClave());
         botonCodigo.setOnClickListener(v -> pedirCodigo());
+        view.findViewById(R.id.botonCrearCuenta).setOnClickListener(v ->
+                Navigation.findNavController(view).navigate(R.id.action_login_to_registro));
 
         boolean cerrarSesion = getArguments() != null
                 && getArguments().getBoolean(ARG_CERRAR_SESION, false);
