@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Menú de la toolbar del Home: "Mis publicaciones" (Punto 5) y "Ver guardados" (Punto 4). -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/menuMisPublicaciones"
+        android:title="@string/menu_mis_publicaciones"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/menuVerGuardados"
+        android:title="@string/menu_ver_guardados"
+        app:showAsAction="never" />
+
+</menu>

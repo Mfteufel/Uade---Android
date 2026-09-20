@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Fondo del badge de estado de la publicación (Pausada / Vendida).
+
+    Mismo shape que bg_estado_articulo.xml pero con colorErrorContainer en vez
+    de colorSecondaryContainer, a propósito: son dos badges distintos (conservación
+    del artículo vs. si la publicación sigue en pie) y no tienen que confundirse
+    a simple vista. Nunca se usa para "Activa": esa no necesita badge.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="?attr/colorErrorContainer" />
+    <corners android:radius="8dp" />
+</shape>

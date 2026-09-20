@@ -2,7 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Permiso para chequear la red (Modo offline) -->
+    <!-- Necesario para publicar el artículo y pausar/reactivar contra la API_Rest (Punto 5). -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Permiso para chequear la red (Modo offline, Punto 6). -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application

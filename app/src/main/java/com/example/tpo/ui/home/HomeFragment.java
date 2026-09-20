@@ -1,5 +1,6 @@
 package com.example.tpo.ui.home;
 
+import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
@@ -19,6 +20,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.os.BundleCompat;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -30,9 +32,8 @@ import com.example.tpo.data.FavoritoRepositoryMock;
 import com.example.tpo.data.PaginaPublicaciones;
 import com.example.tpo.data.PublicacionRepository;
 import com.example.tpo.data.PublicacionRepositoryMock;
+import com.example.tpo.data.PublicacionesVistas;
 import com.example.tpo.data.RepositorioCallback;
-import com.example.tpo.data.local.PublicacionVistaDao;
-import com.example.tpo.data.local.PublicacionVistaEntity;
 import com.example.tpo.model.Categoria;
 import com.example.tpo.model.Cercania;
 import com.example.tpo.model.EstadoArticulo;
@@ -42,8 +43,10 @@ import com.example.tpo.model.Publicacion;
 import com.example.tpo.ui.ChipsUtils;
 import com.example.tpo.util.ConectividadUtils;
 import com.example.tpo.util.FormatoUtils;
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.ChipGroup;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.google.android.material.snackbar.Snackbar;
@@ -52,12 +55,6 @@ import com.google.android.material.textfield.TextInputEditText;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import javax.inject.Inject;
-
-import dagger.hilt.android.AndroidEntryPoint;
 
 /**
  * Home / Explorar publicaciones — Punto 3 del TPO.
@@ -80,7 +77,6 @@ import dagger.hilt.android.AndroidEntryPoint;
  * hay conexión al pedir la página 0, se muestra ese cache en vez de llamar al
  * repositorio.
  */
-@AndroidEntryPoint
 public class HomeFragment extends Fragment implements
         PublicacionAdapter.OnPublicacionClickListener,
         PublicacionAdapter.OnFavoritoClickListener {
@@ -102,6 +98,8 @@ public class HomeFragment extends Fragment implements
     private static final int UMBRAL_PAGINACION = 3;
 
     // --- Vistas. Son null fuera del rango onCreateView..onDestroyView ---
+    private MaterialToolbar toolbar;
+    private FloatingActionButton fabPublicar;
     private TextInputEditText campoBuscar;
     private ChipGroup grupoCategorias;
     private ChipGroup grupoOrden;
@@ -148,11 +146,14 @@ public class HomeFragment extends Fragment implements
     @Nullable
     private Runnable busquedaPendiente;
 
-    // Cache de publicaciones vistas para el modo offline ---
-    @Inject
-    PublicacionVistaDao publicacionVistaDao;
-    private final ExecutorService executorCache = Executors.newSingleThreadExecutor();
-    private final Handler handlerPrincipal = new Handler(Looper.getMainLooper());
+    // Punto 6 (modo sin conexión): resuelto recién en onAttach porque necesita el Context.
+    private PublicacionesVistas publicacionesVistas;
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        publicacionesVistas = PublicacionesVistas.getInstancia(context);
+    }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -182,6 +183,8 @@ public class HomeFragment extends Fragment implements
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        toolbar = view.findViewById(R.id.toolbar);
+        fabPublicar = view.findViewById(R.id.fabPublicar);
         campoBuscar = view.findViewById(R.id.campoBuscar);
         grupoCategorias = view.findViewById(R.id.grupoCategorias);
         grupoOrden = view.findViewById(R.id.grupoOrden);
@@ -202,6 +205,7 @@ public class HomeFragment extends Fragment implements
         crearChipsDeCategoria();
         crearChipsDeOrden();
         configurarBotones();
+        configurarEntradaAPublicar();
         escucharResultadoDeFiltros();
         escucharResultadoDeBusquedaGuardada();
         escucharCierreDeBusquedasGuardadas();
@@ -248,6 +252,8 @@ public class HomeFragment extends Fragment implements
         // 3) Se sueltan las referencias a vistas. El Fragment puede seguir vivo
         //    después de que su vista muere; si guardara las referencias, mantendría
         //    en memoria todo el árbol de vistas (memory leak).
+        toolbar = null;
+        fabPublicar = null;
         campoBuscar = null;
         grupoCategorias = null;
         grupoOrden = null;
@@ -263,12 +269,6 @@ public class HomeFragment extends Fragment implements
         estadoError = null;
         textoError = null;
         adapter = null;
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        executorCache.shutdown();
     }
 
     // ------------------------------------------------------------------
@@ -442,6 +442,30 @@ public class HomeFragment extends Fragment implements
 
         requireView().findViewById(R.id.botonLimpiarFiltros)
                 .setOnClickListener(v -> limpiarTodosLosFiltros());
+    }
+
+    /**
+     * Cablea el FAB que abre el wizard de publicar (Punto 5) y los ítems del
+     * menú de la toolbar: "Mis publicaciones" (Punto 5) y "Ver guardados"
+     * (Punto 4, la lista del bookmark del Detalle — no confundir con
+     * Favoritos, que tiene su propia pestaña en la bottom nav).
+     */
+    private void configurarEntradaAPublicar() {
+        fabPublicar.setOnClickListener(v -> NavHostFragment.findNavController(this)
+                .navigate(R.id.action_home_to_publicar));
+
+        toolbar.inflateMenu(R.menu.menu_home);
+        toolbar.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == R.id.menuMisPublicaciones) {
+                NavHostFragment.findNavController(this).navigate(R.id.action_home_to_misPublicaciones);
+                return true;
+            }
+            if (item.getItemId() == R.id.menuVerGuardados) {
+                NavHostFragment.findNavController(this).navigate(R.id.action_home_to_guardados);
+                return true;
+            }
+            return false;
+        });
     }
 
     /**
@@ -657,6 +681,10 @@ public class HomeFragment extends Fragment implements
             progresoPaginacion.setVisibility(View.VISIBLE);
         }
 
+        // Punto 6: sin conexión ni vale la pena intentar la consulta (fallaría
+        // igual). Se resuelve directo con lo último que el usuario vio. Solo
+        // aplica a la página 0: si ya hay resultados en pantalla y se corta la
+        // conexión a mitad de la paginación, se deja el error normal de abajo.
         if (esPrimeraPagina && !ConectividadUtils.hayConexion(requireContext())) {
             mostrarFallbackOffline(generacion);
             return;
@@ -750,18 +778,20 @@ public class HomeFragment extends Fragment implements
     // ------------------------------------------------------------------
 
     private void mostrarFallbackOffline(int generacion) {
-        executorCache.execute(() -> {
-            List<Publicacion> cacheadas = new ArrayList<>();
-            for (PublicacionVistaEntity entidad : publicacionVistaDao.obtenerTodas()) {
-                cacheadas.add(entidad.aPublicacion());
-            }
-            handlerPrincipal.post(() -> {
+        publicacionesVistas.listar(new RepositorioCallback<List<Publicacion>>() {
+            @Override
+            public void onExito(List<Publicacion> cacheadas) {
                 if (respuestaObsoleta(generacion)) {
                     return;
                 }
                 cargando = false;
                 mostrarResultadoOffline(cacheadas);
-            });
+            }
+
+            @Override
+            public void onError(String mensaje) {
+                // PublicacionesVistas.listar no falla: es una lectura local.
+            }
         });
     }
 
@@ -791,26 +821,18 @@ public class HomeFragment extends Fragment implements
                 Snackbar.LENGTH_LONG).show();
     }
 
-    private void cachearVista(Publicacion publicacion) {
-        long ahora = System.currentTimeMillis();
-        executorCache.execute(() -> {
-            publicacionVistaDao.guardar(PublicacionVistaEntity.desde(publicacion, ahora));
-            publicacionVistaDao.limitarCantidad();
-        });
-    }
-
     // ------------------------------------------------------------------
     // Interacción con la lista
     // ------------------------------------------------------------------
 
-    /** El usuario tocó una publicación. */
+    /** El usuario tocó una publicación: la registra como "vista" (Punto 6) y navega al Detalle. */
     @Override
     public void onPublicacionClick(Publicacion publicacion) {
-        cachearVista(publicacion);
-        Snackbar.make(
-                requireView(),
-                getString(R.string.detalle_proximamente, publicacion.getTitulo()),
-                Snackbar.LENGTH_SHORT).show();
+        publicacionesVistas.registrarVista(publicacion);
+        Bundle argumentos = new Bundle();
+        argumentos.putString("publicacionId", publicacion.getId());
+        NavHostFragment.findNavController(this)
+                .navigate(R.id.action_home_to_detalle, argumentos);
     }
 
     /**

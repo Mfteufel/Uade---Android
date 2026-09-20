@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tpo.R;
 import com.example.tpo.data.FavoritoRepository;
+import com.example.tpo.model.EstadoPublicacion;
 import com.example.tpo.model.Publicacion;
 import com.example.tpo.util.FormatoUtils;
 
@@ -148,6 +149,7 @@ public class PublicacionAdapter extends RecyclerView.Adapter<PublicacionAdapter.
         private final TextView precio;
         private final View indicadorNovedadPrecio;
         private final TextView estado;
+        private final TextView estadoPublicacion;
         private final TextView zona;
         private final ImageButton botonFavorito;
 
@@ -158,6 +160,7 @@ public class PublicacionAdapter extends RecyclerView.Adapter<PublicacionAdapter.
             precio = itemView.findViewById(R.id.precioPublicacion);
             indicadorNovedadPrecio = itemView.findViewById(R.id.indicadorNovedadPrecio);
             estado = itemView.findViewById(R.id.estadoPublicacion);
+            estadoPublicacion = itemView.findViewById(R.id.estadoPublicacionItem);
             zona = itemView.findViewById(R.id.zonaPublicacion);
             botonFavorito = itemView.findViewById(R.id.botonFavorito);
         }
@@ -175,6 +178,16 @@ public class PublicacionAdapter extends RecyclerView.Adapter<PublicacionAdapter.
             indicadorNovedadPrecio.setVisibility(
                     favoritoRepositorio.tieneNovedad(publicacion.getId()) ? View.VISIBLE : View.GONE);
             estado.setText(publicacion.getEstado().getEtiqueta());
+
+            // Badge de "Pausada"/"Vendida" — Punto 4, gestión de la publicación.
+            // Solo lo ve el dueño: el mock ya oculta del listado las que no son
+            // suyas y no están activas (ver PublicacionRepositoryMock.aplicarFiltros).
+            if (publicacion.getEstadoPublicacion() == EstadoPublicacion.ACTIVA) {
+                estadoPublicacion.setVisibility(View.GONE);
+            } else {
+                estadoPublicacion.setText(publicacion.getEstadoPublicacion().getEtiqueta());
+                estadoPublicacion.setVisibility(View.VISIBLE);
+            }
 
             // Renglón "Caballito · hace 5 h"
             zona.setText(contexto.getString(

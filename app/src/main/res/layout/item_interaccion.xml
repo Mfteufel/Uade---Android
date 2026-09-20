@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Fila de una pregunta o una oferta recibida sobre una publicación.
+
+    Se reutiliza en dos lugares: el bloque "Tus preguntas / Tu oferta" del
+    Detalle (lo que mandó el usuario) y la hoja de gestión (lo que recibió el
+    vendedor). El ícono se setea por código según sea pregunta u oferta,
+    reusando ic_preguntar / ic_ofertar con un tint propio: esos vectores no
+    traen tint fijo porque se pensaron para ir dentro de un MaterialButton, acá
+    van sueltos.
+
+    No tiene id en la raíz: se infla una vez por fila y no se busca por id, se
+    guardan referencias a sus hijos en el momento de inflar.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/espaciado_chico"
+    android:gravity="top"
+    android:orientation="horizontal">
+
+    <ImageView
+        android:id="@+id/iconoInteraccion"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_marginTop="2dp"
+        android:contentDescription="@null"
+        android:src="@drawable/ic_preguntar"
+        app:tint="?attr/colorOnSurfaceVariant" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/espaciado_chico"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <!-- Texto de la pregunta, o el monto formateado si es una oferta -->
+        <TextView
+            android:id="@+id/textoInteraccion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            tools:text="¿Todavía tenés la caja original?"
+            tools:ignore="HardcodedText,SpUsage" />
+
+        <!-- "Nicolás P. · hace 2 h" -->
+        <TextView
+            android:id="@+id/autorInteraccion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            tools:text="Nicolás P. · hace 2 h" />
+    </LinearLayout>
+
+</LinearLayout>

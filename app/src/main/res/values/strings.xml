@@ -83,6 +83,174 @@
     <string name="cercania_mi_zona">Solo mi zona</string>
     <string name="cercania_zonas_cercanas">Zonas cercanas</string>
 
+    <!-- ===================== Detalle de publicación ===================== -->
+    <string name="detalle_titulo">Publicación</string>
+    <string name="detalle_descripcion_titulo">Descripción</string>
+    <string name="detalle_vendedor_titulo">Vendedor</string>
+    <string name="detalle_es_tu_publicacion">Esta es tu publicación</string>
+    <string name="detalle_gestionar_publicacion">Gestionar publicación</string>
+    <!-- Vista de un interesado cuando la publicación ya no está activa: no puede preguntar ni ofertar, pero sí guardarla. -->
+    <string name="detalle_publicacion_no_disponible">Esta publicación ya no está disponible</string>
+
+    <!-- Fecha exacta de publicación: "Publicado el 5 de septiembre de 2026" -->
+    <string name="detalle_publicado_el">Publicado el %1$s</string>
+
+    <!-- ===================== Menú de la toolbar del Home ===================== -->
+    <string name="menu_mis_publicaciones">Mis publicaciones</string>
+    <string name="home_fab_publicar">Publicar un artículo</string>
+
+    <!-- ===================== Wizard "Publicar artículo" (Punto 5) ===================== -->
+    <string name="publicar_titulo">Publicar artículo</string>
+
+    <string name="publicar_paso_fotos">Fotos</string>
+    <string name="publicar_paso_fotos_ayuda">Elegí al menos una foto de la galería. La primera va a ser la foto principal.</string>
+    <string name="publicar_agregar_fotos">Agregar fotos</string>
+    <string name="publicar_quitar_foto">Quitar foto</string>
+    <string name="publicar_error_fotos">Agregá al menos una foto</string>
+
+    <string name="publicar_paso_titulo_descripcion">Título y descripción</string>
+    <string name="publicar_titulo_hint">Título del artículo</string>
+    <string name="publicar_descripcion_hint">Descripción</string>
+    <string name="publicar_error_titulo">Escribí un título</string>
+    <string name="publicar_error_descripcion">Escribí una descripción</string>
+
+    <string name="publicar_paso_categoria_estado">Categoría y estado</string>
+    <string name="publicar_categoria_label">Categoría</string>
+    <string name="publicar_error_categoria">Elegí una categoría</string>
+    <string name="publicar_error_estado">Elegí el estado del artículo</string>
+
+    <string name="publicar_paso_precio_zona">Precio y zona</string>
+    <string name="publicar_precio_hint">Precio</string>
+    <string name="publicar_error_precio">Ingresá un precio válido</string>
+    <string name="publicar_zona_hint">Zona de entrega</string>
+    <string name="publicar_error_zona">Elegí una zona de entrega</string>
+
+    <string name="publicar_paso_resumen">Resumen</string>
+    <string name="resumen_categoria">Categoría: %1$s</string>
+    <string name="resumen_estado">Estado: %1$s</string>
+    <string name="resumen_zona">Zona de entrega: %1$s</string>
+    <plurals name="resumen_fotos">
+        <item quantity="one">%1$d foto</item>
+        <item quantity="other">%1$d fotos</item>
+    </plurals>
+
+    <string name="publicar_siguiente">Siguiente</string>
+    <string name="publicar_atras">Atrás</string>
+    <string name="publicar_publicar">Publicar</string>
+    <string name="publicar_publicando">Publicando…</string>
+    <string name="publicar_exito">¡Publicado! Ya aparece en Mis publicaciones</string>
+
+    <!-- ===================== Estado de la publicación (Nuevo != EstadoArticulo, ver EstadoPublicacion) ===================== -->
+    <string name="estado_publicacion_activa">Activa</string>
+    <string name="estado_publicacion_pausada">Pausada</string>
+    <string name="estado_publicacion_vendida">Vendida</string>
+
+    <!-- ===================== Galería del Detalle ===================== -->
+    <!-- Contador debajo de la tira de fotos: "2 de 3" -->
+    <string name="detalle_foto_contador">%1$d de %2$d</string>
+    <!-- contentDescription de cada foto, para TalkBack -->
+    <string name="detalle_foto_numero">Foto %1$d de %2$d</string>
+
+    <!-- ===================== Vendedor (Detalle y Perfil) ===================== -->
+    <string name="detalle_ver_perfil">Ver perfil</string>
+    <string name="vendedor_avatar_descripcion">Avatar del vendedor</string>
+    <!-- "4,8 · 23 ventas" -->
+    <string name="vendedor_reputacion_y_ventas">%1$s · %2$s</string>
+    <string name="vendedor_sin_calificaciones">Sin calificaciones todavía</string>
+    <string name="vendedor_miembro_desde">En Ronda desde %1$s</string>
+    <plurals name="vendedor_ventas">
+        <item quantity="one">%1$d venta</item>
+        <item quantity="other">%1$d ventas</item>
+    </plurals>
+
+    <!-- ===================== Detalle: guardar ===================== -->
+    <string name="detalle_guardar">Guardar publicación</string>
+    <string name="detalle_quitar_guardada">Quitar de guardadas</string>
+    <string name="detalle_guardada_ok">Guardaste esta publicación</string>
+    <string name="detalle_guardada_quitada">La quitaste de tus guardadas</string>
+
+    <!-- ===================== Guardados: pantalla de listado (item del menú del Home) ===================== -->
+    <string name="menu_ver_guardados">Ver guardados</string>
+    <string name="guardados_titulo">Guardados</string>
+    <string name="guardados_vacio_titulo">Todavía no guardaste nada</string>
+    <string name="guardados_vacio_mensaje">Tocá el ícono de guardar en una publicación para verla acá.</string>
+
+    <!-- ===================== Detalle: preguntar ===================== -->
+    <string name="detalle_preguntar">Preguntar</string>
+    <string name="detalle_pregunta_titulo">Preguntarle a %1$s</string>
+    <string name="detalle_pregunta_hint">Escribí tu pregunta</string>
+    <string name="detalle_pregunta_vacia">Escribí una pregunta antes de enviarla</string>
+    <string name="detalle_pregunta_corta">Contale un poco más antes de enviarla</string>
+    <string name="detalle_pregunta_enviar">Enviar</string>
+    <string name="detalle_pregunta_enviada">Le enviamos tu pregunta a %1$s</string>
+
+    <!-- ===================== Detalle: ofertar ===================== -->
+    <string name="detalle_ofertar">Ofertar</string>
+    <string name="detalle_oferta_titulo">Hacer una oferta</string>
+    <string name="detalle_oferta_ayuda">El vendedor pide %1$s</string>
+    <string name="detalle_oferta_hint">Tu oferta</string>
+    <string name="detalle_oferta_vacia">Ingresá cuánto querés ofertar</string>
+    <string name="detalle_oferta_invalida">La oferta tiene que ser mayor a cero</string>
+    <string name="detalle_oferta_muy_baja">Ofertá al menos %1$s: por debajo de eso el vendedor no la va a mirar</string>
+    <string name="detalle_oferta_muy_alta">Tu oferta supera el precio publicado. Podés comprarlo directo por %1$s</string>
+    <string name="detalle_oferta_enviar">Ofertar</string>
+    <string name="detalle_oferta_enviada">Le ofertaste %1$s a %2$s</string>
+    <!-- Helper del diálogo de oferta cuando el usuario ya tenía una oferta hecha: ofertar de nuevo la reemplaza. -->
+    <string name="detalle_oferta_vigente">Ya ofertaste %1$s por esta publicación</string>
+
+    <!-- Acción común a los diálogos del Detalle -->
+    <string name="dialogo_cancelar">Cancelar</string>
+
+    <!-- ===================== Detalle: lo que el interesado ya envió ===================== -->
+    <string name="detalle_mis_preguntas_titulo">Tus preguntas</string>
+    <string name="detalle_mi_oferta_titulo">Tu oferta</string>
+
+    <!-- ===================== Perfil del vendedor (Punto 4 — no confundir con perfil_titulo, el perfil propio del Punto 2) ===================== -->
+    <string name="perfil_vendedor_titulo">Perfil del vendedor</string>
+    <string name="perfil_publicaciones_titulo">Sus publicaciones</string>
+    <string name="perfil_sin_publicaciones">Este vendedor no tiene publicaciones activas</string>
+    <plurals name="perfil_publicaciones_cantidad">
+        <item quantity="one">%1$d publicación activa</item>
+        <item quantity="other">%1$d publicaciones activas</item>
+    </plurals>
+
+    <!-- ===================== Gestión de la publicación (vendedor) ===================== -->
+    <string name="gestion_titulo">Gestionar publicación</string>
+    <!-- "Estado: Activa" -->
+    <string name="gestion_estado_actual">Estado: %1$s</string>
+    <string name="gestion_pausar">Pausar publicación</string>
+    <string name="gestion_reactivar">Reactivar publicación</string>
+    <string name="gestion_marcar_vendida">Marcar como vendida</string>
+    <string name="gestion_volver_a_publicar">Volver a publicar</string>
+    <string name="gestion_editar">Editar publicación</string>
+    <!-- La edición real del artículo depende de cámara/galería y persistencia del borrador: es el Punto 5. -->
+    <string name="gestion_editar_proximamente">Vas a poder editarla desde \"Mis publicaciones\" (Punto 5)</string>
+    <string name="gestion_preguntas_titulo">Preguntas recibidas</string>
+    <string name="gestion_ofertas_titulo">Ofertas recibidas</string>
+    <string name="gestion_sin_preguntas">Todavía no te hicieron preguntas</string>
+    <string name="gestion_sin_ofertas">Todavía no recibiste ofertas</string>
+    <string name="gestion_pausada_ok">Pausaste la publicación</string>
+    <string name="gestion_reactivada_ok">Reactivaste la publicación</string>
+    <string name="gestion_vendida_ok">Marcaste la publicación como vendida</string>
+    <plurals name="gestion_preguntas_cantidad">
+        <item quantity="one">%1$d pregunta</item>
+        <item quantity="other">%1$d preguntas</item>
+    </plurals>
+    <plurals name="gestion_ofertas_cantidad">
+        <item quantity="one">%1$d oferta</item>
+        <item quantity="other">%1$d ofertas</item>
+    </plurals>
+
+    <!-- ===================== Mis publicaciones (Punto 5) ===================== -->
+    <string name="mis_publicaciones_titulo">Mis publicaciones</string>
+    <string name="mis_publicaciones_vacio_titulo">Todavía no publicaste nada</string>
+    <string name="mis_publicaciones_vacio_mensaje">Tocá el botón para publicar tu primer artículo.</string>
+    <string name="mis_publicaciones_error">No pudimos cargar tus publicaciones</string>
+    <string name="accion_pausar">Pausar</string>
+    <string name="accion_reactivar">Reactivar</string>
+    <string name="mis_publicaciones_pausada_ok">Publicación pausada</string>
+    <string name="mis_publicaciones_reactivada_ok">Publicación reactivada</string>
+
     <!-- ===================== Guardar / ver búsquedas (Punto 10) ===================== -->
     <string name="home_guardar_busqueda">Guardar esta búsqueda</string>
     <string name="home_ver_busquedas_guardadas">Ver búsquedas guardadas</string>
@@ -96,10 +264,6 @@
     <string name="busqueda_guardada_precio_hasta">Hasta %1$s</string>
     <!-- Punto 10, indicador de novedad: apareció una publicación nueva que matchea esta búsqueda. -->
     <string name="busqueda_guardada_novedad">Hay publicaciones nuevas</string>
-
-    <!-- ===================== Pendiente de otros puntos ===================== -->
-    <!-- Se usa hasta que el Punto 4 (Detalle de publicación) exista como destino del nav_graph. -->
-    <string name="detalle_proximamente">Detalle de \"%1$s\" — disponible al implementar el Punto 4</string>
 
     <!-- ===================== Perfil y Reputación ===================== -->
     <string name="perfil_titulo">Mi perfil</string>

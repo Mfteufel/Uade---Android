@@ -8,21 +8,25 @@ import androidx.room.Query;
 import java.util.List;
 
 /**
- * Acceso a las publicaciones vistas cacheadas (modo offline)
+ * Punto 6 (modo sin conexión): acceso a las publicaciones vistas cacheadas.
+ * Métodos síncronos, igual que el resto de los DAO del proyecto: quien llame
+ * corre en un hilo de fondo (ver {@code PublicacionesVistas}).
  */
 @Dao
 public interface PublicacionVistaDao {
 
-    /** Máximo de publicaciones vistas que guardamos en la cache */
-    int LIMITE = 10;
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void guardar(PublicacionVistaEntity publicacion);
 
-    @Query("SELECT * FROM publicaciones_vistas ORDER BY guardado_en DESC")
-    List<PublicacionVistaEntity> obtenerTodas();
+    @Query("SELECT * FROM publicaciones_vistas WHERE usuarioId = :usuarioId ORDER BY guardadoEn DESC")
+    List<PublicacionVistaEntity> obtenerTodas(String usuarioId);
 
-    @Query("DELETE FROM publicaciones_vistas WHERE id NOT IN "
-            + "(SELECT id FROM publicaciones_vistas ORDER BY guardado_en DESC LIMIT " + LIMITE + ")")
-    void limitarCantidad();
+    /**
+     * Se queda con las {@code limite} más recientes del usuario y borra el
+     * resto. Se llama siempre después de {@link #guardar}, así el cache actúa
+     * como un LRU acotado por usuario en vez de crecer indefinidamente.
+     */
+    @Query("DELETE FROM publicaciones_vistas WHERE usuarioId = :usuarioId AND id NOT IN "
+            + "(SELECT id FROM publicaciones_vistas WHERE usuarioId = :usuarioId ORDER BY guardadoEn DESC LIMIT :limite)")
+    void limitarCantidad(String usuarioId, int limite);
 }
