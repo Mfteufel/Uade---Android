@@ -25,7 +25,7 @@ import java.util.concurrent.Executors;
  * <p>
  * A diferencia de {@link OfertasPublicacion}, acá no hay límite: un mismo usuario puede
  * mandar varias preguntas sobre la misma publicación, es lo normal en una conversación.
- * No hace falta filtrar por usuario logueado como en {@link PublicacionesGuardadas}: cada
+ * No hace falta filtrar por usuario logueado como en {@code PublicacionesGuardadas}: cada
  * fila ya lleva su propio {@code autorId}.
  */
 public class PreguntasPublicacion {

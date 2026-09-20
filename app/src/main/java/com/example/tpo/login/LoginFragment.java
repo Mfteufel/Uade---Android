@@ -14,6 +14,9 @@ import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 
 import com.example.tpo.R;
+import com.example.tpo.data.BusquedaGuardadaRepositoryMock;
+import com.example.tpo.data.FavoritoRepositoryMock;
+import com.example.tpo.data.RepositorioCallback;
 import com.example.tpo.data.SesionUsuario;
 
 /**
@@ -24,6 +27,16 @@ public class LoginFragment extends Fragment {
 
     private static final String USUARIO = "walter@uade.edu.ar";
     private static final String CLAVE = "1234";
+
+    private static final RepositorioCallback<Void> SIN_RESULTADO = new RepositorioCallback<Void>() {
+        @Override
+        public void onExito(Void resultado) {
+        }
+
+        @Override
+        public void onError(String mensaje) {
+        }
+    };
 
     @Nullable
     @Override
@@ -69,6 +82,10 @@ public class LoginFragment extends Fragment {
             // catálogos (v1..v12 vs u0..u2) queda pendiente, ver TODO en
             // SesionUsuario.
             sesion.setIdUsuario(sesion.getUsuarioId());
+
+            FavoritoRepositoryMock.getInstancia().precargar(SIN_RESULTADO);
+            BusquedaGuardadaRepositoryMock.getInstancia().precargar(SIN_RESULTADO);
+
             Navigation.findNavController(view).navigate(R.id.action_login_to_home);
         });
     }

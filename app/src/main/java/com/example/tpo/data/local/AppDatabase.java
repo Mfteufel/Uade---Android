@@ -11,12 +11,11 @@ import androidx.room.RoomDatabase;
  * <p>
  * Tiene la tabla del borrador de "Publicar artículo", la de "Mis
  * publicaciones" (Punto 5, reemplazo local mientras no exista el backend
- * real), las cuatro tablas de persistencia del Detalle (Punto 4): guardados,
- * preguntas, ofertas (con su ciclo de negociación completo del Punto 7) y el
- * override de estado de la publicación, y la de publicaciones vistas (Punto 6,
- * modo sin conexión). Se arma como singleton, igual que
- * {@code PublicacionRepositoryMock} y {@code SesionUsuario}, para no abrir
- * más de una conexión a la misma base.
+ * real), tres tablas de persistencia del Detalle (Punto 4): preguntas,
+ * ofertas (con su ciclo de negociación completo del Punto 7) y el override de
+ * estado de la publicación, y la de publicaciones vistas (Punto 6, modo sin
+ * conexión). Se arma como singleton, igual que {@code PublicacionRepositoryMock}
+ * y {@code SesionUsuario}, para no abrir más de una conexión a la misma base.
  * <p>
  * {@code version = 5}: subió dos veces en paralelo (dos ramas distintas
  * llevaron {@code OfertaEntity} de v3 a v4, cada una con columnas propias) y
@@ -33,18 +32,17 @@ import androidx.room.RoomDatabase;
  * criterio que el bump anterior: sin subir la versión, Room ve un hash de
  * esquema distinto al de la base ya instalada y crashea en vez de recrearla.
  * <p>
- * {@code version = 7}: al traer main de nuevo, otra rama había sumado en
- * paralelo la tabla {@code publicaciones_vistas} (Punto 6) bajo su propio
- * {@code version = 5} — ya van dos esquemas distintos numerados 5 (ver el
- * párrafo anterior), más el 6 de {@code direccionEntrega}, todos incompatibles
- * entre sí bajo el mismo número. Este esquema mergeado (las 7 entidades) no
- * coincide con ninguno de los anteriores, así que necesita número propio.
+ * {@code version = 7}: el Punto 10 (favoritos y búsquedas guardadas) sacó
+ * {@code PublicacionGuardadaEntity} — el enunciado solo describe favoritos y
+ * búsquedas guardadas, no un tercer concepto de "guardados" separado — así
+ * que esa tabla se unificó dentro de favoritos y dejó de existir acá. Mismo
+ * criterio de siempre: el esquema cambió (una tabla menos), así que necesita
+ * su propio número de versión.
  */
 @Database(entities = {
         BorradorPublicacionEntity.class,
         PublicacionMiaEntity.class,
         PublicacionEstadoEntity.class,
-        PublicacionGuardadaEntity.class,
         PreguntaEntity.class,
         OfertaEntity.class,
         PublicacionVistaEntity.class
@@ -60,8 +58,6 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract MiPublicacionDao miPublicacionDao();
 
     public abstract PublicacionEstadoDao publicacionEstadoDao();
-
-    public abstract PublicacionGuardadaDao publicacionGuardadaDao();
 
     public abstract PreguntaDao preguntaDao();
 

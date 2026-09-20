@@ -13,16 +13,6 @@ import com.example.tpo.model.Zona;
 /**
  * Punto 6 (modo sin conexión): copia local de una {@link Publicacion} que el
  * usuario tocó en el Home, para poder mostrarla de nuevo sin conexión.
- * <p>
- * Clave compuesta ({@code usuarioId}, {@code id}), mismo criterio que
- * {@link PublicacionGuardadaEntity}: evita que dos usuarios que prueban la app
- * en el mismo dispositivo mezclen su historial, y volver a ver la misma
- * publicación simplemente reemplaza la fila en vez de duplicarla.
- * <p>
- * A diferencia de {@link PublicacionGuardadaEntity} (que solo guarda el id
- * porque siempre puede pedirle los datos de nuevo a {@code PublicacionRepositoryMock}),
- * acá se guarda una copia completa: sin conexión no hay a quién pedírsela.
- * Los enums se guardan como su {@code name()}.
  */
 @Entity(tableName = "publicaciones_vistas", primaryKeys = {"usuarioId", "id"})
 public class PublicacionVistaEntity {

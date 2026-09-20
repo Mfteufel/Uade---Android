@@ -6,7 +6,10 @@ import java.util.List;
 
 public interface FavoritoRepository {
 
+    void precargar(RepositorioCallback<Void> callback);
+
     boolean esFavorito(String publicacionId);
+
 
     void marcar(Publicacion publicacion, RepositorioCallback<Void> callback);
 
