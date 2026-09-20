@@ -35,6 +35,7 @@ import com.example.tpo.model.Publicacion;
 import com.example.tpo.model.Vendedor;
 import com.example.tpo.ui.VendedorUi;
 import com.example.tpo.ui.perfil.PerfilVendedorFragment;
+import com.example.tpo.util.ConectividadUtils;
 import com.example.tpo.util.FormatoUtils;
 import com.example.tpo.util.TextoUtils;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -455,8 +456,21 @@ public class DetalleFragment extends Fragment {
         mostrarMisInteracciones(publicacion);
         if (activa) {
             textoRolAviso.setVisibility(View.GONE);
-            botonPreguntar.setOnClickListener(v -> mostrarDialogoPregunta(vendedor));
-            botonOfertar.setOnClickListener(v -> mostrarDialogoOferta(publicacion));
+            // Preguntar y ofertar requieren conexión.
+            botonPreguntar.setOnClickListener(v -> {
+                if (!ConectividadUtils.hayConexion(requireContext())) {
+                    mostrarSnackbar(getString(R.string.error_accion_requiere_conexion));
+                    return;
+                }
+                mostrarDialogoPregunta(vendedor);
+            });
+            botonOfertar.setOnClickListener(v -> {
+                if (!ConectividadUtils.hayConexion(requireContext())) {
+                    mostrarSnackbar(getString(R.string.error_accion_requiere_conexion));
+                    return;
+                }
+                mostrarDialogoOferta(publicacion);
+            });
         } else {
             textoRolAviso.setText(R.string.detalle_publicacion_no_disponible);
             textoRolAviso.setVisibility(View.VISIBLE);
@@ -562,6 +576,11 @@ public class DetalleFragment extends Fragment {
     private void alternarGuardada() {
         if (publicacionCargada == null) {
             return; // el ítem no debería estar visible sin publicación, pero por las dudas
+        }
+        // Guardar la publicación requiere conexión.
+        if (!ConectividadUtils.hayConexion(requireContext())) {
+            mostrarSnackbar(getString(R.string.error_accion_requiere_conexion));
+            return;
         }
         publicacionesGuardadas.alternar(publicacionCargada.getId(), new RepositorioCallback<Boolean>() {
             @Override

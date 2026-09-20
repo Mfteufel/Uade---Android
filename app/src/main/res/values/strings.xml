@@ -47,6 +47,7 @@
     <string name="error_reintentar">Reintentar</string>
     <string name="error_sin_conexion_sin_cache">Estás sin conexión y todavía no viste ninguna publicación para mostrarte.</string>
     <string name="home_sin_conexion_mostrando_cache">Sin conexión: mostrando las últimas publicaciones que viste.</string>
+    <string name="error_accion_requiere_conexion">Necesitás conexión a internet para continuar.</string>
 
     <!-- ===================== Bottom sheet de filtros ===================== -->
     <string name="filtros_titulo">Filtros</string>

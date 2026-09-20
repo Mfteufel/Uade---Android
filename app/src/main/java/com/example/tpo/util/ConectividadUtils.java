@@ -20,9 +20,8 @@ public final class ConectividadUtils {
         if (manager == null) {
             return false;
         }
+
         NetworkCapabilities capacidades = manager.getNetworkCapabilities(manager.getActiveNetwork());
-        return capacidades != null
-                && capacidades.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-                && capacidades.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+        return capacidades != null && capacidades.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
     }
 }

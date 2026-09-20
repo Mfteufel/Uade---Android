@@ -61,6 +61,8 @@ dependencies {
     implementation(libs.navigation.ui)
     // RecyclerView para el listado de publicaciones del Home.
     implementation(libs.recyclerview)
+    // Swipe-to-refresh del Home para el modo offline.
+    implementation(libs.swiperefreshlayout)
     // Hilt: inyeccion de dependencias (TokenManager, NetworkModule, RondaApp)
     implementation(libs.hilt.android)
     annotationProcessor(libs.hilt.compiler)

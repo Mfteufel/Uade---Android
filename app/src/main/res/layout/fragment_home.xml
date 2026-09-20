@@ -191,134 +191,131 @@
             tools:text="28 publicaciones" />
 
         <!-- ============ 6. Contenido ============ -->
-        <!--
-            Los cuatro hijos se superponen y el Fragment muestra solo uno por vez
-            (ver HomeFragment.mostrarEstado...). Es más simple de razonar que ir
-            agregando y sacando vistas del árbol.
-        -->
-        <FrameLayout
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/swipeRefresh"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1">
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/listaPublicaciones"
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:clipToPadding="false"
-                android:paddingTop="@dimen/espaciado_chico"
-                android:paddingBottom="@dimen/lista_padding_inferior"
-                tools:itemCount="4"
-                tools:listitem="@layout/item_publicacion" />
+                android:layout_height="match_parent">
 
-            <!-- Spinner de la primera carga (o de una recarga por cambio de filtro) -->
-            <com.google.android.material.progressindicator.CircularProgressIndicator
-                android:id="@+id/progresoInicial"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:indeterminate="true"
-                android:visibility="gone"
-                tools:visibility="visible" />
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/listaPublicaciones"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clipToPadding="false"
+                    android:paddingTop="@dimen/espaciado_chico"
+                    android:paddingBottom="@dimen/lista_padding_inferior"
+                    tools:itemCount="4"
+                    tools:listitem="@layout/item_publicacion" />
 
-            <!-- Estado vacío: la búsqueda no devolvió resultados -->
-            <LinearLayout
-                android:id="@+id/estadoVacio"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:gravity="center"
-                android:orientation="vertical"
-                android:paddingHorizontal="32dp"
-                android:visibility="gone"
-                tools:visibility="gone">
-
-                <ImageView
-                    android:layout_width="72dp"
-                    android:layout_height="72dp"
-                    android:alpha="0.4"
-                    android:contentDescription="@null"
-                    android:src="@drawable/ic_buscar" />
-
-                <TextView
+                <com.google.android.material.progressindicator.CircularProgressIndicator
+                    android:id="@+id/progresoInicial"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/espaciado_pantalla"
+                    android:layout_gravity="center"
+                    android:indeterminate="true"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+
+                <LinearLayout
+                    android:id="@+id/estadoVacio"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
                     android:gravity="center"
-                    android:text="@string/vacio_titulo"
-                    android:textAppearance="?attr/textAppearanceTitleMedium" />
+                    android:orientation="vertical"
+                    android:paddingHorizontal="32dp"
+                    android:visibility="gone"
+                    tools:visibility="gone">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/espaciado_chico"
+                    <ImageView
+                        android:layout_width="72dp"
+                        android:layout_height="72dp"
+                        android:alpha="0.4"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_buscar" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/espaciado_pantalla"
+                        android:gravity="center"
+                        android:text="@string/vacio_titulo"
+                        android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/espaciado_chico"
+                        android:gravity="center"
+                        android:text="@string/vacio_mensaje"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/botonLimpiarFiltros"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/espaciado_chico"
+                        android:text="@string/vacio_limpiar_filtros" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/estadoError"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
                     android:gravity="center"
-                    android:text="@string/vacio_mensaje"
-                    android:textAppearance="?attr/textAppearanceBodyMedium"
-                    android:textColor="?attr/colorOnSurfaceVariant" />
+                    android:orientation="vertical"
+                    android:paddingHorizontal="32dp"
+                    android:visibility="gone"
+                    tools:visibility="gone">
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/botonLimpiarFiltros"
-                    style="@style/Widget.Material3.Button.TextButton"
-                    android:layout_width="wrap_content"
+                    <ImageView
+                        android:layout_width="72dp"
+                        android:layout_height="72dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_error" />
+
+                    <TextView
+                        android:id="@+id/textoError"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/espaciado_pantalla"
+                        android:gravity="center"
+                        android:text="@string/error_titulo"
+                        android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/espaciado_chico"
+                        android:gravity="center"
+                        android:text="@string/error_mensaje"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/botonReintentar"
+                        style="@style/Widget.Material3.Button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/espaciado_pantalla"
+                        android:text="@string/error_reintentar" />
+                </LinearLayout>
+
+                <com.google.android.material.progressindicator.LinearProgressIndicator
+                    android:id="@+id/progresoPaginacion"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/espaciado_chico"
-                    android:text="@string/vacio_limpiar_filtros" />
-            </LinearLayout>
-
-            <!-- Estado de error: falló la consulta al repositorio -->
-            <LinearLayout
-                android:id="@+id/estadoError"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:gravity="center"
-                android:orientation="vertical"
-                android:paddingHorizontal="32dp"
-                android:visibility="gone"
-                tools:visibility="gone">
-
-                <ImageView
-                    android:layout_width="72dp"
-                    android:layout_height="72dp"
-                    android:contentDescription="@null"
-                    android:src="@drawable/ic_error" />
-
-                <TextView
-                    android:id="@+id/textoError"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/espaciado_pantalla"
-                    android:gravity="center"
-                    android:text="@string/error_titulo"
-                    android:textAppearance="?attr/textAppearanceTitleMedium" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/espaciado_chico"
-                    android:gravity="center"
-                    android:text="@string/error_mensaje"
-                    android:textAppearance="?attr/textAppearanceBodyMedium"
-                    android:textColor="?attr/colorOnSurfaceVariant" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/botonReintentar"
-                    style="@style/Widget.Material3.Button"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/espaciado_pantalla"
-                    android:text="@string/error_reintentar" />
-            </LinearLayout>
-
-            <!-- Barra de carga de la paginación: aparece al pedir la página siguiente -->
-            <com.google.android.material.progressindicator.LinearProgressIndicator
-                android:id="@+id/progresoPaginacion"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_gravity="bottom"
-                android:indeterminate="true"
-                android:visibility="gone"
-                tools:visibility="gone" />
-        </FrameLayout>
+                    android:layout_gravity="bottom"
+                    android:indeterminate="true"
+                    android:visibility="gone"
+                    tools:visibility="gone" />
+            </FrameLayout>
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
     </LinearLayout>
 
     <!-- Punto 5: abre el wizard de "Publicar artículo". -->

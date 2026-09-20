@@ -2,6 +2,9 @@ package com.example.tpo.ui.home;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -23,6 +26,7 @@ import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.tpo.R;
 import com.example.tpo.data.BusquedaGuardadaRepository;
@@ -114,6 +118,7 @@ public class HomeFragment extends Fragment implements
     private View estadoVacio;
     private View estadoError;
     private TextView textoError;
+    private SwipeRefreshLayout swipeRefresh;
 
     private PublicacionAdapter adapter;
 
@@ -148,6 +153,42 @@ public class HomeFragment extends Fragment implements
 
     // Punto 6 (modo sin conexión): resuelto recién en onAttach porque necesita el Context.
     private PublicacionesVistas publicacionesVistas;
+
+    /** true mientras lo que se ve en pantalla es el cache offline, no una respuesta real. */
+    private boolean mostrandoDatosSinConexion = false;
+
+    private final ConnectivityManager.NetworkCallback callbackConectividad = new ConnectivityManager.NetworkCallback() {
+        @Override
+        public void onAvailable(@NonNull Network network) {
+            intentarRecargaAutomatica();
+        }
+
+        @Override
+        public void onCapabilitiesChanged(@NonNull Network network, @NonNull NetworkCapabilities capacidades) {
+            if (capacidades.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)) {
+                intentarRecargaAutomatica();
+            }
+        }
+
+        @Override
+        public void onLost(@NonNull Network network) {
+            handlerBusqueda.post(() -> {
+                if (!mostrandoDatosSinConexion && listaPublicaciones != null) {
+                    generacionConsulta++;
+                    cargando = false;
+                    mostrarFallbackOffline(generacionConsulta);
+                }
+            });
+        }
+    };
+
+    private void intentarRecargaAutomatica() {
+        handlerBusqueda.post(() -> {
+            if (mostrandoDatosSinConexion && listaPublicaciones != null) {
+                recargarDesdeCero();
+            }
+        });
+    }
 
     @Override
     public void onAttach(@NonNull Context context) {
@@ -199,7 +240,9 @@ public class HomeFragment extends Fragment implements
         estadoVacio = view.findViewById(R.id.estadoVacio);
         estadoError = view.findViewById(R.id.estadoError);
         textoError = view.findViewById(R.id.textoError);
+        swipeRefresh = view.findViewById(R.id.swipeRefresh);
 
+        configurarSwipeRefresh();
         configurarLista();
         configurarBuscador();
         crearChipsDeCategoria();
@@ -213,6 +256,7 @@ public class HomeFragment extends Fragment implements
         actualizarBotonFiltros();
         actualizarIndicadorNovedadBusquedas();
         recargarDesdeCero();
+        registrarCallbackConectividad();
     }
 
     @Override
@@ -236,6 +280,8 @@ public class HomeFragment extends Fragment implements
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+
+        desregistrarCallbackConectividad();
 
         // 1) Se cancela la búsqueda que estuviera esperando: si se disparara con
         //    las vistas ya destruidas, reventaría con NullPointerException.
@@ -268,6 +314,7 @@ public class HomeFragment extends Fragment implements
         estadoVacio = null;
         estadoError = null;
         textoError = null;
+        swipeRefresh = null;
         adapter = null;
     }
 
@@ -304,6 +351,12 @@ public class HomeFragment extends Fragment implements
                 }
             }
         });
+    }
+
+    private void configurarSwipeRefresh() {
+        swipeRefresh.setOnRefreshListener(this::recargarDesdeCero);
+        swipeRefresh.setOnChildScrollUpCallback((parent, child) ->
+                listaPublicaciones != null && listaPublicaciones.canScrollVertically(-1));
     }
 
     private void configurarBuscador() {
@@ -681,10 +734,6 @@ public class HomeFragment extends Fragment implements
             progresoPaginacion.setVisibility(View.VISIBLE);
         }
 
-        // Punto 6: sin conexión ni vale la pena intentar la consulta (fallaría
-        // igual). Se resuelve directo con lo último que el usuario vio. Solo
-        // aplica a la página 0: si ya hay resultados en pantalla y se corta la
-        // conexión a mitad de la paginación, se deja el error normal de abajo.
         if (esPrimeraPagina && !ConectividadUtils.hayConexion(requireContext())) {
             mostrarFallbackOffline(generacion);
             return;
@@ -720,6 +769,8 @@ public class HomeFragment extends Fragment implements
     }
 
     private void mostrarResultado(PaginaPublicaciones resultado) {
+        mostrandoDatosSinConexion = false;
+        swipeRefresh.setRefreshing(false);
         progresoInicial.setVisibility(View.GONE);
         progresoPaginacion.setVisibility(View.GONE);
         estadoError.setVisibility(View.GONE);
@@ -748,6 +799,7 @@ public class HomeFragment extends Fragment implements
     }
 
     private void mostrarError(boolean esPrimeraPagina, String mensaje) {
+        swipeRefresh.setRefreshing(false);
         progresoInicial.setVisibility(View.GONE);
         progresoPaginacion.setVisibility(View.GONE);
 
@@ -766,6 +818,9 @@ public class HomeFragment extends Fragment implements
     }
 
     private void mostrarCargaInicial() {
+        if (swipeRefresh.isRefreshing()) {
+            return;
+        }
         progresoInicial.setVisibility(View.VISIBLE);
         progresoPaginacion.setVisibility(View.GONE);
         listaPublicaciones.setVisibility(View.GONE);
@@ -796,6 +851,8 @@ public class HomeFragment extends Fragment implements
     }
 
     private void mostrarResultadoOffline(List<Publicacion> cacheadas) {
+        mostrandoDatosSinConexion = true;
+        swipeRefresh.setRefreshing(false);
         if (cacheadas.isEmpty()) {
             mostrarError(true, getString(R.string.error_sin_conexion_sin_cache));
             return;
@@ -821,6 +878,22 @@ public class HomeFragment extends Fragment implements
                 Snackbar.LENGTH_LONG).show();
     }
 
+    private void registrarCallbackConectividad() {
+        ConnectivityManager manager = (ConnectivityManager)
+                requireContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (manager != null) {
+            manager.registerDefaultNetworkCallback(callbackConectividad);
+        }
+    }
+
+    private void desregistrarCallbackConectividad() {
+        ConnectivityManager manager = (ConnectivityManager)
+                requireContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (manager != null) {
+            manager.unregisterNetworkCallback(callbackConectividad);
+        }
+    }
+
     // ------------------------------------------------------------------
     // Interacción con la lista
     // ------------------------------------------------------------------
@@ -844,6 +917,14 @@ public class HomeFragment extends Fragment implements
      */
     @Override
     public void onFavoritoClick(Publicacion publicacion, boolean favoritoNuevo) {
+        if (!ConectividadUtils.hayConexion(requireContext())) {
+            if (adapter != null) {
+                adapter.refrescarFavorito(publicacion.getId());
+            }
+            Snackbar.make(requireView(), R.string.error_accion_requiere_conexion, Snackbar.LENGTH_SHORT).show();
+            return;
+        }
+
         RepositorioCallback<Void> callback = new RepositorioCallback<Void>() {
             @Override
             public void onExito(Void resultado) {
