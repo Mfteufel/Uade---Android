@@ -25,4 +25,8 @@ public class TokenManager {
     public String getToken() {
         return preferencias.getString("token", null);
     }
+
+    public void clearToken() {
+        preferencias.edit().remove("token").apply();
+    }
 }

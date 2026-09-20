@@ -1,6 +1,27 @@
 <resources>
     <string name="app_name">Ronda</string>
 
+    <!-- ===================== Login (Punto 1) ===================== -->
+    <string name="login_email">Email</string>
+    <string name="login_clave">Contraseña</string>
+    <string name="login_ingresar">Ingresar</string>
+    <string name="login_ingresar_con_codigo">Ingresar con un código por email</string>
+    <string name="login_volver_a_clave">Volver</string>
+    <string name="login_enviar_codigo">Enviar código</string>
+    <string name="login_codigo_hint">Código de 6 dígitos</string>
+    <string name="login_verificar">Verificar</string>
+    <string name="login_cancelar">Cancelar</string>
+    <string name="login_reenviar_codigo">Reenviar código</string>
+    <string name="login_reenviar_en_segundos">Reenviar en %1$d s</string>
+    <string name="login_error_campos_vacios">Completá los dos campos</string>
+    <string name="login_error_email_vacio">Ingresá tu email</string>
+    <string name="login_error_codigo_vacio">Ingresá el código que te enviamos</string>
+    <string name="login_usar_biometria">Desbloquear</string>
+    <string name="login_usar_clave">Usar contraseña</string>
+    <string name="login_biometria_titulo">Desbloqueá Ronda</string>
+    <string name="login_biometria_subtitulo">Usá tu huella, tu cara o el PIN del equipo</string>
+    <string name="login_cerrar_sesion">Cerrar sesión</string>
+
     <!-- ===================== Bottom nav ===================== -->
     <string name="nav_home">Home</string>
     <string name="nav_favoritos">Favoritos</string>

@@ -119,4 +119,16 @@ public class SesionUsuario {
             this.zona = usuario.getZona();
         }
     }
+
+    /**
+     * Vuelve la sesión a los valores demo con los que arranca la app. La llama el
+     * logout: sin esto, cerrar sesión borraría el token pero el nombre/id de la
+     * sesión anterior seguirían pisando el mock hasta reiniciar el proceso.
+     */
+    public void limpiar() {
+        this.usuarioId = BaseDeDatosMock.ID_USUARIO_DEMO;
+        this.zona = Zona.CABALLITO;
+        this.nombre = "Martina G.";
+        this.idUsuario = "v1";
+    }
 }

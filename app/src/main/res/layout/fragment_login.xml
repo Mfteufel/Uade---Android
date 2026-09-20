@@ -1,47 +1,221 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!--
+    Login — Punto 1 del TPO.
+
+    Un solo layout con cuatro grupos que se muestran/ocultan (mismo criterio que
+    el modo lectura/edición de fragment_perfil.xml, en vez de un ViewFlipper o un
+    sub nav graph): biometría (si ya hay un token guardado), usuario/contraseña,
+    pedido de código OTP por email, y verificación del código.
+-->
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
-    android:orientation="vertical"
-    android:padding="@dimen/espaciado_pantalla">
+    android:fillViewport="true"
+    tools:context=".login.LoginFragment">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="24dp"
-        android:text="@string/app_name"
-        android:textAppearance="?attr/textAppearanceHeadlineMedium" />
-
-    <EditText
-        android:id="@+id/campoUsuario"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Email"
-        android:inputType="textEmailAddress" />
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="@dimen/espaciado_pantalla">
 
-    <EditText
-        android:id="@+id/campoClave"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/espaciado_chico"
-        android:hint="Contraseña"
-        android:inputType="textPassword" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/espaciado_grande"
+            android:text="@string/app_name"
+            android:textAppearance="?attr/textAppearanceHeadlineMedium" />
 
-    <TextView
-        android:id="@+id/textoError"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/espaciado_chico"
-        android:textColor="?attr/colorError"
-        android:visibility="gone" />
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/progresoLogin"
+            style="@style/Widget.Material3.CircularProgressIndicator.Small"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/espaciado_mediano"
+            android:indeterminate="true"
+            android:visibility="gone"
+            tools:visibility="visible" />
 
-    <Button
-        android:id="@+id/botonIngresar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/espaciado_pantalla"
-        android:text="Ingresar" />
+        <!-- ===================== Biometría ===================== -->
+        <LinearLayout
+            android:id="@+id/grupoBiometria"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:visibility="gone">
 
-</LinearLayout>
+            <TextView
+                android:id="@+id/textoBiometriaTitulo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/login_biometria_titulo"
+                android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaciado_chico"
+                android:text="@string/login_biometria_subtitulo"
+                android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/botonUsarBiometria"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaciado_pantalla"
+                android:text="@string/login_usar_biometria" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/botonUsarClaveEnVezDeBiometria"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/login_usar_clave" />
+
+        </LinearLayout>
+
+        <!-- ===================== Usuario y contraseña ===================== -->
+        <LinearLayout
+            android:id="@+id/grupoPassword"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/login_email">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/campoUsuario"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textEmailAddress" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaciado_chico"
+                android:hint="@string/login_clave">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/campoClave"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textPassword" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/botonIngresar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaciado_pantalla"
+                android:text="@string/login_ingresar" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/botonIrAOtp"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/login_ingresar_con_codigo" />
+
+        </LinearLayout>
+
+        <!-- ===================== OTP: pedir el código ===================== -->
+        <LinearLayout
+            android:id="@+id/grupoOtpEmail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/login_email">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/campoOtpEmail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textEmailAddress" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/botonEnviarCodigo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaciado_pantalla"
+                android:text="@string/login_enviar_codigo" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/botonVolverAClave"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/login_volver_a_clave" />
+
+        </LinearLayout>
+
+        <!-- ===================== OTP: verificar el código ===================== -->
+        <LinearLayout
+            android:id="@+id/grupoOtpCodigo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/login_codigo_hint">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/campoCodigo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:maxLength="6" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/botonVerificarCodigo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaciado_pantalla"
+                android:text="@string/login_verificar" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/botonReenviarCodigo"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/login_reenviar_codigo" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/botonCancelarOtp"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/login_cancelar" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.core.widget.NestedScrollView>

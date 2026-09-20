@@ -2,14 +2,18 @@ package com.example.tpo.di;
 
 import android.content.Context;
 
+import com.example.tpo.data.AuthRepository;
+import com.example.tpo.data.AuthRepositoryApi;
 import com.example.tpo.data.OperacionRepository;
 import com.example.tpo.data.OperacionRepositoryApi;
 import com.example.tpo.data.OperacionRepositoryMock;
 import com.example.tpo.data.PerfilRepository;
 import com.example.tpo.data.PerfilRepositoryApi;
 import com.example.tpo.data.PerfilRepositoryMock;
+import com.example.tpo.data.remote.AuthApi;
 import com.example.tpo.data.remote.OperacionApi;
 import com.example.tpo.data.remote.UsuarioApi;
+import com.example.tpo.login.TokenManager;
 
 import javax.inject.Singleton;
 
@@ -68,5 +72,21 @@ public class RepositoryModule {
     @Singleton
     public OperacionApi provideOperacionApi(Retrofit retrofit) {
         return retrofit.create(OperacionApi.class);
+    }
+
+    @Provides
+    @Singleton
+    public AuthApi provideAuthApi(Retrofit retrofit) {
+        return retrofit.create(AuthApi.class);
+    }
+
+    /**
+     * Sin flag {@code USAR_API}: a diferencia de Perfil y Operaciones, el login
+     * ya habla con el backend real desde el día uno (ver {@code AuthRepository}).
+     */
+    @Provides
+    @Singleton
+    public AuthRepository provideAuthRepository(AuthApi api, TokenManager tokenManager) {
+        return new AuthRepositoryApi(api, tokenManager);
     }
 }

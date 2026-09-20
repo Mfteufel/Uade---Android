@@ -33,8 +33,17 @@ public final class ErrorApi {
         if (respuesta.code() == 401) {
             return SESION_VENCIDA;
         }
-        String detalle = leerDetalle(respuesta.errorBody());
+        String detalle = detalle(respuesta);
         return detalle != null ? detalle : porDefecto;
+    }
+
+    /**
+     * Igual que {@link #mensaje}, pero sin pisar el 401 con "sesión vencida": lo
+     * usa el login/OTP, donde un 401 significa "código o contraseña incorrectos"
+     * y todavía no hay ninguna sesión que pueda haber vencido.
+     */
+    public static String detalle(Response<?> respuesta) {
+        return leerDetalle(respuesta.errorBody());
     }
 
     private static String leerDetalle(ResponseBody cuerpo) {

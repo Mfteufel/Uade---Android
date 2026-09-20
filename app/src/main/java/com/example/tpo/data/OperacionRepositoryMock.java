@@ -73,7 +73,7 @@ public class OperacionRepositoryMock implements OperacionRepository {
     }
 
     /** Quién está pidiendo. Contra la API real lo resuelve el servidor a partir del JWT. */
-    private static String idLogueado() {
-        return SesionUsuario.getInstancia().getUsuarioId();
+    private String idLogueado() {
+        return base.idParaMockOSuplente(SesionUsuario.getInstancia().getUsuarioId());
     }
 }

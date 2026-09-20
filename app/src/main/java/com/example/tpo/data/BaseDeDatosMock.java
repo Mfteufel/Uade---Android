@@ -81,6 +81,18 @@ public class BaseDeDatosMock {
         return usuarios.containsKey(usuarioId);
     }
 
+    /**
+     * El id que hay que usar contra este catálogo demo: el de la sesión, si existe
+     * acá, o si no el usuario demo. Hace falta porque el login (Punto 1) ya habla
+     * con el backend real y deja en {@code SesionUsuario} un id numérico que este
+     * catálogo fijo no conoce — sin este fallback, Perfil e Historial (que siguen
+     * en mock hasta que el backend tenga esos endpoints) mostrarían "no
+     * encontramos tu perfil" para cualquiera que entre con un login real.
+     */
+    public String idParaMockOSuplente(String idDeSesion) {
+        return existeUsuario(idDeSesion) ? idDeSesion : ID_USUARIO_DEMO;
+    }
+
     /** Equivale a {@code GET /usuarios/me}: todos los datos, incluidos email y teléfono. */
     @Nullable
     public Usuario perfilPropio(String usuarioId, long ahora) {

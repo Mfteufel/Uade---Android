@@ -15,8 +15,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 @InstallIn(SingletonComponent.class)
 public class NetworkModule {
 
-    // 10.0.2.2 es la PC vista desde el emulador
-    private static final String BASE_URL = "http://10.0.2.2:8000/";
+    private static final String BASE_URL = "https://ronda-api-production.up.railway.app/";
 
     @Provides
     @Singleton

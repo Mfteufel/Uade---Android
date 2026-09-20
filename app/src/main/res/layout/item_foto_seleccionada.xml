@@ -2,9 +2,9 @@
 <!--
     Miniatura de una foto ya elegida, en el paso 1 del wizard de publicar.
 
-    setImageURI (y no una librería de carga de imágenes) porque el proyecto no
-    tiene Glide/Picasso: ver el comentario de ic_imagen.xml. Para miniaturas de
-    este tamaño alcanza sin problema.
+    Decodificación manual con submuestreo (ver FotoSeleccionadaAdapter) y no una
+    librería de carga de imágenes, porque el proyecto no tiene Glide/Picasso: ver
+    el comentario de ic_imagen.xml.
 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"

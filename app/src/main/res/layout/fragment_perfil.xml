@@ -136,6 +136,14 @@
                 android:layout_height="wrap_content"
                 android:text="@string/perfil_ver_perfil_publico" />
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/botonCerrarSesion"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaciado_chico"
+                android:text="@string/login_cerrar_sesion" />
+
             <!-- - Datos personales - -->
             <!--
                 Los cuatro campos que el enunciado declara editables. Arrancan
