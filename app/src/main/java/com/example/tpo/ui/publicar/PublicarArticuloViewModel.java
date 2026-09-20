@@ -10,7 +10,7 @@ import androidx.lifecycle.MutableLiveData;
 import com.example.tpo.data.BorradorRepository;
 import com.example.tpo.data.BorradorRepositoryLocal;
 import com.example.tpo.data.MisPublicacionesRepository;
-import com.example.tpo.data.MisPublicacionesRepositoryLocal;
+import com.example.tpo.data.MisPublicacionesRepositoryApi;
 import com.example.tpo.data.RepositorioCallback;
 import com.example.tpo.model.BorradorPublicacion;
 import com.example.tpo.model.MiPublicacion;
@@ -40,9 +40,7 @@ public class PublicarArticuloViewModel extends AndroidViewModel {
     public PublicarArticuloViewModel(@NonNull Application application) {
         super(application);
         borradorRepository = BorradorRepositoryLocal.getInstancia(application);
-        // TODO: cuando exista el backend de FastAPI, reemplazar por
-        // new MisPublicacionesRepositoryApi(application).
-        misPublicacionesRepository = MisPublicacionesRepositoryLocal.getInstancia(application);
+        misPublicacionesRepository = new MisPublicacionesRepositoryApi(application);
         cargarBorradorGuardado();
     }
 

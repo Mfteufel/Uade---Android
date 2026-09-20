@@ -14,7 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tpo.R;
 import com.example.tpo.data.MisPublicacionesRepository;
-import com.example.tpo.data.MisPublicacionesRepositoryLocal;
+import com.example.tpo.data.MisPublicacionesRepositoryApi;
 import com.example.tpo.data.RepositorioCallback;
 import com.example.tpo.model.EstadoPublicacion;
 import com.example.tpo.model.MiPublicacion;
@@ -51,9 +51,7 @@ public class MisPublicacionesFragment extends Fragment implements MiPublicacionA
     @Override
     public void onAttach(@NonNull android.content.Context context) {
         super.onAttach(context);
-        // TODO: cuando exista el backend de FastAPI, reemplazar por
-        // new MisPublicacionesRepositoryApi(context).
-        repositorio = MisPublicacionesRepositoryLocal.getInstancia(context);
+        repositorio = new MisPublicacionesRepositoryApi(context);
     }
 
     @Nullable
