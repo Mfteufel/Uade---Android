@@ -792,9 +792,8 @@ public class DetalleFragment extends Fragment {
      */
     private void registrarOferta(Publicacion publicacion, double monto) {
         SesionUsuario sesion = SesionUsuario.getInstancia();
-        Oferta oferta = new Oferta(
-                publicacion.getId(), sesion.getIdUsuario(), sesion.getNombre(),
-                monto, System.currentTimeMillis());
+        Oferta oferta = ofertasPublicacion.crearOferta(
+                publicacion, sesion.getIdUsuario(), sesion.getNombre(), monto);
         ofertasPublicacion.guardar(oferta, new RepositorioCallback<Void>() {
             @Override
             public void onExito(Void resultado) {
