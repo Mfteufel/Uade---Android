@@ -1,5 +1,9 @@
 package com.example.tpo.ui.publicar;
 
+import android.content.ContentResolver;
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -11,6 +15,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tpo.R;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -79,10 +85,51 @@ public class FotoSeleccionadaAdapter extends RecyclerView.Adapter<FotoSelecciona
             // takePersistableUriPermission a tiempo). Sin este catch, esa
             // SecurityException tira abajo toda la pantalla.
             try {
-                imagenFoto.setImageURI(foto);
+                imagenFoto.setImageBitmap(decodificarMiniatura(itemView.getContext(), foto));
             } catch (SecurityException excepcion) {
                 Log.w("FotoSeleccionadaAdapter", "Sin permiso para leer " + foto, excepcion);
                 imagenFoto.setImageResource(R.drawable.ic_imagen);
+            } catch (IOException excepcion) {
+                Log.w("FotoSeleccionadaAdapter", "No se pudo leer " + foto, excepcion);
+                imagenFoto.setImageResource(R.drawable.ic_imagen);
+            }
+        }
+
+        // Las fotos de la galería vienen a resolución de cámara (o más, si son
+        // screenshots): decodificarlas enteras para una miniatura de 96dp hacía
+        // que Canvas rechazara dibujar el bitmap ("trying to draw too large
+        // bitmap") y tirara abajo toda la Activity. Se decodifica en dos pasadas
+        // (bordes primero, después el bitmap ya submuestreado al tamaño del ítem).
+        private Bitmap decodificarMiniatura(Context context, Uri foto) throws IOException {
+            int tamanioObjetivoPx = context.getResources().getDimensionPixelSize(R.dimen.item_foto_ancho);
+            ContentResolver resolver = context.getContentResolver();
+
+            BitmapFactory.Options limites = new BitmapFactory.Options();
+            limites.inJustDecodeBounds = true;
+            try (InputStream entrada = resolver.openInputStream(foto)) {
+                if (entrada == null) {
+                    throw new IOException("No se pudo abrir " + foto);
+                }
+                BitmapFactory.decodeStream(entrada, null, limites);
+            }
+
+            int muestreo = 1;
+            while (limites.outWidth / (muestreo * 2) >= tamanioObjetivoPx
+                    && limites.outHeight / (muestreo * 2) >= tamanioObjetivoPx) {
+                muestreo *= 2;
+            }
+
+            BitmapFactory.Options opciones = new BitmapFactory.Options();
+            opciones.inSampleSize = muestreo;
+            try (InputStream entrada = resolver.openInputStream(foto)) {
+                if (entrada == null) {
+                    throw new IOException("No se pudo abrir " + foto);
+                }
+                Bitmap bitmap = BitmapFactory.decodeStream(entrada, null, opciones);
+                if (bitmap == null) {
+                    throw new IOException("No se pudo decodificar " + foto);
+                }
+                return bitmap;
             }
         }
     }

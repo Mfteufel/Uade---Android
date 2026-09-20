@@ -15,7 +15,7 @@ val propiedadesLocales = Properties().apply {
     }
 }
 val apiBaseUrl: String = (propiedadesLocales.getProperty("API_BASE_URL")
-    ?: "https://api.ronda.tpo.uade.edu.ar/")
+    ?: "https://ronda-api-production.up.railway.app/")
 
 android {
     namespace = "com.example.tpo"
@@ -63,6 +63,8 @@ dependencies {
     implementation(libs.recyclerview)
     // Swipe-to-refresh del Home para el modo offline.
     implementation(libs.swiperefreshlayout)
+    // Desbloqueo por huella/cara/PIN del dispositivo (Punto 1).
+    implementation(libs.biometric)
     // Hilt: inyeccion de dependencias (TokenManager, NetworkModule, RondaApp)
     implementation(libs.hilt.android)
     annotationProcessor(libs.hilt.compiler)

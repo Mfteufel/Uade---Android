@@ -204,8 +204,8 @@ public class PerfilRepositoryMock implements PerfilRepository {
     // ---------------------------------------------------------------------
 
     /** Quién está pidiendo. Contra la API real lo resuelve el servidor a partir del JWT. */
-    private static String idLogueado() {
-        return SesionUsuario.getInstancia().getUsuarioId();
+    private String idLogueado() {
+        return base.idParaMockOSuplente(SesionUsuario.getInstancia().getUsuarioId());
     }
 
     /** postDelayed simula la latencia de red y deja el callback en el Main Thread. */

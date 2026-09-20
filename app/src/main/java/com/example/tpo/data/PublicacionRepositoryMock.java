@@ -9,6 +9,7 @@ import com.example.tpo.data.local.AppDatabase;
 import com.example.tpo.data.local.PublicacionEstadoDao;
 import com.example.tpo.data.local.PublicacionEstadoEntity;
 import com.example.tpo.login.RondaApp;
+import com.example.tpo.model.BorradorPublicacion;
 import com.example.tpo.model.Categoria;
 import com.example.tpo.model.Cercania;
 import com.example.tpo.model.EstadoArticulo;
@@ -409,6 +410,36 @@ public class PublicacionRepositoryMock implements PublicacionRepository {
                 50000, EstadoArticulo.NUEVO, categoria != null ? categoria : Categoria.OTROS, Zona.CABALLITO,
                 System.currentTimeMillis(), V1_MARTINA, 1, DIRECCION_ENTREGA_MOCK);
         catalogo.add(nueva);
+        return nueva;
+    }
+
+    /**
+     * Agrega al catálogo la publicación que el usuario acaba de crear en el
+     * wizard (Punto 5), para que aparezca en Home igual que las de prueba.
+     * <p>
+     * El vendedor se arma con los datos de {@link SesionUsuario} y no con el
+     * catálogo "v1".."v12" de vendedores de prueba: son dos catálogos de
+     * identidad distintos todavía sin reconciliar (ver el TODO en
+     * {@link SesionUsuario#getIdUsuario()}), y esta publicación es la única
+     * cuyo dueño es real y no de prueba.
+     */
+    public Publicacion agregarPublicacionDelUsuario(BorradorPublicacion borrador) {
+        SesionUsuario sesion = SesionUsuario.getInstancia();
+        Vendedor vendedor = new Vendedor(
+                sesion.getIdUsuario(), sesion.getNombre(), 0, 0, System.currentTimeMillis());
+        Publicacion nueva = new Publicacion(
+                "u-" + System.currentTimeMillis(),
+                borrador.getTitulo(),
+                borrador.getDescripcion(),
+                borrador.getPrecio(),
+                borrador.getEstadoArticulo(),
+                borrador.getCategoria(),
+                borrador.getZona(),
+                System.currentTimeMillis(), vendedor, borrador.getFotos().size(), DIRECCION_ENTREGA_MOCK);
+        // Al principio y no al final: así "Más recientes" (el orden por
+        // default) la muestra arriba de todo, como corresponde a algo recién
+        // publicado.
+        catalogo.add(0, nueva);
         return nueva;
     }
 

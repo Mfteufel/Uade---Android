@@ -67,6 +67,14 @@ public class MainActivity extends AppCompatActivity {
         NavController navController = navHostFragment.getNavController();
         NavigationUI.setupWithNavController(bottomNav, navController);
 
+        // Sin esto, la bottom nav (fija sobre todos los destinos) queda clickeable
+        // incluso parado en el login: tocar "Favoritos" o "Perfil" ahí navegaba
+        // directo a la app sin haber iniciado sesión.
+        navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
+            boolean esLogin = destination.getId() == R.id.loginFragment;
+            bottomNav.setVisibility(esLogin ? View.GONE : View.VISIBLE);
+        });
+
         // RECEIVER_EXPORTED porque el broadcast de prueba llega desde `adb shell am
         // broadcast`, que corre como shell y no como este mismo paquete.
         receptorNovedades = new SimulacionNovedadesReceiver(this::onNovedadSimulada);

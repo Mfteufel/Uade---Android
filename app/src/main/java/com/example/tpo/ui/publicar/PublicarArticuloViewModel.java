@@ -11,6 +11,7 @@ import com.example.tpo.data.BorradorRepository;
 import com.example.tpo.data.BorradorRepositoryLocal;
 import com.example.tpo.data.MisPublicacionesRepository;
 import com.example.tpo.data.MisPublicacionesRepositoryLocal;
+import com.example.tpo.data.PublicacionRepositoryMock;
 import com.example.tpo.data.RepositorioCallback;
 import com.example.tpo.model.BorradorPublicacion;
 import com.example.tpo.model.MiPublicacion;
@@ -119,6 +120,11 @@ public class PublicarArticuloViewModel extends AndroidViewModel {
             public void onExito(MiPublicacion resultado) {
                 publicando.setValue(false);
                 borradorRepository.borrar();
+                // "Mis publicaciones" (Room) y el catálogo de Home (mock en memoria)
+                // son dos fuentes de datos separadas mientras no hay backend: sin
+                // este paso, lo recién publicado nunca aparecía en Home. Ver
+                // PublicacionRepositoryMock#agregarPublicacionDelUsuario.
+                PublicacionRepositoryMock.getInstancia().agregarPublicacionDelUsuario(actual);
                 callback.onExito(resultado);
             }
 

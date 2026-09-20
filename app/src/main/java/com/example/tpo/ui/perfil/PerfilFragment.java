@@ -16,11 +16,14 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.NavOptions;
 import androidx.navigation.Navigation;
 
 import com.example.tpo.R;
 import com.example.tpo.data.PerfilRepository;
 import com.example.tpo.data.RepositorioCallback;
+import com.example.tpo.data.SesionUsuario;
+import com.example.tpo.login.TokenManager;
 import com.example.tpo.model.Usuario;
 import com.example.tpo.model.Zona;
 import com.example.tpo.util.FormatoUtils;
@@ -78,6 +81,9 @@ public class PerfilFragment extends Fragment {
     /** Lo inyecta Hilt: la pantalla no sabe si del otro lado hay un mock o Retrofit. */
     @Inject
     PerfilRepository repositorio;
+
+    @Inject
+    TokenManager tokenManager;
 
     /** Último perfil traído del repositorio. Es la referencia para editar y para cancelar. */
     @Nullable
@@ -141,6 +147,7 @@ public class PerfilFragment extends Fragment {
         view.findViewById(R.id.botonVerPerfilPublico).setOnClickListener(v -> irAMiPerfilPublico());
         view.findViewById(R.id.botonMisOperaciones).setOnClickListener(v ->
                 Navigation.findNavController(requireView()).navigate(R.id.action_miPerfil_to_historial));
+        view.findViewById(R.id.botonCerrarSesion).setOnClickListener(v -> cerrarSesion());
 
         view.findViewById(R.id.botonReintentarPerfil)
                 .setOnClickListener(v -> cargarPerfil());
@@ -306,6 +313,20 @@ public class PerfilFragment extends Fragment {
         argumentos.putString(PerfilVendedorFragment.ARG_VENDEDOR_ID, usuarioActual.getId());
         Navigation.findNavController(requireView())
                 .navigate(R.id.action_miPerfil_to_perfilPublico, argumentos);
+    }
+
+    /**
+     * Borra el token, resetea la sesión a los valores demo y vuelve al login
+     * limpiando todo el back stack: sin el {@code popUpTo} sobre {@code nav_graph},
+     * el botón "atrás" volvería a mostrar Home/Perfil de la sesión ya cerrada.
+     */
+    private void cerrarSesion() {
+        tokenManager.clearToken();
+        SesionUsuario.getInstancia().limpiar();
+        Navigation.findNavController(requireView()).navigate(
+                R.id.loginFragment,
+                null,
+                new NavOptions.Builder().setPopUpTo(R.id.nav_graph, true).build());
     }
 
     // ------------------------------------------------------------------
