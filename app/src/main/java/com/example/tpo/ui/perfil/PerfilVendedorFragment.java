@@ -1,5 +1,6 @@
 package com.example.tpo.ui.perfil;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,6 +21,7 @@ import com.example.tpo.data.PerfilRepository;
 import com.example.tpo.data.PerfilVendedor;
 import com.example.tpo.data.PublicacionRepository;
 import com.example.tpo.data.PublicacionRepositoryMock;
+import com.example.tpo.data.PublicacionesVistas;
 import com.example.tpo.data.RepositorioCallback;
 import com.example.tpo.data.SesionUsuario;
 import com.example.tpo.model.Calificacion;
@@ -27,6 +29,7 @@ import com.example.tpo.model.Publicacion;
 import com.example.tpo.model.Usuario;
 import com.example.tpo.model.UsuarioResumen;
 import com.example.tpo.ui.home.PublicacionAdapter;
+import com.example.tpo.util.ConectividadUtils;
 import com.example.tpo.util.FormatoUtils;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
@@ -75,7 +78,15 @@ public class PerfilVendedorFragment extends Fragment
     private final PublicacionRepository publicacionRepositorio = PublicacionRepositoryMock.getInstancia();
     private final FavoritoRepository favoritoRepositorio = FavoritoRepositoryMock.getInstancia();
 
+    private PublicacionesVistas publicacionesVistas;
+
     private String usuarioId;
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        publicacionesVistas = PublicacionesVistas.getInstancia(context);
+    }
 
     // --- Vistas. Son null fuera del rango onCreateView..onDestroyView ---
     private View contenidoPerfil;
@@ -379,6 +390,7 @@ public class PerfilVendedorFragment extends Fragment
     /** El usuario tocó una publicación del listado: se va a su Detalle, igual que desde el Home. */
     @Override
     public void onPublicacionClick(Publicacion publicacion) {
+        publicacionesVistas.registrarVista(publicacion);
         Bundle argumentos = new Bundle();
         argumentos.putString("publicacionId", publicacion.getId());
         Navigation.findNavController(requireView())
@@ -400,6 +412,15 @@ public class PerfilVendedorFragment extends Fragment
     /** El usuario tocó el corazón de una tarjeta — mismo criterio que HomeFragment. */
     @Override
     public void onFavoritoClick(Publicacion publicacion, boolean favoritoNuevo) {
+        // Marcar/desmarcar favorito requiere conexión.
+        if (!ConectividadUtils.hayConexion(requireContext())) {
+            if (publicacionAdapter != null) {
+                publicacionAdapter.refrescarFavorito(publicacion.getId());
+            }
+            Snackbar.make(requireView(), R.string.error_accion_requiere_conexion, Snackbar.LENGTH_SHORT).show();
+            return;
+        }
+
         RepositorioCallback<Void> callback = new RepositorioCallback<Void>() {
             @Override
             public void onExito(Void resultado) {

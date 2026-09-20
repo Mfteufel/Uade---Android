@@ -19,9 +19,11 @@ import com.example.tpo.data.FavoritoRepositoryMock;
 import com.example.tpo.data.PublicacionRepository;
 import com.example.tpo.data.PublicacionRepositoryMock;
 import com.example.tpo.data.PublicacionesGuardadas;
+import com.example.tpo.data.PublicacionesVistas;
 import com.example.tpo.data.RepositorioCallback;
 import com.example.tpo.model.Publicacion;
 import com.example.tpo.ui.home.PublicacionAdapter;
+import com.example.tpo.util.ConectividadUtils;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.android.material.snackbar.Snackbar;
@@ -53,6 +55,8 @@ public class GuardadosFragment extends Fragment implements
      */
     private PublicacionesGuardadas publicacionesGuardadas;
 
+    private PublicacionesVistas publicacionesVistas;
+
     private RecyclerView listaGuardados;
     private CircularProgressIndicator progreso;
     private View estadoVacio;
@@ -63,6 +67,7 @@ public class GuardadosFragment extends Fragment implements
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         publicacionesGuardadas = PublicacionesGuardadas.getInstancia(context);
+        publicacionesVistas = PublicacionesVistas.getInstancia(context);
     }
 
     @Nullable
@@ -159,6 +164,7 @@ public class GuardadosFragment extends Fragment implements
     /** El usuario tocó una publicación del listado: se va a su Detalle, igual que desde el Home. */
     @Override
     public void onPublicacionClick(Publicacion publicacion) {
+        publicacionesVistas.registrarVista(publicacion);
         Bundle argumentos = new Bundle();
         argumentos.putString("publicacionId", publicacion.getId());
         NavHostFragment.findNavController(this)
@@ -173,6 +179,15 @@ public class GuardadosFragment extends Fragment implements
      */
     @Override
     public void onFavoritoClick(Publicacion publicacion, boolean favoritoNuevo) {
+        // Marcar/desmarcar favorito requiere conexión.
+        if (!ConectividadUtils.hayConexion(requireContext())) {
+            if (adapter != null) {
+                adapter.refrescarFavorito(publicacion.getId());
+            }
+            Snackbar.make(requireView(), R.string.error_accion_requiere_conexion, Snackbar.LENGTH_SHORT).show();
+            return;
+        }
+
         RepositorioCallback<Void> callback = new RepositorioCallback<Void>() {
             @Override
             public void onExito(Void resultado) {
