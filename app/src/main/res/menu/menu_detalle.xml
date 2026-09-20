@@ -16,7 +16,7 @@
 
     <item
         android:id="@+id/accionGuardar"
-        android:icon="@drawable/ic_guardar_borde"
+        android:icon="@drawable/ic_favorito_borde"
         android:title="@string/detalle_guardar"
         android:visible="false"
         app:showAsAction="always" />

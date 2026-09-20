@@ -17,18 +17,6 @@ import java.util.concurrent.Executors;
 /**
  * Últimas publicaciones que el usuario vio — Punto 6 del TPO (modo sin
  * conexión).
- * <p>
- * Mismo patrón que {@link PublicacionesGuardadas}: un DAO, un
- * {@link ExecutorService} de un solo hilo para no tocar la base en el Main
- * Thread, resultado siempre entregado por {@link RepositorioCallback} en el
- * Main Thread. Se filtra por {@link SesionUsuario#getUsuarioId()}, mismo
- * motivo que {@link PublicacionesGuardadas}: no mezclar el historial de dos
- * usuarios que prueban la app en el mismo dispositivo.
- * <p>
- * A diferencia de {@link PublicacionesGuardadas} (que solo guarda el id
- * porque siempre puede volver a pedirle los datos actuales a
- * {@code PublicacionRepositoryMock}), acá se guarda una copia completa de la
- * publicación: sin conexión no hay forma de volver a pedírsela a nadie.
  */
 public class PublicacionesVistas {
 

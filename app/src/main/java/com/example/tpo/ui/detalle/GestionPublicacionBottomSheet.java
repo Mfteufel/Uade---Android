@@ -63,8 +63,8 @@ public class GestionPublicacionBottomSheet extends BottomSheetDialogFragment {
 
     /**
      * Necesitan un {@code Context} para Room; se obtienen en {@link #onAttach}, igual que
-     * en {@link DetalleFragment}. No hace falta {@code PublicacionesGuardadas} acá: el
-     * vendedor no guarda su propia publicación.
+     * en {@link DetalleFragment}. No hace falta el favorito acá: el vendedor no marca como
+     * favorita su propia publicación.
      */
     private PreguntasPublicacion preguntasPublicacion;
     private OfertasPublicacion ofertasPublicacion;
