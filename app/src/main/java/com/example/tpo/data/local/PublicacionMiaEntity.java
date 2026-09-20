@@ -50,6 +50,10 @@ public class PublicacionMiaEntity {
     @Nullable
     public String zona;
 
+    /** Dirección de entrega, texto libre — Punto 8. */
+    @Nullable
+    public String direccionEntrega;
+
     @NonNull
     public List<Uri> fotos = new ArrayList<>();
 

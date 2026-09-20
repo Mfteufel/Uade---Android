@@ -78,6 +78,7 @@ public class BorradorRepositoryLocal implements BorradorRepository {
         entity.estadoArticulo = nombreOrNull(borrador.getEstadoArticulo());
         entity.precio = borrador.getPrecio();
         entity.zona = nombreOrNull(borrador.getZona());
+        entity.direccionEntrega = borrador.getDireccionEntrega();
         entity.paso = borrador.getPaso();
         entity.actualizadoEn = System.currentTimeMillis();
         return entity;
@@ -92,6 +93,7 @@ public class BorradorRepositoryLocal implements BorradorRepository {
         borrador.setEstadoArticulo(valorEnumOrNull(EstadoArticulo.class, entity.estadoArticulo));
         borrador.setPrecio(entity.precio);
         borrador.setZona(valorEnumOrNull(Zona.class, entity.zona));
+        borrador.setDireccionEntrega(entity.direccionEntrega);
         borrador.setPaso(entity.paso);
         return borrador;
     }

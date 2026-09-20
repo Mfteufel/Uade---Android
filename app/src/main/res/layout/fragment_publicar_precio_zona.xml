@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Paso 4 del wizard de publicar (Punto 5): precio y zona de entrega. -->
+<!-- Paso 4 del wizard de publicar (Punto 5): precio, zona y dirección de entrega (Punto 8). -->
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -65,6 +65,46 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:text="@string/publicar_error_zona"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorError"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <!--
+            Dirección exacta del punto de entrega (Punto 8). Texto libre, igual
+            que el catálogo de prueba: puede ser una dirección o coordenadas
+            pegadas de Google Maps (ver MapaUtils, que entiende los dos formatos).
+        -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/inputDireccion"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/espaciado_mediano"
+            android:hint="@string/publicar_direccion_hint">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/campoDireccion"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPostalAddress"
+                android:maxLines="2" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/publicar_direccion_ayuda"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant" />
+
+        <TextView
+            android:id="@+id/textoErrorDireccion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/publicar_error_direccion"
             android:textAppearance="?attr/textAppearanceBodySmall"
             android:textColor="?attr/colorError"
             android:visibility="gone"

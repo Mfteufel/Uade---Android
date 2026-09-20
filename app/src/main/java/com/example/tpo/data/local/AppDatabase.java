@@ -19,12 +19,18 @@ import androidx.room.RoomDatabase;
  * <p>
  * {@code version = 5}: subió dos veces en paralelo (dos ramas distintas
  * llevaron {@code OfertaEntity} de v3 a v4, cada una con columnas propias) y
- * quedaron esquemas incompatibles bajo el mismo número. Sin este bump, un
- * dispositivo que ya haya corrido una de las dos v4 crashea al abrir la app
+ * quedaron esquemas incompatibles bajo el mismo número. Sin ese bump, un
+ * dispositivo que ya haya corrido una de las dos v4 crasheaba al abrir la app
  * con la otra ({@code IllegalStateException} de Room por hash de esquema
  * distinto) en vez de simplemente recrear la base, que es lo que hace
  * {@link androidx.room.RoomDatabase.Builder#fallbackToDestructiveMigration()}
  * — pero solo ante un cambio de versión, no si el número quedó pisado.
+ * <p>
+ * {@code version = 6}: se le agregó la columna {@code direccionEntrega} a
+ * {@code BorradorPublicacionEntity} y a {@code PublicacionMiaEntity} (Punto 8:
+ * el wizard de "Publicar artículo" ahora pide la dirección de entrega). Mismo
+ * criterio que el bump anterior: sin subir la versión, Room ve un hash de
+ * esquema distinto al de la base ya instalada y crashea en vez de recrearla.
  */
 @Database(entities = {
         BorradorPublicacionEntity.class,
@@ -33,7 +39,7 @@ import androidx.room.RoomDatabase;
         PublicacionGuardadaEntity.class,
         PreguntaEntity.class,
         OfertaEntity.class
-}, version = 5, exportSchema = false)
+}, version = 6, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
     private static final String NOMBRE_ARCHIVO = "ronda.db";

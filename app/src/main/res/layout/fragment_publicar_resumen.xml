@@ -75,6 +75,15 @@
             tools:text="Zona de entrega: Caballito" />
 
         <TextView
+            android:id="@+id/textoDireccion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            tools:text="Dirección: Av. Santa Fe 3253, Palermo, CABA" />
+
+        <TextView
             android:id="@+id/textoDescripcion"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

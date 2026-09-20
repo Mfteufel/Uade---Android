@@ -118,16 +118,21 @@
     <string name="publicar_error_categoria">Elegí una categoría</string>
     <string name="publicar_error_estado">Elegí el estado del artículo</string>
 
-    <string name="publicar_paso_precio_zona">Precio y zona</string>
+    <string name="publicar_paso_precio_zona">Precio, zona y entrega</string>
     <string name="publicar_precio_hint">Precio</string>
     <string name="publicar_error_precio">Ingresá un precio válido</string>
     <string name="publicar_zona_hint">Zona de entrega</string>
     <string name="publicar_error_zona">Elegí una zona de entrega</string>
+    <!-- Punto 8: dirección exacta del punto de encuentro, cargada al publicar. -->
+    <string name="publicar_direccion_hint">Dirección de entrega</string>
+    <string name="publicar_direccion_ayuda">Se la vamos a mostrar al comprador recién cuando le aceptes una oferta.</string>
+    <string name="publicar_error_direccion">Ingresá la dirección de entrega (podés pegar coordenadas de Google Maps)</string>
 
     <string name="publicar_paso_resumen">Resumen</string>
     <string name="resumen_categoria">Categoría: %1$s</string>
     <string name="resumen_estado">Estado: %1$s</string>
     <string name="resumen_zona">Zona de entrega: %1$s</string>
+    <string name="resumen_direccion">Dirección: %1$s</string>
     <plurals name="resumen_fotos">
         <item quantity="one">%1$d foto</item>
         <item quantity="other">%1$d fotos</item>

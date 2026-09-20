@@ -36,6 +36,7 @@ public class PublicarResumenFragment extends PublicarPasoFragment {
     private TextView textoCategoria;
     private TextView textoEstado;
     private TextView textoZona;
+    private TextView textoDireccion;
     private TextView textoDescripcion;
     private CircularProgressIndicator progresoPublicando;
     private MaterialButton botonAtras;
@@ -59,6 +60,7 @@ public class PublicarResumenFragment extends PublicarPasoFragment {
         textoCategoria = view.findViewById(R.id.textoCategoria);
         textoEstado = view.findViewById(R.id.textoEstado);
         textoZona = view.findViewById(R.id.textoZona);
+        textoDireccion = view.findViewById(R.id.textoDireccion);
         textoDescripcion = view.findViewById(R.id.textoDescripcion);
         progresoPublicando = view.findViewById(R.id.progresoPublicando);
         botonAtras = view.findViewById(R.id.botonAtras);
@@ -85,6 +87,7 @@ public class PublicarResumenFragment extends PublicarPasoFragment {
         textoCategoria = null;
         textoEstado = null;
         textoZona = null;
+        textoDireccion = null;
         textoDescripcion = null;
         progresoPublicando = null;
         botonAtras = null;
@@ -107,6 +110,9 @@ public class PublicarResumenFragment extends PublicarPasoFragment {
         }
         if (borrador.getZona() != null) {
             textoZona.setText(getString(R.string.resumen_zona, borrador.getZona().getNombre()));
+        }
+        if (borrador.getDireccionEntrega() != null) {
+            textoDireccion.setText(getString(R.string.resumen_direccion, borrador.getDireccionEntrega()));
         }
         textoDescripcion.setText(borrador.getDescripcion());
     }

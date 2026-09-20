@@ -43,6 +43,7 @@ public interface ApiService {
             @Part("estadoArticulo") RequestBody estadoArticulo,
             @Part("precio") RequestBody precio,
             @Part("zona") RequestBody zona,
+            @Part("direccionEntrega") RequestBody direccionEntrega,
             @Part List<MultipartBody.Part> fotos);
 
     /** Publicaciones del vendedor logueado, para la pantalla "Mis publicaciones". */

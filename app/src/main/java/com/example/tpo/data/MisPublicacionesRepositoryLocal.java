@@ -67,6 +67,7 @@ public class MisPublicacionesRepositoryLocal implements MisPublicacionesReposito
             entity.estadoArticulo = nombreOrNull(borrador.getEstadoArticulo());
             entity.precio = borrador.getPrecio() != null ? borrador.getPrecio() : 0;
             entity.zona = nombreOrNull(borrador.getZona());
+            entity.direccionEntrega = borrador.getDireccionEntrega();
             entity.fotos = new ArrayList<>(borrador.getFotos());
             entity.estadoPublicacion = EstadoPublicacion.ACTIVA.name();
             entity.fechaPublicacion = System.currentTimeMillis();
