@@ -58,8 +58,13 @@
     </fragment>
 
     <!--
-        Perfil público del vendedor (Punto 4) — no confundir con perfilFragment
-        (Punto 2, el perfil propio del bottom nav). Detalle y Perfil se pueden
+        Perfil público de cualquier usuario (Punto 2, "consultar el perfil público
+        de la otra parte", y Punto 4, "acceso a su perfil público") — no confundir
+        con perfilFragment (el perfil propio del bottom nav). Es una sola pantalla
+        para los dos puntos: se llega desde el Detalle, desde el Historial (la
+        contraparte), desde una calificación (su autor) y desde "Ver mi perfil
+        público". El argumento se sigue llamando vendedorId por compatibilidad,
+        pero puede ser el id de cualquier usuario. Detalle y Perfil se pueden
         encadenar (ver un perfil, entrar a otra publicación suya, ver ese
         perfil...), así que la pila puede crecer. Se deja crecer a propósito:
         el "atrás" devuelve al usuario exactamente por donde vino, que es lo
@@ -79,6 +84,11 @@
         <action
             android:id="@+id/action_perfil_to_detalle"
             app:destination="@id/detalleFragment" />
+
+        <!-- Tocar el autor de una calificación abre su perfil público. -->
+        <action
+            android:id="@+id/action_perfilPublico_to_perfilPublico"
+            app:destination="@id/perfilVendedorFragment" />
     </fragment>
 
     <!-- Favoritos: destino de la bottom nav, ver menu_navegacion.xml. -->
@@ -99,7 +109,36 @@
         android:id="@+id/perfilFragment"
         android:name="com.example.tpo.ui.perfil.PerfilFragment"
         android:label="@string/perfil_titulo"
-        tools:layout="@layout/fragment_perfil" />
+        tools:layout="@layout/fragment_perfil">
+
+        <action
+            android:id="@+id/action_miPerfil_to_perfilPublico"
+            app:destination="@id/perfilVendedorFragment" />
+
+        <action
+            android:id="@+id/action_miPerfil_to_historial"
+            app:destination="@id/historialFragment" />
+
+    </fragment>
+
+    <!--
+        Punto 9 - Historial de operaciones y calificaciones. Se llega desde "Mis
+        operaciones" en el perfil propio; la hoja para calificar
+        (CalificarBottomSheet) se abre desde acá y no es un destino del grafo,
+        igual que los bottom sheets del Home.
+    -->
+    <fragment
+        android:id="@+id/historialFragment"
+        android:name="com.example.tpo.ui.historial.HistorialFragment"
+        android:label="@string/historial_titulo"
+        tools:layout="@layout/fragment_historial">
+
+        <!-- Tocar la contraparte de una operación abre su perfil público. -->
+        <action
+            android:id="@+id/action_historial_to_perfilPublico"
+            app:destination="@id/perfilVendedorFragment" />
+
+    </fragment>
 
     <!-- Punto 1 - Login. Primera pantalla de la app. -->
     <fragment

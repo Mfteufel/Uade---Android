@@ -1,6 +1,10 @@
 package com.example.tpo.ui.home;
 
+import android.content.Context;
 import android.graphics.drawable.Drawable;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -22,6 +26,7 @@ import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.tpo.R;
 import com.example.tpo.data.BusquedaGuardadaRepository;
@@ -31,6 +36,7 @@ import com.example.tpo.data.FavoritoRepositoryMock;
 import com.example.tpo.data.PaginaPublicaciones;
 import com.example.tpo.data.PublicacionRepository;
 import com.example.tpo.data.PublicacionRepositoryMock;
+import com.example.tpo.data.PublicacionesVistas;
 import com.example.tpo.data.RepositorioCallback;
 import com.example.tpo.model.Categoria;
 import com.example.tpo.model.Cercania;
@@ -39,8 +45,9 @@ import com.example.tpo.model.FiltroPublicaciones;
 import com.example.tpo.model.OrdenPublicaciones;
 import com.example.tpo.model.Publicacion;
 import com.example.tpo.ui.ChipsUtils;
-import com.google.android.material.appbar.MaterialToolbar;
+import com.example.tpo.util.ConectividadUtils;
 import com.example.tpo.util.FormatoUtils;
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -68,6 +75,11 @@ import java.util.List;
  * cada control (buscador, chips, hoja de filtros) modifica ese objeto y después
  * pide una recarga. Así hay un solo camino de datos y no una rama distinta por
  * cada control.
+ * <p>
+ * También resuelve el modo sin conexión para publicaciones vistas:
+ * cada publicación tocada se cachea en Room y si no
+ * hay conexión al pedir la página 0, se muestra ese cache en vez de llamar al
+ * repositorio.
  */
 public class HomeFragment extends Fragment implements
         PublicacionAdapter.OnPublicacionClickListener,
@@ -106,6 +118,7 @@ public class HomeFragment extends Fragment implements
     private View estadoVacio;
     private View estadoError;
     private TextView textoError;
+    private SwipeRefreshLayout swipeRefresh;
 
     private PublicacionAdapter adapter;
 
@@ -137,6 +150,51 @@ public class HomeFragment extends Fragment implements
     private final Handler handlerBusqueda = new Handler(Looper.getMainLooper());
     @Nullable
     private Runnable busquedaPendiente;
+
+    // Punto 6 (modo sin conexión): resuelto recién en onAttach porque necesita el Context.
+    private PublicacionesVistas publicacionesVistas;
+
+    /** true mientras lo que se ve en pantalla es el cache offline, no una respuesta real. */
+    private boolean mostrandoDatosSinConexion = false;
+
+    private final ConnectivityManager.NetworkCallback callbackConectividad = new ConnectivityManager.NetworkCallback() {
+        @Override
+        public void onAvailable(@NonNull Network network) {
+            intentarRecargaAutomatica();
+        }
+
+        @Override
+        public void onCapabilitiesChanged(@NonNull Network network, @NonNull NetworkCapabilities capacidades) {
+            if (capacidades.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)) {
+                intentarRecargaAutomatica();
+            }
+        }
+
+        @Override
+        public void onLost(@NonNull Network network) {
+            handlerBusqueda.post(() -> {
+                if (!mostrandoDatosSinConexion && listaPublicaciones != null) {
+                    generacionConsulta++;
+                    cargando = false;
+                    mostrarFallbackOffline(generacionConsulta);
+                }
+            });
+        }
+    };
+
+    private void intentarRecargaAutomatica() {
+        handlerBusqueda.post(() -> {
+            if (mostrandoDatosSinConexion && listaPublicaciones != null) {
+                recargarDesdeCero();
+            }
+        });
+    }
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        publicacionesVistas = PublicacionesVistas.getInstancia(context);
+    }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -182,7 +240,9 @@ public class HomeFragment extends Fragment implements
         estadoVacio = view.findViewById(R.id.estadoVacio);
         estadoError = view.findViewById(R.id.estadoError);
         textoError = view.findViewById(R.id.textoError);
+        swipeRefresh = view.findViewById(R.id.swipeRefresh);
 
+        configurarSwipeRefresh();
         configurarLista();
         configurarBuscador();
         crearChipsDeCategoria();
@@ -196,6 +256,7 @@ public class HomeFragment extends Fragment implements
         actualizarBotonFiltros();
         actualizarIndicadorNovedadBusquedas();
         recargarDesdeCero();
+        registrarCallbackConectividad();
     }
 
     @Override
@@ -219,6 +280,8 @@ public class HomeFragment extends Fragment implements
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+
+        desregistrarCallbackConectividad();
 
         // 1) Se cancela la búsqueda que estuviera esperando: si se disparara con
         //    las vistas ya destruidas, reventaría con NullPointerException.
@@ -251,6 +314,7 @@ public class HomeFragment extends Fragment implements
         estadoVacio = null;
         estadoError = null;
         textoError = null;
+        swipeRefresh = null;
         adapter = null;
     }
 
@@ -287,6 +351,12 @@ public class HomeFragment extends Fragment implements
                 }
             }
         });
+    }
+
+    private void configurarSwipeRefresh() {
+        swipeRefresh.setOnRefreshListener(this::recargarDesdeCero);
+        swipeRefresh.setOnChildScrollUpCallback((parent, child) ->
+                listaPublicaciones != null && listaPublicaciones.canScrollVertically(-1));
     }
 
     private void configurarBuscador() {
@@ -669,6 +739,11 @@ public class HomeFragment extends Fragment implements
             progresoPaginacion.setVisibility(View.VISIBLE);
         }
 
+        if (esPrimeraPagina && !ConectividadUtils.hayConexion(requireContext())) {
+            mostrarFallbackOffline(generacion);
+            return;
+        }
+
         repositorio.buscarPublicaciones(filtro, pagina, new RepositorioCallback<PaginaPublicaciones>() {
             @Override
             public void onExito(PaginaPublicaciones resultado) {
@@ -699,6 +774,8 @@ public class HomeFragment extends Fragment implements
     }
 
     private void mostrarResultado(PaginaPublicaciones resultado) {
+        mostrandoDatosSinConexion = false;
+        swipeRefresh.setRefreshing(false);
         progresoInicial.setVisibility(View.GONE);
         progresoPaginacion.setVisibility(View.GONE);
         estadoError.setVisibility(View.GONE);
@@ -727,6 +804,7 @@ public class HomeFragment extends Fragment implements
     }
 
     private void mostrarError(boolean esPrimeraPagina, String mensaje) {
+        swipeRefresh.setRefreshing(false);
         progresoInicial.setVisibility(View.GONE);
         progresoPaginacion.setVisibility(View.GONE);
 
@@ -745,6 +823,9 @@ public class HomeFragment extends Fragment implements
     }
 
     private void mostrarCargaInicial() {
+        if (swipeRefresh.isRefreshing()) {
+            return;
+        }
         progresoInicial.setVisibility(View.VISIBLE);
         progresoPaginacion.setVisibility(View.GONE);
         listaPublicaciones.setVisibility(View.GONE);
@@ -753,12 +834,79 @@ public class HomeFragment extends Fragment implements
     }
 
     // ------------------------------------------------------------------
+    // Modo sin conexión para publicaciones vistas
+    // ------------------------------------------------------------------
+
+    private void mostrarFallbackOffline(int generacion) {
+        publicacionesVistas.listar(new RepositorioCallback<List<Publicacion>>() {
+            @Override
+            public void onExito(List<Publicacion> cacheadas) {
+                if (respuestaObsoleta(generacion)) {
+                    return;
+                }
+                cargando = false;
+                mostrarResultadoOffline(cacheadas);
+            }
+
+            @Override
+            public void onError(String mensaje) {
+                // PublicacionesVistas.listar no falla: es una lectura local.
+            }
+        });
+    }
+
+    private void mostrarResultadoOffline(List<Publicacion> cacheadas) {
+        mostrandoDatosSinConexion = true;
+        swipeRefresh.setRefreshing(false);
+        if (cacheadas.isEmpty()) {
+            mostrarError(true, getString(R.string.error_sin_conexion_sin_cache));
+            return;
+        }
+
+        progresoInicial.setVisibility(View.GONE);
+        progresoPaginacion.setVisibility(View.GONE);
+        estadoError.setVisibility(View.GONE);
+        estadoVacio.setVisibility(View.GONE);
+        listaPublicaciones.setVisibility(View.VISIBLE);
+
+        adapter.reemplazar(cacheadas);
+        listaPublicaciones.scrollToPosition(0);
+
+        paginaActual = 0;
+        hayMasPaginas = false;
+
+        int total = cacheadas.size();
+        textoResultados.setText(getResources().getQuantityString(R.plurals.home_resultados, total, total));
+
+        Snackbar.make(requireView(),
+                getString(R.string.home_sin_conexion_mostrando_cache),
+                Snackbar.LENGTH_LONG).show();
+    }
+
+    private void registrarCallbackConectividad() {
+        ConnectivityManager manager = (ConnectivityManager)
+                requireContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (manager != null) {
+            manager.registerDefaultNetworkCallback(callbackConectividad);
+        }
+    }
+
+    private void desregistrarCallbackConectividad() {
+        ConnectivityManager manager = (ConnectivityManager)
+                requireContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (manager != null) {
+            manager.unregisterNetworkCallback(callbackConectividad);
+        }
+    }
+
+    // ------------------------------------------------------------------
     // Interacción con la lista
     // ------------------------------------------------------------------
 
-    /** El usuario tocó una publicación: navega al Detalle (Punto 4) con su id. */
+    /** El usuario tocó una publicación: la registra como "vista" (Punto 6) y navega al Detalle. */
     @Override
     public void onPublicacionClick(Publicacion publicacion) {
+        publicacionesVistas.registrarVista(publicacion);
         Bundle argumentos = new Bundle();
         argumentos.putString("publicacionId", publicacion.getId());
         NavHostFragment.findNavController(this)
@@ -774,6 +922,14 @@ public class HomeFragment extends Fragment implements
      */
     @Override
     public void onFavoritoClick(Publicacion publicacion, boolean favoritoNuevo) {
+        if (!ConectividadUtils.hayConexion(requireContext())) {
+            if (adapter != null) {
+                adapter.refrescarFavorito(publicacion.getId());
+            }
+            Snackbar.make(requireView(), R.string.error_accion_requiere_conexion, Snackbar.LENGTH_SHORT).show();
+            return;
+        }
+
         RepositorioCallback<Void> callback = new RepositorioCallback<Void>() {
             @Override
             public void onExito(Void resultado) {

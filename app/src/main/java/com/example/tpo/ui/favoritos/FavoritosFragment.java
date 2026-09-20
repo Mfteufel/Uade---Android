@@ -1,5 +1,6 @@
 package com.example.tpo.ui.favoritos;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,9 +16,11 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.tpo.R;
 import com.example.tpo.data.FavoritoRepository;
 import com.example.tpo.data.FavoritoRepositoryMock;
+import com.example.tpo.data.PublicacionesVistas;
 import com.example.tpo.data.RepositorioCallback;
 import com.example.tpo.model.Publicacion;
 import com.example.tpo.ui.home.PublicacionAdapter;
+import com.example.tpo.util.ConectividadUtils;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.android.material.snackbar.Snackbar;
@@ -37,6 +40,14 @@ public class FavoritosFragment extends Fragment implements
 
     private PublicacionAdapter adapter;
     private final FavoritoRepository favoritoRepositorio = FavoritoRepositoryMock.getInstancia();
+
+    private PublicacionesVistas publicacionesVistas;
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        publicacionesVistas = PublicacionesVistas.getInstancia(context);
+    }
 
     @Nullable
     @Override
@@ -111,6 +122,7 @@ public class FavoritosFragment extends Fragment implements
 
     @Override
     public void onPublicacionClick(Publicacion publicacion) {
+        publicacionesVistas.registrarVista(publicacion);
         Bundle argumentos = new Bundle();
         argumentos.putString("publicacionId", publicacion.getId());
         NavHostFragment.findNavController(this)
@@ -124,6 +136,15 @@ public class FavoritosFragment extends Fragment implements
      */
     @Override
     public void onFavoritoClick(Publicacion publicacion, boolean favoritoNuevo) {
+        // Marcar/desmarcar favorito requiere conexión.
+        if (!ConectividadUtils.hayConexion(requireContext())) {
+            if (adapter != null) {
+                adapter.refrescarFavorito(publicacion.getId());
+            }
+            Snackbar.make(requireView(), R.string.error_accion_requiere_conexion, Snackbar.LENGTH_SHORT).show();
+            return;
+        }
+
         RepositorioCallback<Void> callback = new RepositorioCallback<Void>() {
             @Override
             public void onExito(Void resultado) {

@@ -11,9 +11,10 @@ import androidx.room.RoomDatabase;
  * <p>
  * Tiene la tabla del borrador de "Publicar artículo", la de "Mis
  * publicaciones" (Punto 5, reemplazo local mientras no exista el backend
- * real) y las cuatro tablas de persistencia del Detalle (Punto 4): guardados,
+ * real), las cuatro tablas de persistencia del Detalle (Punto 4): guardados,
  * preguntas, ofertas (con su ciclo de negociación completo del Punto 7) y el
- * override de estado de la publicación. Se arma como singleton, igual que
+ * override de estado de la publicación, y la de publicaciones vistas (Punto 6,
+ * modo sin conexión). Se arma como singleton, igual que
  * {@code PublicacionRepositoryMock} y {@code SesionUsuario}, para no abrir
  * más de una conexión a la misma base.
  * <p>
@@ -31,6 +32,13 @@ import androidx.room.RoomDatabase;
  * el wizard de "Publicar artículo" ahora pide la dirección de entrega). Mismo
  * criterio que el bump anterior: sin subir la versión, Room ve un hash de
  * esquema distinto al de la base ya instalada y crashea en vez de recrearla.
+ * <p>
+ * {@code version = 7}: al traer main de nuevo, otra rama había sumado en
+ * paralelo la tabla {@code publicaciones_vistas} (Punto 6) bajo su propio
+ * {@code version = 5} — ya van dos esquemas distintos numerados 5 (ver el
+ * párrafo anterior), más el 6 de {@code direccionEntrega}, todos incompatibles
+ * entre sí bajo el mismo número. Este esquema mergeado (las 7 entidades) no
+ * coincide con ninguno de los anteriores, así que necesita número propio.
  */
 @Database(entities = {
         BorradorPublicacionEntity.class,
@@ -38,8 +46,9 @@ import androidx.room.RoomDatabase;
         PublicacionEstadoEntity.class,
         PublicacionGuardadaEntity.class,
         PreguntaEntity.class,
-        OfertaEntity.class
-}, version = 6, exportSchema = false)
+        OfertaEntity.class,
+        PublicacionVistaEntity.class
+}, version = 7, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
     private static final String NOMBRE_ARCHIVO = "ronda.db";
@@ -57,6 +66,8 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract PreguntaDao preguntaDao();
 
     public abstract OfertaDao ofertaDao();
+
+    public abstract PublicacionVistaDao publicacionVistaDao();
 
     public static AppDatabase getInstancia(Context context) {
         if (instancia == null) {

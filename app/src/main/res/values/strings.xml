@@ -46,6 +46,9 @@
     <string name="error_titulo">No pudimos cargar las publicaciones</string>
     <string name="error_mensaje">Revisá tu conexión e intentá de nuevo.</string>
     <string name="error_reintentar">Reintentar</string>
+    <string name="error_sin_conexion_sin_cache">Estás sin conexión y todavía no viste ninguna publicación para mostrarte.</string>
+    <string name="home_sin_conexion_mostrando_cache">Sin conexión: mostrando las últimas publicaciones que viste.</string>
+    <string name="error_accion_requiere_conexion">Necesitás conexión a internet para continuar.</string>
 
     <!-- ===================== Bottom sheet de filtros ===================== -->
     <string name="filtros_titulo">Filtros</string>
@@ -298,6 +301,56 @@
     <string name="perfil_cancelar">Cancelar</string>
     <string name="perfil_guardado">Perfil actualizado</string>
     <string name="perfil_zona_invalida">Elegí una zona de la lista</string>
+    <string name="perfil_foto_descripcion">Foto de perfil</string>
+    <string name="perfil_cambiar_foto">Cambiar foto</string>
+    <string name="perfil_foto_actualizada">Foto actualizada</string>
+    <plurals name="perfil_cantidad_calificaciones">
+        <item quantity="one">(%d calificación)</item>
+        <item quantity="other">(%d calificaciones)</item>
+    </plurals>
+    <plurals name="perfil_calificaciones_pendientes">
+        <item quantity="one">Tenés %d calificación pendiente</item>
+        <item quantity="other">Tenés %d calificaciones pendientes</item>
+    </plurals>
+    <string name="perfil_mis_operaciones">Mis operaciones</string>
+    <string name="perfil_ver_perfil_publico">Ver mi perfil público</string>
+
+    <!-- Perfil público (se llega desde el Detalle, el Historial o "Ver mi perfil público") -->
+    <string name="perfil_publico_titulo">Perfil</string>
+    <string name="perfil_publico_titulo_propio">Tu perfil público</string>
+    <string name="perfil_publico_sin_calificaciones">Todavía no recibió calificaciones</string>
+    <string name="perfil_publico_sin_publicaciones">No tiene publicaciones activas</string>
+    <string name="perfil_publico_zona">Zona: %1$s</string>
+    <string name="perfil_tab_publicaciones">Publicaciones</string>
+    <string name="perfil_tab_calificaciones">Calificaciones</string>
+    <string name="perfil_tab_publicaciones_cantidad">Publicaciones (%1$d)</string>
+    <string name="perfil_tab_calificaciones_cantidad">Calificaciones (%1$d)</string>
+    <string name="perfil_calificaciones_error">No pudimos cargar las calificaciones</string>
+    <string name="calificacion_articulo">Por: %1$s</string>
+    <string name="calificacion_estrellas_descripcion">%1$d de 5 estrellas</string>
+
+    <!-- ===================== Historial y Calificaciones ===================== -->
+    <string name="historial_titulo">Mis operaciones</string>
+    <string name="historial_compras">Compras</string>
+    <string name="historial_ventas">Ventas</string>
+    <string name="historial_todas">Todas</string>
+    <string name="historial_fechas">Fechas</string>
+    <string name="historial_elegir_fechas">Operaciones entre</string>
+    <string name="historial_rango_fechas">%1$s – %2$s</string>
+    <string name="historial_le_compraste">Le compraste a %1$s</string>
+    <string name="historial_le_vendiste">Le vendiste a %1$s</string>
+    <string name="historial_entregada_el">Entregada el %1$s</string>
+    <string name="historial_calificar">Calificar</string>
+    <string name="historial_calificar_hasta">Podés calificar hasta el %1$s</string>
+    <string name="historial_ya_calificaste">Calificaste con</string>
+    <string name="historial_plazo_vencido">El plazo de 7 días para calificar ya venció</string>
+    <string name="historial_vacio">Todavía no concretaste operaciones</string>
+    <string name="historial_vacio_con_filtros">No hay operaciones con estos filtros</string>
+    <string name="calificar_titulo">Calificá a %1$s</string>
+    <string name="calificar_estrellas_descripcion">Elegí de 1 a 5 estrellas</string>
+    <string name="calificar_comentario">Comentario (opcional)</string>
+    <string name="calificar_enviar">Enviar</string>
+    <string name="calificacion_enviada">¡Gracias! Tu calificación quedó registrada</string>
 
     <!-- ===================== Negociación de ofertas (Punto 7) ===================== -->
     <string name="estado_oferta_pendiente">Pendiente</string>

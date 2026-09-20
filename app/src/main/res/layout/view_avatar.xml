@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Avatar de un usuario (Punto 2): la foto de perfil si tiene, o sus iniciales
+    sobre un círculo si no.
+
+    Las dos vistas están superpuestas y PerfilUi.pintarAvatar() decide cuál se ve.
+    La foto usa ShapeableImageView (Material) para recortarla en círculo sin
+    librerías de imágenes. El tamaño lo pone quien lo incluye.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/textoIniciales"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/fondo_avatar"
+        android:gravity="center"
+        android:importantForAccessibility="no"
+        android:textAppearance="?attr/textAppearanceHeadlineSmall"
+        android:textColor="?attr/colorOnPrimaryContainer"
+        tools:text="W" />
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/imagenFoto"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@string/perfil_foto_descripcion"
+        android:scaleType="centerCrop"
+        android:visibility="gone"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
+
+</FrameLayout>
