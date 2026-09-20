@@ -31,6 +31,8 @@ import com.example.tpo.data.PaginaPublicaciones;
 import com.example.tpo.data.PublicacionRepository;
 import com.example.tpo.data.PublicacionRepositoryMock;
 import com.example.tpo.data.RepositorioCallback;
+import com.example.tpo.data.local.PublicacionVistaDao;
+import com.example.tpo.data.local.PublicacionVistaEntity;
 import com.example.tpo.model.Categoria;
 import com.example.tpo.model.Cercania;
 import com.example.tpo.model.EstadoArticulo;
@@ -38,6 +40,7 @@ import com.example.tpo.model.FiltroPublicaciones;
 import com.example.tpo.model.OrdenPublicaciones;
 import com.example.tpo.model.Publicacion;
 import com.example.tpo.ui.ChipsUtils;
+import com.example.tpo.util.ConectividadUtils;
 import com.example.tpo.util.FormatoUtils;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.ChipGroup;
@@ -49,6 +52,12 @@ import com.google.android.material.textfield.TextInputEditText;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import javax.inject.Inject;
+
+import dagger.hilt.android.AndroidEntryPoint;
 
 /**
  * Home / Explorar publicaciones — Punto 3 del TPO.
@@ -65,7 +74,13 @@ import java.util.List;
  * cada control (buscador, chips, hoja de filtros) modifica ese objeto y después
  * pide una recarga. Así hay un solo camino de datos y no una rama distinta por
  * cada control.
+ * <p>
+ * También resuelve el modo sin conexión para publicaciones vistas:
+ * cada publicación tocada se cachea en Room y si no
+ * hay conexión al pedir la página 0, se muestra ese cache en vez de llamar al
+ * repositorio.
  */
+@AndroidEntryPoint
 public class HomeFragment extends Fragment implements
         PublicacionAdapter.OnPublicacionClickListener,
         PublicacionAdapter.OnFavoritoClickListener {
@@ -132,6 +147,12 @@ public class HomeFragment extends Fragment implements
     private final Handler handlerBusqueda = new Handler(Looper.getMainLooper());
     @Nullable
     private Runnable busquedaPendiente;
+
+    // Cache de publicaciones vistas para el modo offline ---
+    @Inject
+    PublicacionVistaDao publicacionVistaDao;
+    private final ExecutorService executorCache = Executors.newSingleThreadExecutor();
+    private final Handler handlerPrincipal = new Handler(Looper.getMainLooper());
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -242,6 +263,12 @@ public class HomeFragment extends Fragment implements
         estadoError = null;
         textoError = null;
         adapter = null;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        executorCache.shutdown();
     }
 
     // ------------------------------------------------------------------
@@ -630,6 +657,11 @@ public class HomeFragment extends Fragment implements
             progresoPaginacion.setVisibility(View.VISIBLE);
         }
 
+        if (esPrimeraPagina && !ConectividadUtils.hayConexion(requireContext())) {
+            mostrarFallbackOffline(generacion);
+            return;
+        }
+
         repositorio.buscarPublicaciones(filtro, pagina, new RepositorioCallback<PaginaPublicaciones>() {
             @Override
             public void onExito(PaginaPublicaciones resultado) {
@@ -714,12 +746,67 @@ public class HomeFragment extends Fragment implements
     }
 
     // ------------------------------------------------------------------
+    // Modo sin conexión para publicaciones vistas
+    // ------------------------------------------------------------------
+
+    private void mostrarFallbackOffline(int generacion) {
+        executorCache.execute(() -> {
+            List<Publicacion> cacheadas = new ArrayList<>();
+            for (PublicacionVistaEntity entidad : publicacionVistaDao.obtenerTodas()) {
+                cacheadas.add(entidad.aPublicacion());
+            }
+            handlerPrincipal.post(() -> {
+                if (respuestaObsoleta(generacion)) {
+                    return;
+                }
+                cargando = false;
+                mostrarResultadoOffline(cacheadas);
+            });
+        });
+    }
+
+    private void mostrarResultadoOffline(List<Publicacion> cacheadas) {
+        if (cacheadas.isEmpty()) {
+            mostrarError(true, getString(R.string.error_sin_conexion_sin_cache));
+            return;
+        }
+
+        progresoInicial.setVisibility(View.GONE);
+        progresoPaginacion.setVisibility(View.GONE);
+        estadoError.setVisibility(View.GONE);
+        estadoVacio.setVisibility(View.GONE);
+        listaPublicaciones.setVisibility(View.VISIBLE);
+
+        adapter.reemplazar(cacheadas);
+        listaPublicaciones.scrollToPosition(0);
+
+        paginaActual = 0;
+        hayMasPaginas = false;
+
+        int total = cacheadas.size();
+        textoResultados.setText(getResources().getQuantityString(R.plurals.home_resultados, total, total));
+
+        Snackbar.make(requireView(),
+                getString(R.string.home_sin_conexion_mostrando_cache),
+                Snackbar.LENGTH_LONG).show();
+    }
+
+    private void cachearVista(Publicacion publicacion) {
+        long ahora = System.currentTimeMillis();
+        executorCache.execute(() -> {
+            publicacionVistaDao.guardar(PublicacionVistaEntity.desde(publicacion, ahora));
+            publicacionVistaDao.limitarCantidad();
+        });
+    }
+
+    // ------------------------------------------------------------------
     // Interacción con la lista
     // ------------------------------------------------------------------
 
     /** El usuario tocó una publicación. */
     @Override
     public void onPublicacionClick(Publicacion publicacion) {
+        cachearVista(publicacion);
         Snackbar.make(
                 requireView(),
                 getString(R.string.detalle_proximamente, publicacion.getTitulo()),
