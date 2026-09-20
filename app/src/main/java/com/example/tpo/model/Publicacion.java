@@ -62,29 +62,17 @@ public class Publicacion implements Serializable {
     private EstadoPublicacion estadoPublicacion = EstadoPublicacion.ACTIVA;
     /**
      * Dirección exacta del punto de entrega, en texto libre (puede ser una
-     * dirección o directamente coordenadas pegadas de Google Maps) — Punto 8.
+     * dirección o directamente coordenadas pegadas de Google Maps) — cargada
+     * por el vendedor al publicar (Punto 5). Solo se le debería mostrar al
+     * comprador cuando tiene una {@link Oferta} en estado {@code ACEPTADA}
+     * para esta publicación (ver {@code OfertasPublicacion}, Punto 7); esta
+     * clase no impone esa regla, solo guarda el dato — la UI que decide
+     * mostrarlo o no vive en el Detalle de Publicación (Punto 8).
      * <p>
-     * {@code null} en las publicaciones que todavía no la cargaron (el
-     * enunciado la exige recién desde el Punto 5, que la carga al publicar).
-     * Por eso no se agregó como parámetro obligatorio del constructor
-     * principal: así el catálogo de prueba puede migrarse de a poco.
+     * {@code null} en las publicaciones que todavía no la cargaron.
      */
     @Nullable
     private final String direccionEntrega;
-
-    public Publicacion(String id,
-                       String titulo,
-                       String descripcion,
-                       double precio,
-                       EstadoArticulo estado,
-                       Categoria categoria,
-                       Zona zona,
-                       long fechaPublicacion,
-                       Vendedor vendedor,
-                       int cantidadFotos) {
-        this(id, titulo, descripcion, precio, estado, categoria, zona,
-                fechaPublicacion, vendedor, cantidadFotos, null);
-    }
 
     public Publicacion(String id,
                        String titulo,

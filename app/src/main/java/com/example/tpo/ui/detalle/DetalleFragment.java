@@ -28,6 +28,7 @@ import com.example.tpo.data.PublicacionRepositoryMock;
 import com.example.tpo.data.PublicacionesGuardadas;
 import com.example.tpo.data.RepositorioCallback;
 import com.example.tpo.data.SesionUsuario;
+import com.example.tpo.model.EstadoOferta;
 import com.example.tpo.model.EstadoPublicacion;
 import com.example.tpo.model.Oferta;
 import com.example.tpo.model.Pregunta;
@@ -543,8 +544,18 @@ public class DetalleFragment extends Fragment {
         if (miOferta != null) {
             grupoMisInteracciones.addView(
                     inflarEncabezado(inflater, R.string.detalle_mi_oferta_titulo));
-            grupoMisInteracciones.addView(inflarFilaInteraccion(inflater, R.drawable.ic_ofertar,
-                    FormatoUtils.precio(miOferta.getMonto()), miOferta.getFecha()));
+            // Se suma el estado (Pendiente/Aceptada/Rechazada/Vencida) junto a la
+            // antigüedad para que se note en pantalla por qué se desbloqueó (o no)
+            // el punto de entrega, sin tener que ir hasta "Mis ofertas".
+            String antiguedadYEstado = getString(R.string.detalle_mi_oferta_estado,
+                    FormatoUtils.antiguedad(requireContext(), miOferta.getFecha()),
+                    getString(miOferta.getEstado().getEtiqueta()));
+            View filaOferta = inflater.inflate(R.layout.item_interaccion, grupoMisInteracciones, false);
+            ((ImageView) filaOferta.findViewById(R.id.iconoInteraccion)).setImageResource(R.drawable.ic_ofertar);
+            ((TextView) filaOferta.findViewById(R.id.textoInteraccion))
+                    .setText(FormatoUtils.precio(miOferta.getMonto()));
+            ((TextView) filaOferta.findViewById(R.id.autorInteraccion)).setText(antiguedadYEstado);
+            grupoMisInteracciones.addView(filaOferta);
         }
 
         boolean hayAlgoQueMostrar = !misPreguntas.isEmpty() || miOferta != null;
@@ -613,15 +624,14 @@ public class DetalleFragment extends Fragment {
     }
 
     /**
-     * El enunciado del Punto 8 dice "una vez aceptada una oferta". El Punto 7
-     * (ofertas con estados, contraoferta, vencimiento) todavía no está hecho,
-     * así que por ahora usamos como equivalente que el vendedor haya marcado
-     * como aceptada la oferta que este usuario ya mandó. El día que exista el
-     * ciclo completo de estados, este método es el único lugar que hay que
-     * cambiar.
+     * El enunciado del Punto 8 dice "una vez aceptada una oferta". Con el
+     * ciclo completo de estados del Punto 7 ya integrado, el desbloqueo es
+     * literal: la oferta vigente de este usuario está en {@code ACEPTADA},
+     * ya sea porque el vendedor aceptó su oferta original o porque él aceptó
+     * una contraoferta del vendedor.
      */
     private boolean puedeVerPuntoDeEntrega(@Nullable Oferta oferta) {
-        return oferta != null && oferta.isAceptada();
+        return oferta != null && oferta.getEstado() == EstadoOferta.ACEPTADA;
     }
 
     // ------------------------------------------------------------------
@@ -861,9 +871,8 @@ public class DetalleFragment extends Fragment {
      */
     private void registrarOferta(Publicacion publicacion, double monto) {
         SesionUsuario sesion = SesionUsuario.getInstancia();
-        Oferta oferta = new Oferta(
-                publicacion.getId(), sesion.getIdUsuario(), sesion.getNombre(),
-                monto, System.currentTimeMillis());
+        Oferta oferta = ofertasPublicacion.crearOferta(
+                publicacion, sesion.getIdUsuario(), sesion.getNombre(), monto);
         ofertasPublicacion.guardar(oferta, new RepositorioCallback<Void>() {
             @Override
             public void onExito(Void resultado) {

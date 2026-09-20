@@ -429,9 +429,10 @@ public class HomeFragment extends Fragment implements
 
     /**
      * Cablea el FAB que abre el wizard de publicar (Punto 5) y los ítems del
-     * menú de la toolbar: "Mis publicaciones" (Punto 5) y "Ver guardados"
+     * menú de la toolbar: "Mis publicaciones" (Punto 5), "Ver guardados"
      * (Punto 4, la lista del bookmark del Detalle — no confundir con
-     * Favoritos, que tiene su propia pestaña en la bottom nav).
+     * Favoritos, que tiene su propia pestaña en la bottom nav) y "Mis ofertas"
+     * (Punto 7, negociación).
      */
     private void configurarEntradaAPublicar() {
         fabPublicar.setOnClickListener(v -> NavHostFragment.findNavController(this)
@@ -445,6 +446,10 @@ public class HomeFragment extends Fragment implements
             }
             if (item.getItemId() == R.id.menuVerGuardados) {
                 NavHostFragment.findNavController(this).navigate(R.id.action_home_to_guardados);
+                return true;
+            }
+            if (item.getItemId() == R.id.menuMisOfertas) {
+                NavHostFragment.findNavController(this).navigate(R.id.action_home_to_misOfertas);
                 return true;
             }
             return false;
