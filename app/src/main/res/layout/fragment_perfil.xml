@@ -101,13 +101,39 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/espaciado_grande" />
 
-            <!-- - Perfil público - -->
+            <!-- - Actividad: historial y perfil público (Punto 9) - -->
+            <!--
+                El aviso de calificaciones pendientes es la forma en que "cada parte
+                recibe en la app la opción de calificar": lo cuenta el servidor y se
+                oculta cuando no hay ninguna.
+            -->
+            <TextView
+                android:id="@+id/textoCalificacionesPendientes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaciado_pantalla"
+                android:drawablePadding="@dimen/espaciado_chico"
+                android:gravity="center_vertical"
+                android:textAppearance="?attr/textAppearanceLabelLarge"
+                android:textColor="?attr/colorPrimary"
+                android:visibility="gone"
+                app:drawableStartCompat="@drawable/ic_estrella"
+                tools:text="Tenés 3 calificaciones pendientes"
+                tools:visibility="visible" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/botonMisOperaciones"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/espaciado_chico"
+                android:text="@string/perfil_mis_operaciones" />
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/botonVerPerfilPublico"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/espaciado_pantalla"
                 android:text="@string/perfil_ver_perfil_publico" />
 
             <!-- - Datos personales - -->

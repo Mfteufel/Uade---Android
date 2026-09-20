@@ -2,9 +2,13 @@ package com.example.tpo.di;
 
 import android.content.Context;
 
+import com.example.tpo.data.OperacionRepository;
+import com.example.tpo.data.OperacionRepositoryApi;
+import com.example.tpo.data.OperacionRepositoryMock;
 import com.example.tpo.data.PerfilRepository;
 import com.example.tpo.data.PerfilRepositoryApi;
 import com.example.tpo.data.PerfilRepositoryMock;
+import com.example.tpo.data.remote.OperacionApi;
 import com.example.tpo.data.remote.UsuarioApi;
 
 import javax.inject.Singleton;
@@ -50,7 +54,19 @@ public class RepositoryModule {
 
     @Provides
     @Singleton
+    public OperacionRepository provideOperacionRepository(OperacionApi api) {
+        return USAR_API ? new OperacionRepositoryApi(api) : new OperacionRepositoryMock();
+    }
+
+    @Provides
+    @Singleton
     public UsuarioApi provideUsuarioApi(Retrofit retrofit) {
         return retrofit.create(UsuarioApi.class);
+    }
+
+    @Provides
+    @Singleton
+    public OperacionApi provideOperacionApi(Retrofit retrofit) {
+        return retrofit.create(OperacionApi.class);
     }
 }

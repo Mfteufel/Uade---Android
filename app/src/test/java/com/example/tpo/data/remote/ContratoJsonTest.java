@@ -5,7 +5,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.example.tpo.data.remote.dto.OperacionResponse;
 import com.example.tpo.data.remote.dto.UsuarioResponse;
+import com.example.tpo.model.EstadoOperacion;
+import com.example.tpo.model.Operacion;
+import com.example.tpo.model.TipoOperacion;
 import com.example.tpo.model.Usuario;
 import com.example.tpo.model.Zona;
 import com.google.gson.Gson;
@@ -62,6 +66,28 @@ public class ContratoJsonTest {
         assertFalse(usuario.tieneFoto());
         assertFalse(usuario.getReputacion().tieneCalificaciones());
         assertEquals(0, usuario.getCalificacionesPendientes());
+    }
+
+    @Test
+    public void operacionVistaPorElComprador() {
+        String json = "{\"id\": 12, \"publicacion_id\": 4, \"articulo\": \"Teclado mecánico\","
+                + " \"monto_final\": 45000, \"fecha_operacion\": 1726000000000,"
+                + " \"fecha_entrega\": 1726200000000, \"estado\": \"ENTREGADA\", \"tipo\": \"COMPRA\","
+                + " \"comprador\": {\"id\": 1, \"nombre\": \"Walter\"},"
+                + " \"vendedor\": {\"id\": 3, \"nombre\": \"Sofía M.\"},"
+                + " \"mi_calificacion\": null, \"puede_calificar\": true,"
+                + " \"calificable_hasta\": 1726804800000}";
+
+        Operacion operacion = gson.fromJson(json, OperacionResponse.class).aModelo();
+
+        assertEquals("12", operacion.getId());
+        assertEquals(TipoOperacion.COMPRA, operacion.getTipo());
+        assertEquals(EstadoOperacion.ENTREGADA, operacion.getEstado());
+        assertEquals("Sofía M.", operacion.getContraparte().getNombre());
+        assertEquals(45000, operacion.getMontoFinal(), 0.001);
+        assertTrue(operacion.puedeCalificar());
+        assertFalse(operacion.yaCalifique());
+        assertEquals(1726804800000L, (long) operacion.getCalificableHasta());
     }
 
     @Test

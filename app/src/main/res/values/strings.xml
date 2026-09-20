@@ -291,9 +291,14 @@
         <item quantity="one">(%d calificación)</item>
         <item quantity="other">(%d calificaciones)</item>
     </plurals>
+    <plurals name="perfil_calificaciones_pendientes">
+        <item quantity="one">Tenés %d calificación pendiente</item>
+        <item quantity="other">Tenés %d calificaciones pendientes</item>
+    </plurals>
+    <string name="perfil_mis_operaciones">Mis operaciones</string>
     <string name="perfil_ver_perfil_publico">Ver mi perfil público</string>
 
-    <!-- Perfil público (se llega desde el Detalle, una calificación o "Ver mi perfil público") -->
+    <!-- Perfil público (se llega desde el Detalle, el Historial o "Ver mi perfil público") -->
     <string name="perfil_publico_titulo">Perfil</string>
     <string name="perfil_publico_titulo_propio">Tu perfil público</string>
     <string name="perfil_publico_sin_calificaciones">Todavía no recibió calificaciones</string>
@@ -308,9 +313,27 @@
     <string name="calificacion_estrellas_descripcion">%1$d de 5 estrellas</string>
 
     <!-- ===================== Historial y Calificaciones ===================== -->
-    <!-- Etiquetas de TipoOperacion (modelo compartido con la reputación del Punto 2). -->
+    <string name="historial_titulo">Mis operaciones</string>
     <string name="historial_compras">Compras</string>
     <string name="historial_ventas">Ventas</string>
+    <string name="historial_todas">Todas</string>
+    <string name="historial_fechas">Fechas</string>
+    <string name="historial_elegir_fechas">Operaciones entre</string>
+    <string name="historial_rango_fechas">%1$s – %2$s</string>
+    <string name="historial_le_compraste">Le compraste a %1$s</string>
+    <string name="historial_le_vendiste">Le vendiste a %1$s</string>
+    <string name="historial_entregada_el">Entregada el %1$s</string>
+    <string name="historial_calificar">Calificar</string>
+    <string name="historial_calificar_hasta">Podés calificar hasta el %1$s</string>
+    <string name="historial_ya_calificaste">Calificaste con</string>
+    <string name="historial_plazo_vencido">El plazo de 7 días para calificar ya venció</string>
+    <string name="historial_vacio">Todavía no concretaste operaciones</string>
+    <string name="historial_vacio_con_filtros">No hay operaciones con estos filtros</string>
+    <string name="calificar_titulo">Calificá a %1$s</string>
+    <string name="calificar_estrellas_descripcion">Elegí de 1 a 5 estrellas</string>
+    <string name="calificar_comentario">Comentario (opcional)</string>
+    <string name="calificar_enviar">Enviar</string>
+    <string name="calificacion_enviada">¡Gracias! Tu calificación quedó registrada</string>
 
     <!-- ===================== Negociación de ofertas (Punto 7) ===================== -->
     <string name="estado_oferta_pendiente">Pendiente</string>

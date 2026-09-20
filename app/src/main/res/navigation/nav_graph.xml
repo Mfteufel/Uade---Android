@@ -61,8 +61,9 @@
         Perfil público de cualquier usuario (Punto 2, "consultar el perfil público
         de la otra parte", y Punto 4, "acceso a su perfil público") — no confundir
         con perfilFragment (el perfil propio del bottom nav). Es una sola pantalla
-        para los dos puntos: se llega desde el Detalle, desde una calificación
-        (su autor) y desde "Ver mi perfil público". El argumento se sigue llamando vendedorId por compatibilidad,
+        para los dos puntos: se llega desde el Detalle, desde el Historial (la
+        contraparte), desde una calificación (su autor) y desde "Ver mi perfil
+        público". El argumento se sigue llamando vendedorId por compatibilidad,
         pero puede ser el id de cualquier usuario. Detalle y Perfil se pueden
         encadenar (ver un perfil, entrar a otra publicación suya, ver ese
         perfil...), así que la pila puede crecer. Se deja crecer a propósito:
@@ -112,6 +113,29 @@
 
         <action
             android:id="@+id/action_miPerfil_to_perfilPublico"
+            app:destination="@id/perfilVendedorFragment" />
+
+        <action
+            android:id="@+id/action_miPerfil_to_historial"
+            app:destination="@id/historialFragment" />
+
+    </fragment>
+
+    <!--
+        Punto 9 - Historial de operaciones y calificaciones. Se llega desde "Mis
+        operaciones" en el perfil propio; la hoja para calificar
+        (CalificarBottomSheet) se abre desde acá y no es un destino del grafo,
+        igual que los bottom sheets del Home.
+    -->
+    <fragment
+        android:id="@+id/historialFragment"
+        android:name="com.example.tpo.ui.historial.HistorialFragment"
+        android:label="@string/historial_titulo"
+        tools:layout="@layout/fragment_historial">
+
+        <!-- Tocar la contraparte de una operación abre su perfil público. -->
+        <action
+            android:id="@+id/action_historial_to_perfilPublico"
             app:destination="@id/perfilVendedorFragment" />
 
     </fragment>
