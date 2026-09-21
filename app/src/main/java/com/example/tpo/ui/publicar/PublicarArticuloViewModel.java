@@ -120,11 +120,16 @@ public class PublicarArticuloViewModel extends AndroidViewModel {
             public void onExito(MiPublicacion resultado) {
                 publicando.setValue(false);
                 borradorRepository.borrar();
-                // "Mis publicaciones" (Room) y el catálogo de Home (mock en memoria)
-                // son dos fuentes de datos separadas mientras no hay backend: sin
-                // este paso, lo recién publicado nunca aparecía en Home. Ver
+                // "Mis publicaciones" (Room) y el catálogo de Home (mock en memoria,
+                // más una copia en Room propia) son dos fuentes de datos separadas
+                // mientras no hay backend: sin este paso, lo recién publicado nunca
+                // aparecía en Home. Se reusa resultado.getId() (el id que ya generó
+                // Room para "Mis publicaciones") en vez de dejar que
+                // PublicacionRepositoryMock invente uno propio, para que las dos
+                // copias de la misma publicación compartan un solo id. Ver
                 // PublicacionRepositoryMock#agregarPublicacionDelUsuario.
-                PublicacionRepositoryMock.getInstancia().agregarPublicacionDelUsuario(actual);
+                PublicacionRepositoryMock.getInstancia()
+                        .agregarPublicacionDelUsuario(resultado.getId(), actual);
                 callback.onExito(resultado);
             }
 
