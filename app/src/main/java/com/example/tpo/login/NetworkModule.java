@@ -1,5 +1,7 @@
 package com.example.tpo.login;
 
+import java.util.concurrent.TimeUnit;
+
 import javax.inject.Singleton;
 
 import dagger.Module;
@@ -21,6 +23,9 @@ public class NetworkModule {
     @Singleton
     public OkHttpClient provideOkHttp(TokenManager tokenManager) {
         return new OkHttpClient.Builder()
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(30, TimeUnit.SECONDS)
+                .writeTimeout(30, TimeUnit.SECONDS)
                 .addInterceptor(chain -> {
                     Request original = chain.request();
                     String token = tokenManager.getToken();
@@ -42,5 +47,11 @@ public class NetworkModule {
                 .client(okHttpClient)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
+    }
+
+    @Provides
+    @Singleton
+    public AuthApi provideAuthApi(Retrofit retrofit) {
+        return retrofit.create(AuthApi.class);
     }
 }

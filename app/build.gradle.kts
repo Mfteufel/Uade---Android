@@ -75,6 +75,7 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp)
+    implementation(libs.security.crypto)
     implementation(libs.okhttp.logging.interceptor)
     implementation(libs.gson)
     testImplementation(libs.junit)

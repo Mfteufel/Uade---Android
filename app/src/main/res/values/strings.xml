@@ -2,6 +2,37 @@
     <string name="app_name">Ronda</string>
 
     <!-- ===================== Login (Punto 1) ===================== -->
+    <string name="login_crear_cuenta">Crear una cuenta</string>
+    <string name="login_completar_campos">Completá el email y la contraseña</string>
+    <string name="login_email_invalido">El email no tiene un formato válido</string>
+    <string name="login_email_para_codigo">Escribí tu email para recibir el código</string>
+    <string name="login_credenciales_incorrectas">Email o contraseña incorrectos</string>
+    <string name="login_sesion_vencida">Tu sesión venció, ingresá de nuevo</string>
+    <string name="login_sin_conexion">No hay conexión. Revisá tu internet y probá de nuevo</string>
+    <string name="login_error_servidor">Error del servidor (%1$d)</string>
+    <string name="codigo_titulo">Ingresá el código</string>
+    <string name="codigo_enviado_a">Te enviamos un código de 6 dígitos a %1$s</string>
+    <string name="codigo_de_prueba">Código de prueba: %1$s</string>
+    <string name="codigo_hint">Código</string>
+    <string name="codigo_verificar">Verificar</string>
+    <string name="codigo_reenviar">Reenviar código</string>
+    <string name="codigo_incompleto">El código tiene 6 dígitos</string>
+    <string name="codigo_incorrecto">El código es incorrecto o ya venció</string>
+    <string name="codigo_reenviado">Te enviamos un código nuevo</string>
+    <string name="codigo_esperar">Esperá unos segundos antes de pedir otro código</string>
+    <string name="codigo_sin_pedido">No hay ningún pedido de código para ese email</string>
+    <string name="registro_titulo">Crear una cuenta</string>
+    <string name="registro_nombre">Nombre</string>
+    <string name="registro_crear">Crear cuenta</string>
+    <string name="registro_ya_tengo_cuenta">Ya tengo una cuenta</string>
+    <string name="registro_completar_campos">Completá el nombre, el email y la contraseña</string>
+    <string name="registro_clave_corta">La contraseña tiene que tener al menos %1$d caracteres</string>
+    <string name="registro_email_en_uso">Ese email ya tiene una cuenta. Probá ingresar</string>
+    <string name="registro_datos_invalidos">Revisá los datos e intentá de nuevo</string>
+    <string name="biometria_activar_titulo">¿Entrar con tu huella?</string>
+    <string name="biometria_activar_mensaje">La próxima vez vas a poder desbloquear Ronda con tu huella, tu cara o el PIN del equipo.</string>
+    <string name="biometria_activar_si">Sí, activar</string>
+    <string name="biometria_activar_no">No, gracias</string>
     <string name="login_email">Email</string>
     <string name="login_clave">Contraseña</string>
     <string name="login_ingresar">Ingresar</string>

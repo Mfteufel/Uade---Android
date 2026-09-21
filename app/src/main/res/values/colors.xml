@@ -54,4 +54,10 @@
     <color name="ronda_inverse_primary">#98D7B2</color>
 
     <color name="color_indicador_novedad">#E53935</color>
+
+    <!-- Colores del logo -->
+    <color name="ronda_marca_azul">#235F8B</color>
+    <color name="ronda_marca_turquesa">#49A7AD</color>
+    <color name="ronda_marca_naranja">#F68342</color>
+    <color name="ronda_marca_crema">#FBFCF6</color>
 </resources>

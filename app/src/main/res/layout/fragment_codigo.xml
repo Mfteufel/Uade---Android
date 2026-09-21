@@ -14,8 +14,8 @@
         android:padding="@dimen/espaciado_grande">
 
         <ImageView
-            android:layout_width="160dp"
-            android:layout_height="160dp"
+            android:layout_width="110dp"
+            android:layout_height="110dp"
             android:contentDescription="@string/app_name"
             android:src="@drawable/logo_ronda" />
 
@@ -34,49 +34,50 @@
                 android:orientation="vertical"
                 android:padding="@dimen/espaciado_grande">
 
-                <Button
-                    android:id="@+id/botonHuella"
-                    style="@style/Widget.Material3.Button.OutlinedButton"
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/codigo_titulo"
+                    android:textAppearance="?attr/textAppearanceHeadlineSmall" />
+
+                <TextView
+                    android:id="@+id/textoEnviado"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="@dimen/espaciado_mediano"
-                    android:text="@string/login_usar_biometria"
+                    android:layout_marginTop="@dimen/espaciado_chico"
+                    android:gravity="center_horizontal" />
+
+                <TextView
+                    android:id="@+id/textoCodigoDePrueba"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/espaciado_chico"
+                    android:gravity="center_horizontal"
+                    android:textColor="@color/ronda_marca_naranja"
+                    android:textStyle="bold"
                     android:visibility="gone" />
 
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="@string/login_email">
+                    android:layout_marginTop="@dimen/espaciado_pantalla"
+                    android:hint="@string/codigo_hint">
 
                     <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/campoEmail"
+                        android:id="@+id/campoCodigo"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="textEmailAddress" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <com.google.android.material.textfield.TextInputLayout
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/espaciado_mediano"
-                    android:hint="@string/login_clave"
-                    app:endIconMode="password_toggle">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/campoClave"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textPassword" />
+                        android:gravity="center_horizontal"
+                        android:inputType="number"
+                        android:maxLength="6" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <TextView
-                    android:id="@+id/textoError"
+                    android:id="@+id/textoMensaje"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/espaciado_chico"
-                    android:textColor="?attr/colorError"
                     android:visibility="gone" />
 
                 <ProgressBar
@@ -87,27 +88,20 @@
                     android:visibility="gone" />
 
                 <Button
-                    android:id="@+id/botonIngresar"
+                    android:id="@+id/botonVerificar"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/espaciado_pantalla"
                     android:backgroundTint="@color/ronda_marca_naranja"
-                    android:text="@string/login_ingresar"
+                    android:text="@string/codigo_verificar"
                     android:textColor="@color/white" />
 
                 <Button
-                    android:id="@+id/botonCodigo"
+                    android:id="@+id/botonReenviar"
                     style="@style/Widget.Material3.Button.TextButton"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/login_ingresar_con_codigo" />
-
-                <Button
-                    android:id="@+id/botonCrearCuenta"
-                    style="@style/Widget.Material3.Button.TextButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/login_crear_cuenta" />
+                    android:text="@string/codigo_reenviar" />
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
