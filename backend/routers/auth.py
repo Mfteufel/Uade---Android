@@ -2,8 +2,9 @@ import hmac
 import secrets
 from datetime import timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 
+import correo
 import database
 import seguridad
 from models.usuario import (
@@ -22,8 +23,6 @@ router = APIRouter(prefix="/auth", tags=["Autenticacion"])
 MINUTOS_VALIDEZ_OTP = 5
 SEGUNDOS_ENTRE_REENVIOS = 30
 LARGO_MINIMO_DE_CLAVE = 6
-# en desarrollo el codigo vuelve en la respuesta; en produccion va por mail
-DEVOLVER_OTP_EN_RESPUESTA = True
 
 
 def normalizar_email(email):
@@ -36,17 +35,21 @@ def normalizar_email(email):
     return email
 
 
-def emitir_codigo(email):
+def emitir_codigo(email, tareas):
     database.invalidar_codigos(email)
     codigo = "%06d" % secrets.randbelow(1000000)
     database.guardar_codigo(
         email, codigo, database.ahora() + timedelta(minutes=MINUTOS_VALIDEZ_OTP)
     )
     print("[OTP] " + codigo + " para " + email, flush=True)
+    # el mail sale despues de responder, asi la app no espera al servidor de correo
+    if correo.configurado():
+        tareas.add_task(correo.enviar_codigo, email, codigo, MINUTOS_VALIDEZ_OTP)
     return RespuestaOtp(
         mensaje="Te enviamos un codigo a " + email,
         expira_en_segundos=MINUTOS_VALIDEZ_OTP * 60,
-        codigo=codigo if DEVOLVER_OTP_EN_RESPUESTA else None,
+        # solo sin mail configurado (desarrollo) el codigo vuelve en la respuesta
+        codigo=None if correo.configurado() else codigo,
     )
 
 
@@ -63,15 +66,15 @@ def respuesta_con_token(usuario):
 
 
 @router.post("/otp", response_model=RespuestaOtp)
-def solicitar_codigo(datos: SolicitudOtp):
+def solicitar_codigo(datos: SolicitudOtp, tareas: BackgroundTasks):
     email = normalizar_email(datos.email)
     if database.buscar_usuario_por_email(email) is None:
         database.crear_usuario(email=email, nombre=email.split("@")[0])
-    return emitir_codigo(email)
+    return emitir_codigo(email, tareas)
 
 
 @router.post("/otp/reenviar", response_model=RespuestaOtp)
-def reenviar_codigo(datos: SolicitudOtp):
+def reenviar_codigo(datos: SolicitudOtp, tareas: BackgroundTasks):
     email = normalizar_email(datos.email)
     if database.buscar_usuario_por_email(email) is None:
         raise HTTPException(
@@ -88,7 +91,7 @@ def reenviar_codigo(datos: SolicitudOtp):
                 detail="Espera " + str(faltan) + " segundos para pedir otro codigo",
                 headers={"Retry-After": str(faltan)},
             )
-    return emitir_codigo(email)
+    return emitir_codigo(email, tareas)
 
 
 @router.post("/otp/verificar", response_model=RespuestaToken)
