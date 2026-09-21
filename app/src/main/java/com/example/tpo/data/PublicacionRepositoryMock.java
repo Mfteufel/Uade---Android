@@ -6,6 +6,8 @@ import android.os.Looper;
 import androidx.annotation.Nullable;
 
 import com.example.tpo.data.local.AppDatabase;
+import com.example.tpo.data.local.PublicacionCreadaDao;
+import com.example.tpo.data.local.PublicacionCreadaEntity;
 import com.example.tpo.data.local.PublicacionEstadoDao;
 import com.example.tpo.data.local.PublicacionEstadoEntity;
 import com.example.tpo.login.RondaApp;
@@ -87,9 +89,17 @@ public class PublicacionRepositoryMock implements PublicacionRepository {
             AppDatabase.getInstancia(RondaApp.getContextoApp()).publicacionEstadoDao();
 
     /**
-     * true una vez que se aplicaron sobre {@link #catalogo} los overrides de estado
-     * persistidos (pausada/vendida) que sobrevivieron a un reinicio del proceso. Se
-     * consulta Room una sola vez por proceso, no en cada operación.
+     * Publicaciones creadas por el usuario desde el wizard (Punto 5), persistidas para
+     * sobrevivir a un reinicio del proceso — ver {@link #agregarPublicacionDelUsuario}.
+     */
+    private final PublicacionCreadaDao creadaDao =
+            AppDatabase.getInstancia(RondaApp.getContextoApp()).publicacionCreadaDao();
+
+    /**
+     * true una vez que se sumaron a {@link #catalogo} las publicaciones creadas por el
+     * usuario y se aplicaron los overrides de estado (pausada/vendida) que sobrevivieron
+     * a un reinicio del proceso. Se consulta Room una sola vez por proceso, no en cada
+     * operación.
      */
     private volatile boolean estadosPersistidosAplicados = false;
 
@@ -105,11 +115,18 @@ public class PublicacionRepositoryMock implements PublicacionRepository {
     }
 
     /**
-     * Pisa {@code estadoPublicacion} sobre los objetos de {@link #catalogo} que tengan un
+     * Suma a {@link #catalogo} las publicaciones creadas por el usuario en sesiones
+     * anteriores ({@link PublicacionCreadaEntity}, ver {@link #agregarPublicacionDelUsuario})
+     * y después pisa {@code estadoPublicacion} sobre los objetos del catálogo que tengan un
      * override guardado en Room (el vendedor los pausó, vendió o reactivó en una sesión
-     * anterior). Solo persiste el override, no el catálogo entero: la búsqueda, el
-     * filtrado y la paginación del Home siguen siendo responsabilidad de esta misma clase
-     * en memoria, eso no cambia acá (ver Punto 6 para el cacheo del catálogo completo).
+     * anterior). Va en ese orden porque una publicación creada por el usuario puede tener,
+     * a la vez, un override de estado: si se aplicara antes de sumarla al catálogo,
+     * {@code buscarPorId} no la encontraría todavía y el override se perdería en silencio.
+     * <p>
+     * Solo persiste lo que el usuario creó y los overrides, no el catálogo entero: la
+     * búsqueda, el filtrado y la paginación del Home siguen siendo responsabilidad de esta
+     * misma clase en memoria, eso no cambia acá (ver Punto 6 para el cacheo del catálogo
+     * completo).
      */
     private void aplicarEstadosPersistidosSiHaceFalta() {
         if (estadosPersistidosAplicados) {
@@ -118,6 +135,9 @@ public class PublicacionRepositoryMock implements PublicacionRepository {
         synchronized (this) {
             if (estadosPersistidosAplicados) {
                 return;
+            }
+            for (PublicacionCreadaEntity creada : creadaDao.listarTodas()) {
+                catalogo.add(creada.aPublicacion());
             }
             for (PublicacionEstadoEntity override : estadoDao.obtenerTodos()) {
                 Publicacion publicacion = buscarPorId(override.publicacionId);
@@ -415,31 +435,47 @@ public class PublicacionRepositoryMock implements PublicacionRepository {
 
     /**
      * Agrega al catálogo la publicación que el usuario acaba de crear en el
-     * wizard (Punto 5), para que aparezca en Home igual que las de prueba.
+     * wizard (Punto 5), para que aparezca en Home igual que las de prueba, y la
+     * persiste en Room ({@link PublicacionCreadaEntity}) para que
+     * {@link #aplicarEstadosPersistidosSiHaceFalta()} la vuelva a sumar al catálogo
+     * la próxima vez que arranque el proceso — sin esto, la publicación
+     * desaparecía del Home y de su propio Detalle apenas se reiniciaba la app,
+     * aunque siguiera viéndose en "Mis publicaciones" (Room, tabla
+     * {@code mi_publicacion}).
      * <p>
      * El vendedor se arma con los datos de {@link SesionUsuario} y no con el
      * catálogo "v1".."v12" de vendedores de prueba: son dos catálogos de
      * identidad distintos todavía sin reconciliar (ver el TODO en
      * {@link SesionUsuario#getIdUsuario()}), y esta publicación es la única
      * cuyo dueño es real y no de prueba.
+     *
+     * @param id       mismo id que ya generó Room para la fila de "Mis publicaciones"
+     *                 ({@code MiPublicacion#getId()}), así las dos copias de la misma
+     *                 publicación quedan identificadas igual y no con dos ids distintos.
+     * @param borrador datos completos del wizard, incluida la dirección de entrega real
+     *                 que cargó el vendedor.
      */
-    public Publicacion agregarPublicacionDelUsuario(BorradorPublicacion borrador) {
+    public Publicacion agregarPublicacionDelUsuario(String id, BorradorPublicacion borrador) {
         SesionUsuario sesion = SesionUsuario.getInstancia();
         Vendedor vendedor = new Vendedor(
                 sesion.getIdUsuario(), sesion.getNombre(), 0, 0, System.currentTimeMillis());
         Publicacion nueva = new Publicacion(
-                "u-" + System.currentTimeMillis(),
+                id,
                 borrador.getTitulo(),
                 borrador.getDescripcion(),
                 borrador.getPrecio(),
                 borrador.getEstadoArticulo(),
                 borrador.getCategoria(),
                 borrador.getZona(),
-                System.currentTimeMillis(), vendedor, borrador.getFotos().size(), DIRECCION_ENTREGA_MOCK);
+                System.currentTimeMillis(), vendedor, borrador.getFotos().size(),
+                borrador.getDireccionEntrega());
         // Al principio y no al final: así "Más recientes" (el orden por
         // default) la muestra arriba de todo, como corresponde a algo recién
         // publicado.
         catalogo.add(0, nueva);
+        // Al hilo de fondo: no hace falta esperar el insert para que la publicación
+        // ya se vea en el Home de esta misma sesión (ver catalogo.add de arriba).
+        executor.execute(() -> creadaDao.insertar(PublicacionCreadaEntity.desde(nueva)));
         return nueva;
     }
 
