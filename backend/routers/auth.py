@@ -35,6 +35,20 @@ def normalizar_email(email):
     return email
 
 
+def frenar_si_pidio_hace_poco(email):
+    ultimo = database.ultimo_codigo(email)
+    if ultimo is None:
+        return
+    pasaron = (database.ahora() - database.desde_texto(ultimo["creado_en"])).total_seconds()
+    if pasaron < SEGUNDOS_ENTRE_REENVIOS:
+        faltan = int(SEGUNDOS_ENTRE_REENVIOS - pasaron)
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Espera " + str(faltan) + " segundos para pedir otro codigo",
+            headers={"Retry-After": str(faltan)},
+        )
+
+
 def emitir_codigo(email, tareas):
     database.invalidar_codigos(email)
     codigo = "%06d" % secrets.randbelow(1000000)
@@ -68,8 +82,13 @@ def respuesta_con_token(usuario):
 @router.post("/otp", response_model=RespuestaOtp)
 def solicitar_codigo(datos: SolicitudOtp, tareas: BackgroundTasks):
     email = normalizar_email(datos.email)
+    # entrar con codigo es solo para cuentas que ya existen: no crea usuarios
     if database.buscar_usuario_por_email(email) is None:
-        database.crear_usuario(email=email, nombre=email.split("@")[0])
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No hay una cuenta con ese email",
+        )
+    frenar_si_pidio_hace_poco(email)
     return emitir_codigo(email, tareas)
 
 
@@ -81,16 +100,7 @@ def reenviar_codigo(datos: SolicitudOtp, tareas: BackgroundTasks):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No hay ningun pedido de codigo para ese email",
         )
-    ultimo = database.ultimo_codigo(email)
-    if ultimo is not None:
-        pasaron = (database.ahora() - database.desde_texto(ultimo["creado_en"])).total_seconds()
-        if pasaron < SEGUNDOS_ENTRE_REENVIOS:
-            faltan = int(SEGUNDOS_ENTRE_REENVIOS - pasaron)
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="Espera " + str(faltan) + " segundos para pedir otro codigo",
-                headers={"Retry-After": str(faltan)},
-            )
+    frenar_si_pidio_hace_poco(email)
     return emitir_codigo(email, tareas)
 
 
@@ -111,11 +121,14 @@ def verificar_codigo(datos: VerificacionOtp):
         raise rechazo
     # un codigo se usa una sola vez
     database.marcar_codigo_usado(registro["id"])
+    usuario = database.buscar_usuario_por_email(email)
+    # confirmar el codigo prueba que el email es suyo: recien ahi vale la contrasena elegida
+    database.activar_password_pendiente(usuario["id"])
     return respuesta_con_token(database.buscar_usuario_por_email(email))
 
 
-@router.post("/registro", response_model=RespuestaToken, status_code=status.HTTP_201_CREATED)
-def registrar(datos: SolicitudRegistro):
+@router.post("/registro", response_model=RespuestaOtp, status_code=status.HTTP_201_CREATED)
+def registrar(datos: SolicitudRegistro, tareas: BackgroundTasks):
     email = normalizar_email(datos.email)
     nombre = (datos.nombre or "").strip()
     if not nombre:
@@ -125,11 +138,18 @@ def registrar(datos: SolicitudRegistro):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="La contrasena tiene que tener al menos " + str(LARGO_MINIMO_DE_CLAVE) + " caracteres",
         )
-    # si el email ya existe nunca se le pisa la clave: cualquiera podria robar una cuenta
-    if database.buscar_usuario_por_email(email) is not None:
+
+    usuario = database.buscar_usuario_por_email(email)
+    if usuario is not None and usuario["password_hash"]:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Ese email ya tiene una cuenta")
-    usuario = database.crear_usuario(email, nombre, seguridad.hashear_password(datos.password))
-    return respuesta_con_token(usuario)
+    if usuario is None:
+        usuario = database.crear_usuario(email, nombre)
+    else:
+        frenar_si_pidio_hace_poco(email)
+
+    # la cuenta no queda activa hasta confirmar el codigo que llega por mail
+    database.guardar_registro_pendiente(usuario["id"], nombre, seguridad.hashear_password(datos.password))
+    return emitir_codigo(email, tareas)
 
 
 @router.post("/login", response_model=RespuestaToken)
@@ -137,6 +157,16 @@ def iniciar_sesion(datos: SolicitudLogin):
     email = normalizar_email(datos.email)
     usuario = database.buscar_usuario_por_email(email)
     # mismo mensaje si el usuario no existe o la clave esta mal: no revela que emails hay
+    sin_confirmar = (
+        usuario is not None
+        and not usuario["password_hash"]
+        and seguridad.verificar_password(datos.password, usuario["password_pendiente"])
+    )
+    if sin_confirmar:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Falta confirmar tu email con el codigo",
+        )
     if usuario is None or not seguridad.verificar_password(datos.password, usuario["password_hash"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
