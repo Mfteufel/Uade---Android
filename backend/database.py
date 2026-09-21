@@ -40,7 +40,21 @@ CREATE TABLE IF NOT EXISTS publicaciones (
     estado_publicacion TEXT NOT NULL DEFAULT 'ACTIVA',
     vendedor_id        TEXT NOT NULL,
     texto_busqueda     TEXT NOT NULL,
-    fecha_publicacion  INTEGER NOT NULL
+    fecha_publicacion  INTEGER NOT NULL,
+    direccion_entrega  TEXT
+);
+
+CREATE TABLE IF NOT EXISTS ofertas (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    publicacion_id INTEGER NOT NULL,
+    comprador_id   INTEGER NOT NULL,
+    vendedor_id    TEXT NOT NULL,
+    precio         REAL NOT NULL,
+    mensaje        TEXT,
+    estado         TEXT NOT NULL DEFAULT 'PENDIENTE',
+    turno          TEXT NOT NULL DEFAULT 'VENDEDOR',
+    fecha_creacion INTEGER NOT NULL,
+    vence_en       INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS favoritos (
@@ -110,6 +124,9 @@ def inicializar():
             conexion.execute("ALTER TABLE usuarios ADD COLUMN telefono TEXT")
         if "password_pendiente" not in columnas:
             conexion.execute("ALTER TABLE usuarios ADD COLUMN password_pendiente TEXT")
+        columnas = [fila["name"] for fila in conexion.execute("PRAGMA table_info(publicaciones)")]
+        if "direccion_entrega" not in columnas:
+            conexion.execute("ALTER TABLE publicaciones ADD COLUMN direccion_entrega TEXT")
 
 
 def buscar_usuario_por_email(email):
@@ -192,18 +209,29 @@ def contar_publicaciones():
 
 
 def crear_publicacion(titulo, descripcion, precio, categoria, estado_articulo, zona,
-                      vendedor_id, fecha_publicacion=None):
+                      vendedor_id, fecha_publicacion=None, direccion_entrega=None):
     if fecha_publicacion is None:
         fecha_publicacion = ahora_en_milisegundos()
     with conectar() as conexion:
         cursor = conexion.execute(
             "INSERT INTO publicaciones (titulo, descripcion, precio, categoria,"
-            " estado_articulo, zona, vendedor_id, texto_busqueda, fecha_publicacion)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            " estado_articulo, zona, vendedor_id, texto_busqueda, fecha_publicacion,"
+            " direccion_entrega)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (titulo, descripcion, precio, categoria, estado_articulo, zona,
-             str(vendedor_id), normalizar(titulo + " " + descripcion), fecha_publicacion),
+             str(vendedor_id), normalizar(titulo + " " + descripcion), fecha_publicacion,
+             direccion_entrega),
         )
         return cursor.lastrowid
+
+
+def completar_direccion(vendedor_id, direccion):
+    with conectar() as conexion:
+        conexion.execute(
+            "UPDATE publicaciones SET direccion_entrega = ?"
+            " WHERE vendedor_id = ? AND direccion_entrega IS NULL",
+            (direccion, str(vendedor_id)),
+        )
 
 
 def buscar_publicacion(publicacion_id):
@@ -400,4 +428,99 @@ def marcar_busquedas_vistas(usuario_id):
         conexion.execute(
             "UPDATE busquedas SET visto_hasta = ? WHERE usuario_id = ?",
             (ahora_en_milisegundos(), usuario_id),
+        )
+
+
+OFERTA_CON_PUBLICACION = (
+    "SELECT o.*, p.titulo, p.direccion_entrega FROM ofertas o"
+    " JOIN publicaciones p ON p.id = o.publicacion_id"
+)
+
+
+def contar_ofertas():
+    with conectar() as conexion:
+        return conexion.execute("SELECT COUNT(*) FROM ofertas").fetchone()[0]
+
+
+def crear_oferta(publicacion_id, comprador_id, vendedor_id, precio, mensaje, vence_en,
+                 estado="PENDIENTE", turno="VENDEDOR", fecha_creacion=None):
+    if fecha_creacion is None:
+        fecha_creacion = ahora_en_milisegundos()
+    with conectar() as conexion:
+        cursor = conexion.execute(
+            "INSERT INTO ofertas (publicacion_id, comprador_id, vendedor_id, precio, mensaje,"
+            " estado, turno, fecha_creacion, vence_en)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (publicacion_id, comprador_id, str(vendedor_id), precio, mensaje,
+             estado, turno, fecha_creacion, vence_en),
+        )
+        return cursor.lastrowid
+
+
+def buscar_oferta(oferta_id):
+    with conectar() as conexion:
+        return conexion.execute(
+            OFERTA_CON_PUBLICACION + " WHERE o.id = ?", (oferta_id,)
+        ).fetchone()
+
+
+def ofertas_enviadas(comprador_id):
+    with conectar() as conexion:
+        return conexion.execute(
+            OFERTA_CON_PUBLICACION + " WHERE o.comprador_id = ? ORDER BY o.id DESC",
+            (comprador_id,),
+        ).fetchall()
+
+
+def ofertas_recibidas(vendedor_id):
+    with conectar() as conexion:
+        return conexion.execute(
+            OFERTA_CON_PUBLICACION + " WHERE o.vendedor_id = ? ORDER BY o.id DESC",
+            (str(vendedor_id),),
+        ).fetchall()
+
+
+def tiene_oferta_pendiente(publicacion_id, comprador_id):
+    with conectar() as conexion:
+        fila = conexion.execute(
+            "SELECT id FROM ofertas WHERE publicacion_id = ? AND comprador_id = ?"
+            " AND estado = 'PENDIENTE'",
+            (publicacion_id, comprador_id),
+        ).fetchone()
+    return fila is not None
+
+
+def vencer_ofertas():
+    with conectar() as conexion:
+        conexion.execute(
+            "UPDATE ofertas SET estado = 'VENCIDA' WHERE estado = 'PENDIENTE' AND vence_en < ?",
+            (ahora_en_milisegundos(),),
+        )
+
+
+def rechazar_oferta(oferta_id):
+    with conectar() as conexion:
+        conexion.execute("UPDATE ofertas SET estado = 'RECHAZADA' WHERE id = ?", (oferta_id,))
+
+
+# los tres cambios van en la misma transaccion: o se hacen todos o ninguno
+def aceptar_oferta(oferta_id, publicacion_id):
+    with conectar() as conexion:
+        conexion.execute("UPDATE ofertas SET estado = 'ACEPTADA' WHERE id = ?", (oferta_id,))
+        conexion.execute(
+            "UPDATE ofertas SET estado = 'RECHAZADA'"
+            " WHERE publicacion_id = ? AND estado = 'PENDIENTE'",
+            (publicacion_id,),
+        )
+        conexion.execute(
+            "UPDATE publicaciones SET estado_publicacion = 'VENDIDA' WHERE id = ?",
+            (publicacion_id,),
+        )
+
+
+def contraofertar(oferta_id, precio, turno, vence_en):
+    with conectar() as conexion:
+        conexion.execute(
+            "UPDATE ofertas SET precio = ?, turno = ?, vence_en = ? WHERE id = ?",
+            (precio, turno, vence_en, oferta_id),
         )

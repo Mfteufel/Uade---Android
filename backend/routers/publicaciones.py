@@ -113,6 +113,7 @@ def crear(
     estadoArticulo: str = Form(...),
     precio: float = Form(...),
     zona: str = Form(...),
+    direccionEntrega: Optional[str] = Form(None),
     fotos: List[UploadFile] = File(default=[]),
 ):
     if not titulo.strip() or not descripcion.strip():
@@ -130,8 +131,10 @@ def crear(
     CARPETA_FOTOS.mkdir(parents=True, exist_ok=True)
     archivos = [guardar_foto(foto) for foto in fotos]
 
+    direccion = (direccionEntrega or "").strip() or None
     publicacion_id = database.crear_publicacion(
-        titulo.strip(), descripcion.strip(), precio, categoria, estadoArticulo, zona, vendedorId
+        titulo.strip(), descripcion.strip(), precio, categoria, estadoArticulo, zona, vendedorId,
+        direccion_entrega=direccion,
     )
 
     for archivo in archivos:
