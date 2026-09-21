@@ -45,3 +45,9 @@ class PublicacionCreada(BaseModel):
 
 class CambioEstado(BaseModel):
     estadoPublicacion: str
+
+
+class EdicionPublicacion(BaseModel):
+    titulo: Optional[str] = None
+    descripcion: Optional[str] = None
+    precio: Optional[float] = None
