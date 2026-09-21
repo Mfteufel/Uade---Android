@@ -1,6 +1,5 @@
 package com.example.tpo.ui.misofertas;
 
-import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,14 +12,11 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.core.widget.NestedScrollView;
 
 import com.example.tpo.R;
-import com.example.tpo.data.OfertasPublicacion;
-import com.example.tpo.data.PublicacionRepository;
-import com.example.tpo.data.PublicacionRepositoryMock;
+import com.example.tpo.data.OfertasRepository;
 import com.example.tpo.data.RepositorioCallback;
 import com.example.tpo.data.SesionUsuario;
 import com.example.tpo.model.EstadoOferta;
-import com.example.tpo.model.Oferta;
-import com.example.tpo.model.Publicacion;
+import com.example.tpo.model.OfertaNegociacion;
 import com.example.tpo.util.FormatoUtils;
 import com.example.tpo.util.MapaUtils;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
@@ -31,27 +27,34 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
+import javax.inject.Inject;
+
+import dagger.hilt.android.AndroidEntryPoint;
+
 /**
  * Hoja "Detalle de la oferta" — negociación del Punto 7, abierta desde una fila de
  * {@link MisOfertasFragment}.
  * <p>
- * Recibe el id de la oferta (no el objeto), mismo criterio que
- * {@code GestionPublicacionBottomSheet} con el id de la publicación: siempre
- * resuelve el estado más actualizado contra Room.
+ * Recibe el id de la oferta (no el objeto), así siempre resuelve el estado más
+ * actualizado contra el repositorio.
  * <p>
- * La botonera depende del rol de quien mira (comparando ids contra
- * {@link SesionUsuario}) y del estado actual:
+ * La botonera depende de {@link OfertaNegociacion#meTocaResponder} (comparando el id
+ * del usuario logueado contra comprador/vendedor y el {@code turno} que manda el
+ * servidor):
  * <ul>
- *     <li>Soy el vendedor y está PENDIENTE → Aceptar, Rechazar, Contraofertar.</li>
- *     <li>Soy el comprador, está PENDIENTE y la última propuesta es del vendedor
- *     (me contraofertó) → Aceptar esa contraoferta, o Contraofertar de nuevo.</li>
- *     <li>Cualquier otro caso (terminal, o estoy esperando respuesta) → solo lectura.</li>
+ *     <li>Me toca responder → Aceptar, Rechazar, Contraofertar.</li>
+ *     <li>Soy parte pero no me toca (estoy esperando la respuesta del otro) → solo
+ *     Contraofertar (puedo insistir con otro precio aunque no me toque, igual que
+ *     antes de mi propuesta).</li>
+ *     <li>No está PENDIENTE, o no soy parte → solo lectura.</li>
  * </ul>
  * <p>
- * Punto 8: apenas la oferta queda ACEPTADA, esta hoja también muestra el punto de
- * entrega de la publicación con su botón "Cómo llegar" (ver {@link #mostrarPuntoEntrega}) —
- * mismo bloque, mismo criterio, que el Detalle de publicación.
+ * Punto 8: apenas la oferta queda ACEPTADA, el servidor manda
+ * {@link OfertaNegociacion#getDireccionEntrega()} con valor — esta hoja la muestra
+ * con su botón "Cómo llegar" (ver {@link #mostrarPuntoEntrega}), mismo criterio que
+ * el Detalle de publicación.
  */
+@AndroidEntryPoint
 public class DetalleOfertaBottomSheet extends BottomSheetDialogFragment {
 
     public static final String TAG = "DetalleOfertaBottomSheet";
@@ -63,13 +66,11 @@ public class DetalleOfertaBottomSheet extends BottomSheetDialogFragment {
 
     private static final String ARG_OFERTA_ID = "arg_oferta_id";
 
-    private final PublicacionRepository repositorio = PublicacionRepositoryMock.getInstancia();
+    /** Lo inyecta Hilt: la hoja no sabe si del otro lado hay datos falsos o Retrofit. */
+    @Inject
+    OfertasRepository repositorio;
+
     private String ofertaId;
-
-    private OfertasPublicacion ofertasPublicacion;
-
-    @Nullable
-    private Oferta ofertaActual;
 
     private NestedScrollView scrollDetalleOferta;
     private CircularProgressIndicator progresoDetalleOferta;
@@ -93,12 +94,6 @@ public class DetalleOfertaBottomSheet extends BottomSheetDialogFragment {
         argumentos.putString(ARG_OFERTA_ID, ofertaId);
         hoja.setArguments(argumentos);
         return hoja;
-    }
-
-    @Override
-    public void onAttach(@NonNull Context context) {
-        super.onAttach(context);
-        ofertasPublicacion = OfertasPublicacion.getInstancia(context);
     }
 
     @Override
@@ -166,31 +161,13 @@ public class DetalleOfertaBottomSheet extends BottomSheetDialogFragment {
 
     private void cargarOferta() {
         mostrarCarga();
-        ofertasPublicacion.obtenerPorId(ofertaId, new RepositorioCallback<Oferta>() {
+        repositorio.obtener(ofertaId, new RepositorioCallback<OfertaNegociacion>() {
             @Override
-            public void onExito(Oferta oferta) {
+            public void onExito(OfertaNegociacion oferta) {
                 if (scrollDetalleOferta == null) {
                     return; // la vista ya se destruyó
                 }
-                ofertaActual = oferta;
-                repositorio.obtenerPublicacion(oferta.getPublicacionId(),
-                        new RepositorioCallback<Publicacion>() {
-                            @Override
-                            public void onExito(Publicacion publicacion) {
-                                if (scrollDetalleOferta == null) {
-                                    return;
-                                }
-                                mostrarOferta(oferta, publicacion);
-                            }
-
-                            @Override
-                            public void onError(String mensaje) {
-                                if (scrollDetalleOferta == null) {
-                                    return;
-                                }
-                                mostrarError(mensaje);
-                            }
-                        });
+                mostrarOferta(oferta);
             }
 
             @Override
@@ -216,10 +193,10 @@ public class DetalleOfertaBottomSheet extends BottomSheetDialogFragment {
         textoErrorDetalleOferta.setText(mensaje);
     }
 
-    private void mostrarOferta(Oferta oferta, Publicacion publicacion) {
-        tituloPublicacionDetalleOferta.setText(publicacion.getTitulo());
+    private void mostrarOferta(OfertaNegociacion oferta) {
+        tituloPublicacionDetalleOferta.setText(oferta.getTituloPublicacion());
         montoDetalleOferta.setText(getString(
-                R.string.detalle_oferta_neg_monto_actual, FormatoUtils.precio(oferta.getMonto())));
+                R.string.detalle_oferta_neg_monto_actual, FormatoUtils.precio(oferta.getPrecio())));
         estadoDetalleOferta.setText(getString(
                 R.string.detalle_oferta_neg_estado, getString(oferta.getEstado().getEtiqueta())));
 
@@ -232,10 +209,10 @@ public class DetalleOfertaBottomSheet extends BottomSheetDialogFragment {
         }
 
         vencimientoDetalleOferta.setText(getString(R.string.detalle_oferta_neg_vencimiento,
-                FormatoUtils.tiempoRestante(requireContext(), oferta.getFechaVencimiento())));
+                FormatoUtils.tiempoRestante(requireContext(), oferta.getVenceEn())));
 
-        configurarBotonesSegunRolYEstado(oferta, publicacion);
-        mostrarPuntoEntrega(oferta, publicacion);
+        configurarBotonesSegunRolYEstado(oferta);
+        mostrarPuntoEntrega(oferta);
 
         progresoDetalleOferta.setVisibility(View.GONE);
         estadoErrorDetalleOferta.setVisibility(View.GONE);
@@ -247,18 +224,27 @@ public class DetalleOfertaBottomSheet extends BottomSheetDialogFragment {
      * dirección) se entera del punto de entrega apenas la oferta pasa a
      * ACEPTADA — mismo criterio y misma utilidad ({@link MapaUtils}) que el
      * bloque equivalente del Detalle de publicación.
+     * <p>
+     * El bloque solo aparece si la oferta está ACEPTADA. Dentro de ese caso,
+     * si el vendedor nunca cargó una dirección al publicar, se avisa en vez de
+     * ocultar todo — evita que parezca que la pantalla no cargó nada.
      */
-    private void mostrarPuntoEntrega(Oferta oferta, Publicacion publicacion) {
-        String direccion = publicacion.getDireccionEntrega();
-        boolean desbloqueado = oferta.getEstado() == EstadoOferta.ACEPTADA
-                && MapaUtils.tieneDireccion(direccion);
+    private void mostrarPuntoEntrega(OfertaNegociacion oferta) {
+        boolean aceptada = oferta.getEstado() == EstadoOferta.ACEPTADA;
+        bloquePuntoEntregaOferta.setVisibility(aceptada ? View.VISIBLE : View.GONE);
+        if (!aceptada) {
+            return;
+        }
 
-        bloquePuntoEntregaOferta.setVisibility(desbloqueado ? View.VISIBLE : View.GONE);
-        if (!desbloqueado) {
+        String direccion = oferta.getDireccionEntrega();
+        if (!MapaUtils.tieneDireccion(direccion)) {
+            direccionEntregaDetalleOferta.setText(R.string.detalle_oferta_neg_sin_direccion);
+            botonComoLlegarOferta.setVisibility(View.GONE);
             return;
         }
 
         direccionEntregaDetalleOferta.setText(direccion);
+        botonComoLlegarOferta.setVisibility(View.VISIBLE);
         botonComoLlegarOferta.setOnClickListener(v -> {
             if (!MapaUtils.abrirComoLlegar(requireContext(), direccion)) {
                 mostrarSnackbarSiSigueAbierta(getString(R.string.detalle_mapa_sin_app));
@@ -267,26 +253,22 @@ public class DetalleOfertaBottomSheet extends BottomSheetDialogFragment {
     }
 
     /**
-     * Qué botones se ven según quién mira la oferta y su estado actual. Solo hay
-     * acciones posibles cuando la oferta sigue {@code PENDIENTE}: aceptar y rechazar
-     * están disponibles para cualquiera de las dos partes (quien no propuso el último
-     * monto es quien tiene que responder), contraofertar también para las dos.
+     * Qué botones se ven según quién mira la oferta y de quién es el turno.
+     * Las tres acciones (aceptar, rechazar, contraofertar) son solo para quien
+     * tiene el turno — el backend también lo valida y devuelve 403 si no
+     * ("Todavía no es tu turno de responder").
      */
-    private void configurarBotonesSegunRolYEstado(Oferta oferta, Publicacion publicacion) {
-        String idUsuario = SesionUsuario.getInstancia().getIdUsuario();
-        boolean soyParte = idUsuario.equals(oferta.getAutorId()) || idUsuario.equals(oferta.getVendedorId());
-        boolean pendiente = oferta.getEstado() == EstadoOferta.PENDIENTE;
-        // Quien propuso el último monto espera respuesta de la otra parte: no puede
-        // aceptar ni rechazar su propia propuesta, pero sí puede seguir contraofertando.
-        boolean esperandoMiRespuesta = pendiente && soyParte && !idUsuario.equals(oferta.getPropuestoPor());
+    private void configurarBotonesSegunRolYEstado(OfertaNegociacion oferta) {
+        String idUsuario = SesionUsuario.getInstancia().getUsuarioId();
+        boolean meTocaResponder = oferta.meTocaResponder(idUsuario);
 
-        botonAceptarOferta.setVisibility(esperandoMiRespuesta ? View.VISIBLE : View.GONE);
-        botonRechazarOferta.setVisibility(esperandoMiRespuesta ? View.VISIBLE : View.GONE);
-        botonContraofertar.setVisibility(pendiente && soyParte ? View.VISIBLE : View.GONE);
+        botonAceptarOferta.setVisibility(meTocaResponder ? View.VISIBLE : View.GONE);
+        botonRechazarOferta.setVisibility(meTocaResponder ? View.VISIBLE : View.GONE);
+        botonContraofertar.setVisibility(meTocaResponder ? View.VISIBLE : View.GONE);
 
         botonAceptarOferta.setOnClickListener(v -> aceptar());
         botonRechazarOferta.setOnClickListener(v -> rechazar());
-        botonContraofertar.setOnClickListener(v -> mostrarDialogoContraoferta(oferta, publicacion));
+        botonContraofertar.setOnClickListener(v -> mostrarDialogoContraoferta(oferta));
     }
 
     // ------------------------------------------------------------------
@@ -294,9 +276,9 @@ public class DetalleOfertaBottomSheet extends BottomSheetDialogFragment {
     // ------------------------------------------------------------------
 
     private void aceptar() {
-        ofertasPublicacion.aceptar(ofertaId, new RepositorioCallback<Void>() {
+        repositorio.aceptar(ofertaId, new RepositorioCallback<OfertaNegociacion>() {
             @Override
-            public void onExito(Void resultado) {
+            public void onExito(OfertaNegociacion resultado) {
                 notificarResultadoYCerrar(R.string.detalle_oferta_neg_aceptar_ok);
             }
 
@@ -308,9 +290,9 @@ public class DetalleOfertaBottomSheet extends BottomSheetDialogFragment {
     }
 
     private void rechazar() {
-        ofertasPublicacion.rechazar(ofertaId, new RepositorioCallback<Void>() {
+        repositorio.rechazar(ofertaId, new RepositorioCallback<OfertaNegociacion>() {
             @Override
-            public void onExito(Void resultado) {
+            public void onExito(OfertaNegociacion resultado) {
                 notificarResultadoYCerrar(R.string.detalle_oferta_neg_rechazar_ok);
             }
 
@@ -321,16 +303,18 @@ public class DetalleOfertaBottomSheet extends BottomSheetDialogFragment {
         });
     }
 
-    private void mostrarDialogoContraoferta(Oferta oferta, Publicacion publicacion) {
+    private void mostrarDialogoContraoferta(OfertaNegociacion oferta) {
         View contenido = LayoutInflater.from(requireContext())
                 .inflate(R.layout.dialogo_contraoferta, null, false);
         TextView textoMontoActual = contenido.findViewById(R.id.textoMontoActualContraoferta);
         TextInputLayout input = contenido.findViewById(R.id.inputContraoferta);
         TextInputEditText campo = contenido.findViewById(R.id.campoContraoferta);
-        TextInputEditText campoMensaje = contenido.findViewById(R.id.campoMensajeContraoferta);
+        // El contrato no admite mensaje en la contraoferta (solo en la oferta original):
+        // se deja el campo oculto para no prometer algo que el backend va a ignorar.
+        contenido.findViewById(R.id.inputMensajeContraoferta).setVisibility(View.GONE);
 
         textoMontoActual.setText(getString(
-                R.string.detalle_oferta_neg_monto_actual, FormatoUtils.precio(oferta.getMonto())));
+                R.string.detalle_oferta_neg_monto_actual, FormatoUtils.precio(oferta.getPrecio())));
 
         AlertDialog dialogo = new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.detalle_oferta_neg_contraoferta_titulo)
@@ -359,28 +343,24 @@ public class DetalleOfertaBottomSheet extends BottomSheetDialogFragment {
                     }
                     input.setError(null);
                     dialogo.dismiss();
-
-                    String mensaje = leerTexto(campoMensaje);
-                    contraofertar(oferta, monto, mensaje.isEmpty() ? null : mensaje);
+                    contraofertar(monto);
                 }));
 
         dialogo.show();
     }
 
-    private void contraofertar(Oferta oferta, double monto, @Nullable String mensaje) {
-        String idUsuario = SesionUsuario.getInstancia().getIdUsuario();
-        ofertasPublicacion.contraofertar(oferta.getId(), monto, idUsuario, mensaje,
-                new RepositorioCallback<Void>() {
-                    @Override
-                    public void onExito(Void resultado) {
-                        notificarResultadoYCerrar(R.string.detalle_oferta_neg_contraoferta_ok);
-                    }
+    private void contraofertar(double monto) {
+        repositorio.contraofertar(ofertaId, monto, new RepositorioCallback<OfertaNegociacion>() {
+            @Override
+            public void onExito(OfertaNegociacion resultado) {
+                notificarResultadoYCerrar(R.string.detalle_oferta_neg_contraoferta_ok);
+            }
 
-                    @Override
-                    public void onError(String mensajeError) {
-                        mostrarSnackbarSiSigueAbierta(mensajeError);
-                    }
-                });
+            @Override
+            public void onError(String mensajeError) {
+                mostrarSnackbarSiSigueAbierta(mensajeError);
+            }
+        });
     }
 
     private String leerTexto(TextInputEditText campo) {
