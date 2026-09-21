@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from pathlib import Path
+
 from fastapi.staticfiles import StaticFiles
 
 import database
@@ -20,6 +22,7 @@ app.include_router(router_usuarios)
 app.include_router(router_favoritos)
 app.include_router(router_busquedas)
 app.mount("/fotos", StaticFiles(directory=CARPETA_FOTOS), name="fotos")
+app.mount("/estatico", StaticFiles(directory=Path(__file__).resolve().parent / "estatico"), name="estatico")
 
 
 @app.get("/salud")

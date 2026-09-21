@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
     email         TEXT NOT NULL UNIQUE,
     nombre        TEXT NOT NULL,
     password_hash TEXT,
+    password_pendiente TEXT,
     zona          TEXT,
     telefono      TEXT,
     creado_en     TEXT NOT NULL
@@ -107,6 +108,8 @@ def inicializar():
         columnas = [fila["name"] for fila in conexion.execute("PRAGMA table_info(usuarios)")]
         if "telefono" not in columnas:
             conexion.execute("ALTER TABLE usuarios ADD COLUMN telefono TEXT")
+        if "password_pendiente" not in columnas:
+            conexion.execute("ALTER TABLE usuarios ADD COLUMN password_pendiente TEXT")
 
 
 def buscar_usuario_por_email(email):
@@ -132,6 +135,23 @@ def crear_usuario(email, nombre, password_hash=None, zona=None):
         )
         nuevo_id = cursor.lastrowid
     return buscar_usuario_por_id(nuevo_id)
+
+
+def guardar_registro_pendiente(usuario_id, nombre, password_hash):
+    with conectar() as conexion:
+        conexion.execute(
+            "UPDATE usuarios SET nombre = ?, password_pendiente = ? WHERE id = ?",
+            (nombre, password_hash, usuario_id),
+        )
+
+
+def activar_password_pendiente(usuario_id):
+    with conectar() as conexion:
+        conexion.execute(
+            "UPDATE usuarios SET password_hash = password_pendiente, password_pendiente = NULL"
+            " WHERE id = ? AND password_pendiente IS NOT NULL",
+            (usuario_id,),
+        )
 
 
 def invalidar_codigos(email):

@@ -32,8 +32,6 @@ public class RegistroFragment extends Fragment {
 
     @Inject
     AuthApi authApi;
-    @Inject
-    TokenManager tokenManager;
 
     private EditText campoNombre;
     private EditText campoEmail;
@@ -96,21 +94,21 @@ public class RegistroFragment extends Fragment {
         }
 
         mostrarCargando(true);
-        authApi.registrar(new RegistroRequest(nombre, email, clave)).enqueue(new Callback<SesionResponse>() {
+        authApi.registrar(new RegistroRequest(nombre, email, clave)).enqueue(new Callback<CodigoResponse>() {
             @Override
-            public void onResponse(@NonNull Call<SesionResponse> call,
-                                   @NonNull Response<SesionResponse> response) {
+            public void onResponse(@NonNull Call<CodigoResponse> call,
+                                   @NonNull Response<CodigoResponse> response) {
                 if (getView() == null) {
                     return;
                 }
                 if (response.isSuccessful() && response.body() != null) {
-                    tokenManager.saveToken(response.body().getToken());
-                    SesionLocal.actualizar(response.body().getUsuario());
-                    Biometria.ofrecerActivar(RegistroFragment.this, tokenManager, () -> {
-                        if (getView() != null) {
-                            Navigation.findNavController(requireView()).navigate(R.id.action_registro_to_home);
-                        }
-                    });
+                    // la cuenta se activa recien al confirmar el codigo que llega por mail
+                    mostrarCargando(false);
+                    Bundle argumentos = new Bundle();
+                    argumentos.putString(CodigoFragment.ARG_EMAIL, email);
+                    argumentos.putString(CodigoFragment.ARG_CODIGO_DE_PRUEBA, response.body().getCodigo());
+                    Navigation.findNavController(requireView())
+                            .navigate(R.id.action_registro_to_codigo, argumentos);
                     return;
                 }
                 mostrarCargando(false);
@@ -118,13 +116,15 @@ public class RegistroFragment extends Fragment {
                     mostrarError(getString(R.string.registro_email_en_uso));
                 } else if (response.code() == 400) {
                     mostrarError(getString(R.string.registro_datos_invalidos));
+                } else if (response.code() == 429) {
+                    mostrarError(getString(R.string.codigo_esperar));
                 } else {
                     mostrarError(getString(R.string.login_error_servidor, response.code()));
                 }
             }
 
             @Override
-            public void onFailure(@NonNull Call<SesionResponse> call, @NonNull Throwable t) {
+            public void onFailure(@NonNull Call<CodigoResponse> call, @NonNull Throwable t) {
                 Log.e(TAG, "Error de red: " + t.getMessage());
                 if (getView() == null) {
                     return;

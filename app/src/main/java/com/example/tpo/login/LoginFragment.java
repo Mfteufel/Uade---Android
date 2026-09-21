@@ -182,6 +182,8 @@ public class LoginFragment extends Fragment {
                 mostrarCargando(false);
                 if (response.code() == 401) {
                     mostrarError(getString(R.string.login_credenciales_incorrectas));
+                } else if (response.code() == 403) {
+                    mostrarError(getString(R.string.login_falta_confirmar));
                 } else if (response.code() == 400) {
                     mostrarError(getString(R.string.login_email_invalido));
                 } else {
@@ -224,6 +226,10 @@ public class LoginFragment extends Fragment {
                     argumentos.putString(CodigoFragment.ARG_CODIGO_DE_PRUEBA, response.body().getCodigo());
                     Navigation.findNavController(requireView())
                             .navigate(R.id.action_login_to_codigo, argumentos);
+                } else if (response.code() == 404) {
+                    mostrarError(getString(R.string.login_sin_cuenta));
+                } else if (response.code() == 429) {
+                    mostrarError(getString(R.string.codigo_esperar));
                 } else if (response.code() == 400) {
                     mostrarError(getString(R.string.login_email_invalido));
                 } else {

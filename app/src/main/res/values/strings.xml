@@ -2,6 +2,8 @@
     <string name="app_name">Ronda</string>
 
     <!-- ===================== Login (Punto 1) ===================== -->
+    <string name="login_sin_cuenta">No hay una cuenta con ese email. Creá una cuenta primero</string>
+    <string name="login_falta_confirmar">Te falta confirmar tu email. Tocá "Ingresar con un código"</string>
     <string name="login_crear_cuenta">Crear una cuenta</string>
     <string name="login_completar_campos">Completá el email y la contraseña</string>
     <string name="login_email_invalido">El email no tiene un formato válido</string>

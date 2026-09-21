@@ -11,7 +11,7 @@ public interface AuthApi {
     Call<SesionResponse> login(@Body LoginRequest body);
 
     @POST("auth/registro")
-    Call<SesionResponse> registrar(@Body RegistroRequest body);
+    Call<CodigoResponse> registrar(@Body RegistroRequest body);
 
     @POST("auth/otp")
     Call<CodigoResponse> pedirCodigo(@Body CodigoRequest body);
