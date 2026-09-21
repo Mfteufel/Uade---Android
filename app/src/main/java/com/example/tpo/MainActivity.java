@@ -71,7 +71,9 @@ public class MainActivity extends AppCompatActivity {
         // incluso parado en el login: tocar "Favoritos" o "Perfil" ahí navegaba
         // directo a la app sin haber iniciado sesión.
         navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
-            boolean esLogin = destination.getId() == R.id.loginFragment;
+            boolean esLogin = destination.getId() == R.id.loginFragment
+                    || destination.getId() == R.id.codigoFragment
+                    || destination.getId() == R.id.registroFragment;
             bottomNav.setVisibility(esLogin ? View.GONE : View.VISIBLE);
         });
 
