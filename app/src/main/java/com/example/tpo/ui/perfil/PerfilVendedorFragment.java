@@ -18,9 +18,6 @@ import com.example.tpo.R;
 import com.example.tpo.data.FavoritoRepository;
 import com.example.tpo.data.FavoritoRepositoryMock;
 import com.example.tpo.data.PerfilRepository;
-import com.example.tpo.data.PerfilVendedor;
-import com.example.tpo.data.PublicacionRepository;
-import com.example.tpo.data.PublicacionRepositoryMock;
 import com.example.tpo.data.PublicacionesVistas;
 import com.example.tpo.data.RepositorioCallback;
 import com.example.tpo.data.SesionUsuario;
@@ -53,10 +50,8 @@ import dagger.hilt.android.AndroidEntryPoint;
  * <p>
  * Muestra lo que pide el enunciado para consultar a la otra parte antes de
  * operar: reputación completa, antigüedad, publicaciones activas y las
- * calificaciones recibidas. Los datos del usuario, su reputación y sus
- * calificaciones salen de {@link PerfilRepository} (Punto 2); sus publicaciones
- * siguen saliendo de {@link PublicacionRepository} (Puntos 3/4), reusando el
- * mismo {@link PublicacionAdapter} que el Home.
+ * calificaciones recibidas. Todo sale de {@link PerfilRepository} (Punto 2); las
+ * publicaciones se pintan con el mismo {@link PublicacionAdapter} que el Home.
  */
 @AndroidEntryPoint
 public class PerfilVendedorFragment extends Fragment
@@ -74,8 +69,7 @@ public class PerfilVendedorFragment extends Fragment
     @Inject
     PerfilRepository perfilRepositorio;
 
-    // Publicaciones y favoritos son de otros puntos y todavía no pasan por Hilt.
-    private final PublicacionRepository publicacionRepositorio = PublicacionRepositoryMock.getInstancia();
+    // Favoritos es de otro punto y todavía no pasa por Hilt.
     private final FavoritoRepository favoritoRepositorio = FavoritoRepositoryMock.getInstancia();
 
     private PublicacionesVistas publicacionesVistas;
@@ -112,7 +106,9 @@ public class PerfilVendedorFragment extends Fragment
     private List<Publicacion> publicaciones;
     @Nullable
     private List<Calificacion> calificaciones;
-    /** Mensaje si fallaron las calificaciones (el resto del perfil se sigue mostrando). */
+    /** Mensaje si falló cada pestaña (el resto del perfil se sigue mostrando). */
+    @Nullable
+    private String errorPublicaciones;
     @Nullable
     private String errorCalificaciones;
 
@@ -215,6 +211,7 @@ public class PerfilVendedorFragment extends Fragment
         mostrarCarga();
         publicaciones = null;
         calificaciones = null;
+        errorPublicaciones = null;
         errorCalificaciones = null;
 
         perfilRepositorio.obtenerPerfilPublico(usuarioId, new RepositorioCallback<Usuario>() {
@@ -239,28 +236,29 @@ public class PerfilVendedorFragment extends Fragment
     }
 
     private void cargarPublicaciones() {
-        publicacionRepositorio.obtenerPerfilVendedor(usuarioId, new RepositorioCallback<PerfilVendedor>() {
-            @Override
-            public void onExito(PerfilVendedor resultado) {
-                if (lista == null) {
-                    return;
-                }
-                publicaciones = resultado.getPublicaciones();
-                alCargarPestania();
-            }
+        perfilRepositorio.obtenerPublicacionesActivas(usuarioId,
+                new RepositorioCallback<List<Publicacion>>() {
+                    @Override
+                    public void onExito(List<Publicacion> resultado) {
+                        if (lista == null) {
+                            return;
+                        }
+                        publicaciones = resultado;
+                        alCargarPestania();
+                    }
 
-            @Override
-            public void onError(String mensaje) {
-                if (lista == null) {
-                    return;
-                }
-                // El mock de publicaciones responde error cuando la persona no tiene
-                // ninguna publicación en el catálogo (por ejemplo, alguien que solo
-                // compra). Para el perfil público eso es "sin publicaciones activas".
-                publicaciones = Collections.emptyList();
-                alCargarPestania();
-            }
-        });
+                    @Override
+                    public void onError(String mensaje) {
+                        if (lista == null) {
+                            return;
+                        }
+                        // Un vendedor sin publicaciones llega por onExito con la lista
+                        // vacía; acá solo entran fallas reales (red, sesión vencida).
+                        publicaciones = Collections.emptyList();
+                        errorPublicaciones = mensaje;
+                        alCargarPestania();
+                    }
+                });
     }
 
     private void cargarCalificaciones() {
@@ -332,7 +330,8 @@ public class PerfilVendedorFragment extends Fragment
         TabLayout.Tab pestaniaPublicaciones = pestanias.getTabAt(PESTANIA_PUBLICACIONES);
         TabLayout.Tab pestaniaCalificaciones = pestanias.getTabAt(PESTANIA_CALIFICACIONES);
         if (pestaniaPublicaciones != null) {
-            pestaniaPublicaciones.setText(publicaciones == null
+            // Si falló la carga no se sabe cuántas hay: "(0)" sería mentir.
+            pestaniaPublicaciones.setText(publicaciones == null || errorPublicaciones != null
                     ? getString(R.string.perfil_tab_publicaciones)
                     : getString(R.string.perfil_tab_publicaciones_cantidad, publicaciones.size()));
         }
@@ -361,7 +360,11 @@ public class PerfilVendedorFragment extends Fragment
                 lista.setAdapter(publicacionAdapter);
             }
             publicacionAdapter.reemplazar(publicaciones);
-            textoVacio.setText(R.string.perfil_publico_sin_publicaciones);
+            if (errorPublicaciones != null) {
+                textoVacio.setText(errorPublicaciones);
+            } else {
+                textoVacio.setText(R.string.perfil_publico_sin_publicaciones);
+            }
         } else {
             if (lista.getAdapter() != calificacionAdapter) {
                 lista.setAdapter(calificacionAdapter);

@@ -9,16 +9,16 @@ import com.google.gson.annotations.SerializedName;
  */
 public class ReputacionResponse {
 
-    @SerializedName("promedio")
+    @SerializedName("promedioEstrellas")
     public double promedio;
 
     @SerializedName("cantidad_calificaciones")
     public int cantidadCalificaciones;
 
-    @SerializedName("operaciones_como_comprador")
+    @SerializedName("operacionesComoComprador")
     public int operacionesComoComprador;
 
-    @SerializedName("operaciones_como_vendedor")
+    @SerializedName("operacionesComoVendedor")
     public int operacionesComoVendedor;
 
     public Reputacion aModelo() {

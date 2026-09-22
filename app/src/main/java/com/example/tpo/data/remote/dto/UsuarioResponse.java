@@ -5,7 +5,7 @@ import com.example.tpo.model.Zona;
 import com.google.gson.annotations.SerializedName;
 
 /**
- * JSON de un usuario: el perfil propio ({@code GET /usuarios/me}) o el público
+ * JSON de un usuario: el perfil propio ({@code GET /usuarios/yo}) o el público
  * ({@code GET /usuarios/{id}}, sin email ni teléfono). Ver
  * {@code docs/contrato-api-perfil-historial.md}.
  * <p>
@@ -32,7 +32,7 @@ public class UsuarioResponse {
     public String zona;
 
     /** Epoch en milisegundos. */
-    @SerializedName("fecha_alta")
+    @SerializedName("fechaAlta")
     public long fechaAlta;
 
     @SerializedName("foto_url")
