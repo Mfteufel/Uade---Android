@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 
 import com.example.tpo.model.Calificacion;
+import com.example.tpo.model.Publicacion;
 import com.example.tpo.model.Usuario;
 
 import java.util.List;
@@ -13,19 +14,18 @@ import java.util.List;
  * <p>
  * Sigue la misma forma que {@link PublicacionRepository}: los Fragments dependen
  * de esta interfaz y no de una implementación concreta. Hilt decide cuál se
- * inyecta ({@code di/RepositoryModule}): hoy {@link PerfilRepositoryMock}; cuando
- * esté la API, {@link PerfilRepositoryApi}. Las pantallas no se tocan.
+ * inyecta ({@code di/RepositoryModule}): {@link PerfilRepositoryApi} contra el
+ * backend o {@link PerfilRepositoryMock} sin servidor. Las pantallas no se tocan.
  * <p>
  * Todas las operaciones son asincrónicas y responden por callback en el Main
- * Thread. Los endpoints equivalentes están en
- * {@code docs/contrato-api-perfil-historial.md}.
+ * Thread.
  */
 public interface PerfilRepository {
 
     /**
      * Trae el perfil completo del usuario logueado.
      * <p>
-     * Equivale a {@code GET /usuarios/me}: el servidor sabe quién pide por el
+     * Equivale a {@code GET /usuarios/yo}: el servidor sabe quién pide por el
      * token, así que no hace falta mandarle el id.
      */
     void obtenerMiPerfil(RepositorioCallback<Usuario> callback);
@@ -36,7 +36,8 @@ public interface PerfilRepository {
      * Devuelve el usuario tal como quedó guardado y no un simple "ok": si el
      * servidor normaliza algo (recorta espacios, pasa el email a minúsculas), la
      * pantalla tiene que mostrar lo que quedó del otro lado y no lo que el usuario
-     * escribió. Equivale a {@code PATCH /usuarios/me}.
+     * escribió. Equivale a {@code PUT /usuarios/yo}: reemplaza los cuatro datos
+     * editables, así que {@code usuario} tiene que traerlos todos.
      *
      * @param usuario copia con los datos nuevos, armada con
      *                {@link Usuario#conDatosPersonales}.
@@ -54,11 +55,26 @@ public interface PerfilRepository {
     void obtenerPerfilPublico(String usuarioId, RepositorioCallback<Usuario> callback);
 
     /**
+     * Publicaciones activas de una persona, más recientes primero, para su perfil
+     * público. Alguien sin publicaciones no es un error: devuelve la lista vacía.
+     * Equivale a {@code GET /publicaciones?vendedorId={id}}.
+     */
+    void obtenerPublicacionesActivas(String usuarioId,
+                                     RepositorioCallback<List<Publicacion>> callback);
+
+    /**
+     * true si esta fuente de datos puede guardar una foto de perfil. El backend
+     * todavía no tiene ese endpoint: la pantalla usa esto para no ofrecer una
+     * acción que no se puede completar.
+     */
+    boolean permiteCambiarFoto();
+
+    /**
      * Reemplaza la foto de perfil del usuario logueado por la imagen elegida.
      * <p>
      * Recibe la {@link Uri} tal como la devuelve el selector de fotos: leerla,
      * achicarla y comprimirla es trabajo de disco y CPU que la implementación hace
-     * fuera del Main Thread. Equivale a {@code PUT /usuarios/me/foto} (multipart).
+     * fuera del Main Thread. Solo tiene sentido si {@link #permiteCambiarFoto()}.
      *
      * @return por callback, el perfil actualizado (ya con {@code fotoUrl}).
      */

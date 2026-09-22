@@ -83,9 +83,8 @@
     <string name="vencimiento_en_menos_de_un_minuto">en menos de un minuto</string>
     <string name="item_favorito_agregar">Agregar a favoritos</string>
     <string name="item_favorito_quitar">Quitar de favoritos</string>
-    <!-- Punto 10, indicador de novedad: favorito bajó de precio desde que se marcó. -->
     <string name="item_novedad_bajo_precio">Bajó de precio</string>
-    <!-- Punto 10, indicador de novedad: publicación matchea con la búsqueda guardada. -->
+    <string name="item_novedad_subio_precio">Subió de precio</string>
     <string name="item_nueva_busqueda">Nueva</string>
 
     <!-- ===================== Mis favoritos (Punto 10) ===================== -->
@@ -103,6 +102,8 @@
     <string name="error_sin_conexion_sin_cache">Estás sin conexión y todavía no viste ninguna publicación para mostrarte.</string>
     <string name="home_sin_conexion_mostrando_cache">Sin conexión: mostrando las últimas publicaciones que viste.</string>
     <string name="error_accion_requiere_conexion">Necesitás conexión a internet para continuar.</string>
+    <string name="detalle_sin_conexion_sin_cache">Estás sin conexión y no tenés esta publicación guardada.</string>
+    <string name="detalle_mostrando_sin_conexion">Sin conexión: mostrando la última vez que viste esta publicación.</string>
 
     <!-- ===================== Bottom sheet de filtros ===================== -->
     <string name="filtros_titulo">Filtros</string>
@@ -327,8 +328,9 @@
     <!-- Parte del rango de precio en el nombre autogenerado, cuando solo hay un extremo cargado -->
     <string name="busqueda_guardada_precio_desde">Desde %1$s</string>
     <string name="busqueda_guardada_precio_hasta">Hasta %1$s</string>
-    <!-- Punto 10, indicador de novedad: apareció una publicación nueva que matchea esta búsqueda. -->
     <string name="busqueda_guardada_novedad">Hay publicaciones nuevas</string>
+    <string name="busqueda_guardada_novedad_precio">Cambió el precio de algo que buscás</string>
+    <string name="busqueda_guardada_novedad_mixta">Hay novedades: publicaciones nuevas y cambios de precio</string>
 
     <!-- ===================== Perfil y Reputación ===================== -->
     <string name="perfil_titulo">Mi perfil</string>

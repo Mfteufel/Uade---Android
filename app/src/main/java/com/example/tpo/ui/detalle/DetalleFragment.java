@@ -22,12 +22,13 @@ import androidx.navigation.Navigation;
 
 import com.example.tpo.R;
 import com.example.tpo.data.FavoritoRepository;
-import com.example.tpo.data.FavoritoRepositoryMock;
+import com.example.tpo.data.FavoritoRepositoryApi;
 import com.example.tpo.data.OfertasPublicacion;
 import com.example.tpo.data.OfertasRepository;
 import com.example.tpo.data.PreguntasPublicacion;
 import com.example.tpo.data.PublicacionRepository;
-import com.example.tpo.data.PublicacionRepositoryMock;
+import com.example.tpo.data.PublicacionRepositoryApi;
+import com.example.tpo.data.PublicacionesVistas;
 import com.example.tpo.data.RepositorioCallback;
 import com.example.tpo.data.SesionUsuario;
 import com.example.tpo.model.EstadoOferta;
@@ -84,27 +85,18 @@ public class DetalleFragment extends Fragment {
     /** La oferta tiene que llegar al menos a esta fracción del precio publicado. */
     private static final double PROPORCION_MINIMA_OFERTA = 0.5;
 
-    private final PublicacionRepository repositorio = PublicacionRepositoryMock.getInstancia();
-    private final FavoritoRepository favoritoRepositorio = FavoritoRepositoryMock.getInstancia();
+    private PublicacionRepository repositorio;
+    private FavoritoRepository favoritoRepositorio;
 
-    /**
-     * Lo inyecta Hilt (Punto 7): manda la oferta al backend real, a diferencia
-     * de {@link #ofertasPublicacion} (Room), que acá sigue usándose solo para
-     * mostrar "lo que ya le enviaste" (Punto 4, sin migrar todavía).
-     */
+    /** Lo inyecta Hilt: manda y lee ofertas contra el backend real (Punto 7). */
     @Inject
     OfertasRepository ofertasRepository;
 
     private String publicacionId;
 
-    /**
-     * Las dos necesitan un {@code Context} para Room, que todavía no existe cuando se
-     * inicializan los campos del Fragment; por eso se obtienen recién en {@link #onAttach},
-     * que es el primer momento del ciclo de vida en el que hay uno disponible (mismo patrón
-     * que {@code MisPublicacionesFragment.onAttach()}, Punto 5).
-     */
     private PreguntasPublicacion preguntasPublicacion;
     private OfertasPublicacion ofertasPublicacion;
+    private PublicacionesVistas publicacionesVistas;
 
     /** Última publicación cargada. La usan el ítem de menú y los diálogos, que viven fuera del callback. */
     @Nullable
@@ -162,6 +154,9 @@ public class DetalleFragment extends Fragment {
         super.onAttach(context);
         preguntasPublicacion = PreguntasPublicacion.getInstancia(context);
         ofertasPublicacion = OfertasPublicacion.getInstancia(context);
+        publicacionesVistas = PublicacionesVistas.getInstancia(context);
+        repositorio = PublicacionRepositoryApi.getInstancia(context);
+        favoritoRepositorio = FavoritoRepositoryApi.getInstancia(context);
     }
 
     @Override
@@ -331,6 +326,10 @@ public class DetalleFragment extends Fragment {
 
     private void cargarPublicacion() {
         mostrarCarga();
+        if (!ConectividadUtils.hayConexion(requireContext())) {
+            mostrarPublicacionSinConexion();
+            return;
+        }
         repositorio.obtenerPublicacion(publicacionId, new RepositorioCallback<Publicacion>() {
             @Override
             public void onExito(Publicacion resultado) {
@@ -346,6 +345,27 @@ public class DetalleFragment extends Fragment {
                     return;
                 }
                 mostrarError(mensaje);
+            }
+        });
+    }
+
+    private void mostrarPublicacionSinConexion() {
+        publicacionesVistas.obtenerVista(publicacionId, new RepositorioCallback<Publicacion>() {
+            @Override
+            public void onExito(Publicacion resultado) {
+                if (scrollContenido == null) {
+                    return;
+                }
+                mostrarPublicacion(resultado);
+                mostrarSnackbar(getString(R.string.detalle_mostrando_sin_conexion));
+            }
+
+            @Override
+            public void onError(String mensaje) {
+                if (scrollContenido == null) {
+                    return;
+                }
+                mostrarError(getString(R.string.detalle_sin_conexion_sin_cache));
             }
         });
     }

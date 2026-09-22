@@ -103,7 +103,7 @@ public class CodigoFragment extends Fragment {
                 }
                 if (response.isSuccessful() && response.body() != null) {
                     tokenManager.saveToken(response.body().getToken());
-                    SesionLocal.actualizar(response.body().getUsuario());
+                    SesionLocal.actualizar(requireContext(), response.body().getUsuario());
                     Biometria.ofrecerActivar(CodigoFragment.this, tokenManager, () -> {
                         if (getView() != null) {
                             Navigation.findNavController(requireView()).navigate(R.id.action_codigo_to_home);
