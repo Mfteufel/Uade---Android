@@ -45,23 +45,24 @@ public class RepositoryModule {
     /**
      * false = datos simulados ({@code BaseDeDatosMock}); true = API REST.
      * <p>
-     * Queda en false hasta que el backend de Walter esté levantado. Antes de
-     * pasarlo a true, seguir la lista de {@code docs/contrato-api-perfil-historial.md}
-     * (permiso INTERNET, URL base, login que guarde el token).
+     * Cada repositorio tiene su propio switch. {@code /operaciones} (Punto 9)
+     * necesita el backend de {@code feature/punto9-backend} desplegado: contra un
+     * servidor sin esos endpoints el historial muestra el error, sin romperse.
      */
-    private static final boolean USAR_API = false;
+    private static final boolean USAR_API_PERFIL = true;
+    private static final boolean USAR_API_OPERACIONES = true;
 
     @Provides
     @Singleton
     public PerfilRepository providePerfilRepository(@ApplicationContext Context context,
                                                     UsuarioApi api) {
-        return USAR_API ? new PerfilRepositoryApi(api, context) : new PerfilRepositoryMock(context);
+        return USAR_API_PERFIL ? new PerfilRepositoryApi(api) : new PerfilRepositoryMock(context);
     }
 
     @Provides
     @Singleton
     public OperacionRepository provideOperacionRepository(OperacionApi api) {
-        return USAR_API ? new OperacionRepositoryApi(api) : new OperacionRepositoryMock();
+        return USAR_API_OPERACIONES ? new OperacionRepositoryApi(api) : new OperacionRepositoryMock();
     }
 
     @Provides

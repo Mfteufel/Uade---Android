@@ -3,19 +3,22 @@ package com.example.tpo.data.remote.dto;
 import com.example.tpo.model.Calificacion;
 import com.google.gson.annotations.SerializedName;
 
-/** JSON de una calificación. Ver {@code docs/contrato-api-perfil-historial.md}. */
+/**
+ * JSON de una calificación: la propia dentro de una operación
+ * ({@code miCalificacion}) o cada una de {@code GET /usuarios/{id}/calificaciones}.
+ */
 public class CalificacionResponse {
 
     @SerializedName("id")
     public String id;
 
-    @SerializedName("operacion_id")
+    @SerializedName("operacionId")
     public String operacionId;
 
     @SerializedName("autor")
     public UsuarioResumenResponse autor;
 
-    @SerializedName("calificado_id")
+    @SerializedName("calificadoId")
     public String calificadoId;
 
     @SerializedName("articulo")

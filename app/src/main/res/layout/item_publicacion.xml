@@ -91,7 +91,7 @@
             app:layout_constraintTop_toBottomOf="@id/tituloPublicacion"
             tools:text="$ 480.000" />
 
-        <!-- Punto 10 (indicador de novedad): solo visible si el favorito bajó de precio. -->
+        <!-- Punto 10 (indicador de novedad): visible si el favorito cambió de precio. -->
         <TextView
             android:id="@+id/indicadorNovedadPrecio"
             android:layout_width="wrap_content"

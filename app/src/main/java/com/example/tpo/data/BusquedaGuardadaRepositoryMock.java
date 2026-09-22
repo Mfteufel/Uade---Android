@@ -130,14 +130,19 @@ public class BusquedaGuardadaRepositoryMock implements BusquedaGuardadaRepositor
     }
 
     @Override
-    public void marcarTodoVisto() {
-        publicacionesNuevasDelUsuario().clear();
+    public void marcarVisto(String id) {
+        publicacionesNuevasDelUsuario().remove(id);
     }
 
     @Override
     public Set<String> publicacionesNuevasDe(String id) {
         Set<String> nuevas = publicacionesNuevasDelUsuario().get(id);
         return nuevas != null ? nuevas : Collections.emptySet();
+    }
+
+    @Override
+    public Map<String, Boolean> publicacionesConCambioDePrecioDe(String id) {
+        return Collections.emptyMap();
     }
 
     public void simularPublicacionNueva(@Nullable String titulo, @Nullable Categoria categoria) {

@@ -238,6 +238,44 @@ public class BaseDeDatosMock {
     }
 
     /**
+     * Valida la confirmación de entrega con las mismas reglas que el servidor:
+     * solo el comprador, y una sola vez. Devuelve el {@code detail} que mandaría
+     * la API, o {@code null} si se puede confirmar.
+     */
+    @Nullable
+    public String validarEntrega(String operacionId, String usuarioId) {
+        FilaOperacion fila = buscarOperacion(operacionId);
+        if (fila == null) {
+            return "La operación no existe";
+        }
+        if (!participa(fila, usuarioId)) {
+            return "No participaste de esta operación";
+        }
+        if (!fila.compradorId.equals(usuarioId)) {
+            return "Solo el comprador puede confirmar la entrega";
+        }
+        if (fila.estado == EstadoOperacion.ENTREGADA) {
+            return "La entrega ya estaba confirmada";
+        }
+        return null;
+    }
+
+    /**
+     * Equivale a {@code POST /operaciones/{id}/entrega}. Llamar solo después de
+     * {@link #validarEntrega} sin errores.
+     *
+     * @return la operación actualizada, vista desde el comprador.
+     */
+    public Operacion confirmarEntrega(String operacionId, String compradorId, long ahora) {
+        registrarEntrega(operacionId, ahora);
+        FilaOperacion fila = buscarOperacion(operacionId);
+        if (fila == null) {
+            throw new IllegalArgumentException("La operación no existe: " + operacionId);
+        }
+        return verDesde(fila, compradorId, ahora);
+    }
+
+    /**
      * Equivale a {@code GET /operaciones?tipo=&desde=&hasta=}: las operaciones
      * concretadas (entregadas) del usuario, vistas desde su lado, más recientes
      * primero. Nunca devuelve operaciones en las que no participó.
@@ -255,6 +293,23 @@ public class BaseDeDatosMock {
         }
         Collections.sort(resultado, (a, b) ->
                 Long.compare(b.getFechaReferencia(), a.getFechaReferencia()));
+        return resultado;
+    }
+
+    /**
+     * Equivale a {@code GET /operaciones/pendientes}: las ventas aceptadas del
+     * usuario que todavía esperan la entrega, más recientes primero. No son parte
+     * del historial.
+     */
+    public List<Operacion> pendientesDeEntrega(String usuarioId, long ahora) {
+        List<Operacion> resultado = new ArrayList<>();
+        for (FilaOperacion fila : operaciones) {
+            if (fila.estado == EstadoOperacion.PENDIENTE_ENTREGA && participa(fila, usuarioId)) {
+                resultado.add(verDesde(fila, usuarioId, ahora));
+            }
+        }
+        Collections.sort(resultado, (a, b) ->
+                Long.compare(b.getFechaOperacion(), a.getFechaOperacion()));
         return resultado;
     }
 

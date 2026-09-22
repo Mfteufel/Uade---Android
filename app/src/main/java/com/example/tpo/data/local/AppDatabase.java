@@ -11,11 +11,13 @@ import androidx.room.RoomDatabase;
  * <p>
  * Tiene la tabla del borrador de "Publicar artículo", la de "Mis
  * publicaciones" (Punto 5, reemplazo local mientras no exista el backend
- * real), tres tablas de persistencia del Detalle (Punto 4): preguntas,
- * ofertas (con su ciclo de negociación completo del Punto 7) y el override de
- * estado de la publicación, y la de publicaciones vistas (Punto 6, modo sin
- * conexión). Se arma como singleton, igual que {@code PublicacionRepositoryMock}
- * y {@code SesionUsuario}, para no abrir más de una conexión a la misma base.
+ * real), el override de estado de la publicación del Detalle (Punto 4:
+ * pausar/reactivar/vender), la de publicaciones vistas (Punto 6, modo sin
+ * conexión) y la del catálogo publicado por el usuario (ver {@code version = 8}).
+ * Preguntas y ofertas del Detalle ya no viven acá: se migraron al backend real
+ * (ver {@code version = 9}). Se arma como singleton, igual que
+ * {@code PublicacionRepositoryMock} y {@code SesionUsuario}, para no abrir más
+ * de una conexión a la misma base.
  * <p>
  * {@code version = 5}: subió dos veces en paralelo (dos ramas distintas
  * llevaron {@code OfertaEntity} de v3 a v4, cada una con columnas propias) y
@@ -38,15 +40,30 @@ import androidx.room.RoomDatabase;
  * que esa tabla se unificó dentro de favoritos y dejó de existir acá. Mismo
  * criterio de siempre: el esquema cambió (una tabla menos), así que necesita
  * su propio número de versión.
+ * <p>
+ * {@code version = 8}: se agrega {@code PublicacionCreadaEntity} (tabla
+ * {@code publicacion_creada}). Antes de esto, la publicación que el usuario
+ * creaba en el wizard se sumaba al catálogo mock de {@code PublicacionRepositoryMock}
+ * solo en memoria: al reiniciar el proceso el catálogo se reconstruía desde
+ * {@code crearCatalogoDePrueba()} (siempre las mismas 28 de prueba) y la publicación
+ * nueva desaparecía del Home y de su propio Detalle, aunque seguía viéndose en "Mis
+ * publicaciones" (Room). Esta tabla persiste esa publicación para que
+ * {@code PublicacionRepositoryMock} la vuelva a sumar al catálogo en cada arranque.
+ * <p>
+ * {@code version = 9}: saca {@code PreguntaEntity} y {@code OfertaEntity}. El
+ * Detalle (Punto 4) migró preguntas y ofertas al backend real
+ * ({@code PreguntaRepositoryApi}, {@code OfertasRepository}) — las tablas
+ * locales quedaron 100% muertas, junto con las clases que las usaban
+ * ({@code PreguntasPublicacion}, {@code OfertasPublicacion}, el modelo
+ * {@code Oferta}).
  */
 @Database(entities = {
         BorradorPublicacionEntity.class,
         PublicacionMiaEntity.class,
         PublicacionEstadoEntity.class,
-        PreguntaEntity.class,
-        OfertaEntity.class,
-        PublicacionVistaEntity.class
-}, version = 7, exportSchema = false)
+        PublicacionVistaEntity.class,
+        PublicacionCreadaEntity.class
+}, version = 9, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
     private static final String NOMBRE_ARCHIVO = "ronda.db";
@@ -59,11 +76,9 @@ public abstract class AppDatabase extends RoomDatabase {
 
     public abstract PublicacionEstadoDao publicacionEstadoDao();
 
-    public abstract PreguntaDao preguntaDao();
-
-    public abstract OfertaDao ofertaDao();
-
     public abstract PublicacionVistaDao publicacionVistaDao();
+
+    public abstract PublicacionCreadaDao publicacionCreadaDao();
 
     public static AppDatabase getInstancia(Context context) {
         if (instancia == null) {

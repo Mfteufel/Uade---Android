@@ -17,6 +17,13 @@ public class BusquedaGuardada implements Serializable {
         this.fechaGuardado = System.currentTimeMillis();
     }
 
+    public BusquedaGuardada(String id, String nombre, FiltroPublicaciones filtro, long fechaGuardado) {
+        this.id = id;
+        this.nombre = nombre;
+        this.filtro = filtro;
+        this.fechaGuardado = fechaGuardado;
+    }
+
     public String getId() {
         return id;
     }

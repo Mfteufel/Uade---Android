@@ -5,12 +5,13 @@ import androidx.annotation.StringRes;
 import com.example.tpo.R;
 
 /**
- * Estado de una {@link Oferta} dentro de la negociación — Punto 7.
+ * Estado de una {@link OfertaNegociacion} dentro de la negociación — Punto 7.
  * <p>
  * {@code PENDIENTE} es el único estado en el que la oferta admite acciones
  * (aceptar, rechazar, contraofertar); los otros tres son terminales dentro de
  * esa publicación para ese comprador — una nueva oferta del mismo usuario
- * reemplaza a la anterior (ver {@code OfertasPublicacion}), no reabre esta.
+ * reemplaza a la anterior (el backend permite una sola PENDIENTE por
+ * publicación y comprador, ver {@code docs/ofertas-api.md}), no reabre esta.
  */
 public enum EstadoOferta {
 

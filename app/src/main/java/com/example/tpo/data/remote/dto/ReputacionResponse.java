@@ -4,21 +4,21 @@ import com.example.tpo.model.Reputacion;
 import com.google.gson.annotations.SerializedName;
 
 /**
- * JSON de la reputación, tal como la calcula el servidor. Ver
- * {@code docs/contrato-api-perfil-historial.md}.
+ * JSON de la reputación, tal como la calcula el servidor a partir de las
+ * calificaciones recibidas y de las operaciones con entrega confirmada.
  */
 public class ReputacionResponse {
 
-    @SerializedName("promedio")
+    @SerializedName("promedioEstrellas")
     public double promedio;
 
-    @SerializedName("cantidad_calificaciones")
+    @SerializedName("cantidadCalificaciones")
     public int cantidadCalificaciones;
 
-    @SerializedName("operaciones_como_comprador")
+    @SerializedName("operacionesComoComprador")
     public int operacionesComoComprador;
 
-    @SerializedName("operaciones_como_vendedor")
+    @SerializedName("operacionesComoVendedor")
     public int operacionesComoVendedor;
 
     public Reputacion aModelo() {

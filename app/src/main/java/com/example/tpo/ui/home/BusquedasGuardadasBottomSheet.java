@@ -1,5 +1,6 @@
 package com.example.tpo.ui.home;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -13,7 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tpo.R;
 import com.example.tpo.data.BusquedaGuardadaRepository;
-import com.example.tpo.data.BusquedaGuardadaRepositoryMock;
+import com.example.tpo.data.BusquedaGuardadaRepositoryApi;
 import com.example.tpo.data.RepositorioCallback;
 import com.example.tpo.model.BusquedaGuardada;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
@@ -30,7 +31,6 @@ public class BusquedasGuardadasBottomSheet extends BottomSheetDialogFragment {
     public static final String RESULTADO_BUSQUEDA_GUARDADA = "resultado_busqueda_guardada";
     public static final String EXTRA_FILTRO = "filtro";
     public static final String EXTRA_ID = "id";
-    /** Se dispara siempre al cerrarse (se haya elegido una búsqueda o no), para que el Home apague su indicador de novedad. */
     public static final String RESULTADO_CERRADA = "resultado_busquedas_guardadas_cerrada";
 
     private RecyclerView lista;
@@ -38,7 +38,13 @@ public class BusquedasGuardadasBottomSheet extends BottomSheetDialogFragment {
     private View estadoVacio;
 
     private BusquedaGuardadaAdapter adapter;
-    private final BusquedaGuardadaRepository repositorio = BusquedaGuardadaRepositoryMock.getInstancia();
+    private BusquedaGuardadaRepository repositorio;
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        repositorio = BusquedaGuardadaRepositoryApi.getInstancia(context);
+    }
 
     @Nullable
     @Override
@@ -75,9 +81,11 @@ public class BusquedasGuardadasBottomSheet extends BottomSheetDialogFragment {
     @Override
     public void onDismiss(@NonNull DialogInterface dialog) {
         super.onDismiss(dialog);
-        // El usuario ya vio esta hoja: se limpian las novedades pendientes y se
-        // avisa al Home para que apague el indicador del ícono, elija o no elija.
-        repositorio.marcarTodoVisto();
+        // Ver esta hoja (la lista de nombres) no cuenta como haber revisado
+        // ninguna búsqueda puntual, eso se marca recién cuando el usuario la
+        // aplica de verdad.
+        // Acá solo se avisa al Home para que actualice el ícono con lo que haya
+        // quedado, puede no haber cambiado nada si no se eligió ninguna.
         getParentFragmentManager().setFragmentResult(RESULTADO_CERRADA, new Bundle());
     }
 

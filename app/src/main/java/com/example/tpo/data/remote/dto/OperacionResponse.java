@@ -7,29 +7,29 @@ import com.google.gson.annotations.SerializedName;
 
 /**
  * JSON de una operación <em>vista por el usuario del token</em> (de ahí
- * {@code tipo}, {@code mi_calificacion} y {@code puede_calificar}). Ver
- * {@code docs/contrato-api-perfil-historial.md}.
+ * {@code tipo}, {@code miCalificacion} y {@code puedeCalificar}), tal como la
+ * devuelve {@code GET /operaciones}.
+ * <p>
+ * Del lado del servidor una operación es una oferta aceptada: el {@code id} es
+ * el de la oferta. No trae fecha de aceptación, por eso el modelo recibe
+ * {@code null} en {@code fechaOperacion}.
  */
 public class OperacionResponse {
 
     @SerializedName("id")
     public String id;
 
-    @SerializedName("publicacion_id")
+    @SerializedName("publicacionId")
     public String publicacionId;
 
     @SerializedName("articulo")
     public String articulo;
 
-    @SerializedName("monto_final")
+    @SerializedName("montoFinal")
     public double montoFinal;
 
-    /** Epoch ms del acuerdo (oferta aceptada). */
-    @SerializedName("fecha_operacion")
-    public long fechaOperacion;
-
-    /** Epoch ms de la entrega, o null. */
-    @SerializedName("fecha_entrega")
+    /** Epoch ms de la entrega confirmada por el comprador, o null. */
+    @SerializedName("fechaEntrega")
     public Long fechaEntrega;
 
     /** "PENDIENTE_ENTREGA" o "ENTREGADA". */
@@ -46,18 +46,18 @@ public class OperacionResponse {
     @SerializedName("vendedor")
     public UsuarioResumenResponse vendedor;
 
-    @SerializedName("mi_calificacion")
+    @SerializedName("miCalificacion")
     public CalificacionResponse miCalificacion;
 
-    @SerializedName("puede_calificar")
+    @SerializedName("puedeCalificar")
     public boolean puedeCalificar;
 
-    /** Epoch ms: entrega + 7 días, o null si no hubo entrega. */
-    @SerializedName("calificable_hasta")
+    /** Epoch ms: entrega + 7 días, o null si todavía no hubo entrega. */
+    @SerializedName("calificableHasta")
     public Long calificableHasta;
 
     public Operacion aModelo() {
-        return new Operacion(id, publicacionId, articulo, montoFinal, fechaOperacion,
+        return new Operacion(id, publicacionId, articulo, montoFinal, null,
                 fechaEntrega, EstadoOperacion.valueOf(estado), comprador.aModelo(),
                 vendedor.aModelo(), TipoOperacion.valueOf(tipo),
                 miCalificacion == null ? null : miCalificacion.aModelo(),

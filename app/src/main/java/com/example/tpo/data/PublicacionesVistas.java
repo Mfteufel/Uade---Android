@@ -61,4 +61,16 @@ public class PublicacionesVistas {
             handlerPrincipal.post(() -> callback.onExito(publicaciones));
         });
     }
+
+    public void obtenerVista(String publicacionId, RepositorioCallback<Publicacion> callback) {
+        String usuarioId = SesionUsuario.getInstancia().getUsuarioId();
+        executor.execute(() -> {
+            PublicacionVistaEntity entidad = dao.obtenerPorId(usuarioId, publicacionId);
+            if (entidad == null) {
+                handlerPrincipal.post(() -> callback.onError("No tenés esta publicación guardada"));
+                return;
+            }
+            handlerPrincipal.post(() -> callback.onExito(entidad.aPublicacion()));
+        });
+    }
 }

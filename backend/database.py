@@ -90,6 +90,18 @@ CREATE TABLE IF NOT EXISTS fotos (
     publicacion_id INTEGER NOT NULL,
     archivo        TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS preguntas (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    publicacion_id INTEGER NOT NULL,
+    autor_id       INTEGER NOT NULL,
+    texto          TEXT NOT NULL,
+    creado_en      INTEGER NOT NULL,
+    respuesta      TEXT,
+    respuesta_en   INTEGER
+);
+
+CREATE INDEX IF NOT EXISTS indice_preguntas_publicacion ON preguntas (publicacion_id);
 """
 
 ORDENES = {
@@ -142,6 +154,11 @@ def inicializar():
         columnas = [fila["name"] for fila in conexion.execute("PRAGMA table_info(ofertas)")]
         if "fecha_entrega" not in columnas:
             conexion.execute("ALTER TABLE ofertas ADD COLUMN fecha_entrega INTEGER")
+        columnas = [fila["name"] for fila in conexion.execute("PRAGMA table_info(preguntas)")]
+        if "respuesta" not in columnas:
+            conexion.execute("ALTER TABLE preguntas ADD COLUMN respuesta TEXT")
+        if "respuesta_en" not in columnas:
+            conexion.execute("ALTER TABLE preguntas ADD COLUMN respuesta_en INTEGER")
 
 
 def buscar_usuario_por_email(email):
@@ -357,6 +374,41 @@ def fotos_de(publicacion_id):
             (publicacion_id,),
         ).fetchall()
     return [fila["archivo"] for fila in filas]
+
+
+def crear_pregunta(publicacion_id, autor_id, texto):
+    creado_en = ahora_en_milisegundos()
+    with conectar() as conexion:
+        cursor = conexion.execute(
+            "INSERT INTO preguntas (publicacion_id, autor_id, texto, creado_en)"
+            " VALUES (?, ?, ?, ?)",
+            (publicacion_id, autor_id, texto, creado_en),
+        )
+        return cursor.lastrowid
+
+
+def preguntas_de(publicacion_id):
+    with conectar() as conexion:
+        return conexion.execute(
+            "SELECT * FROM preguntas WHERE publicacion_id = ? ORDER BY id",
+            (publicacion_id,),
+        ).fetchall()
+
+
+def buscar_pregunta(pregunta_id):
+    with conectar() as conexion:
+        return conexion.execute(
+            "SELECT * FROM preguntas WHERE id = ?", (pregunta_id,)
+        ).fetchone()
+
+
+def responder_pregunta(pregunta_id, texto):
+    respuesta_en = ahora_en_milisegundos()
+    with conectar() as conexion:
+        conexion.execute(
+            "UPDATE preguntas SET respuesta = ?, respuesta_en = ? WHERE id = ?",
+            (texto, respuesta_en, pregunta_id),
+        )
 
 
 def nombre_de_vendedor(vendedor_id):

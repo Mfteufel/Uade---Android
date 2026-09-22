@@ -1,7 +1,5 @@
 package com.example.tpo.data;
 
-import android.content.ContentResolver;
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Handler;
@@ -13,8 +11,12 @@ import com.example.tpo.data.remote.ErrorApi;
 import com.example.tpo.data.remote.UsuarioApi;
 import com.example.tpo.data.remote.dto.ActualizarPerfilRequest;
 import com.example.tpo.data.remote.dto.CalificacionResponse;
+import com.example.tpo.data.remote.dto.PaginaPublicacionesResponse;
+import com.example.tpo.data.remote.dto.PublicacionResumenResponse;
 import com.example.tpo.data.remote.dto.UsuarioResponse;
 import com.example.tpo.model.Calificacion;
+import com.example.tpo.model.EstadoPublicacion;
+import com.example.tpo.model.Publicacion;
 import com.example.tpo.model.Usuario;
 import com.example.tpo.util.ImagenUtils;
 
@@ -25,9 +27,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
 
-import okhttp3.MediaType;
-import okhttp3.MultipartBody;
-import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -36,25 +35,32 @@ import retrofit2.Response;
 /**
  * Implementación de {@link PerfilRepository} contra la API REST, con Retrofit.
  * <p>
- * <b>Todavía no se inyecta</b>: se activa en {@code di/RepositoryModule} cuando el
- * backend de Walter esté levantado (ver {@code docs/contrato-api-perfil-historial.md}).
- * Las pantallas no cambian: reciben los mismos modelos y los mismos mensajes de
- * error por {@link RepositorioCallback} que con {@link PerfilRepositoryMock}.
+ * Se activa en {@code di/RepositoryModule}. Las pantallas no cambian: reciben los
+ * mismos modelos y los mismos mensajes de error por {@link RepositorioCallback}
+ * que con {@link PerfilRepositoryMock}.
+ * <p>
+ * El backend todavía no tiene foto de perfil: para eso se responde localmente,
+ * sin pedir nada al servidor.
  * <p>
  * No construye Retrofit: recibe {@link UsuarioApi} ya creada desde el único
  * {@code Retrofit} de {@code NetworkModule}, que agrega el token JWT.
  */
 public class PerfilRepositoryApi implements PerfilRepository {
 
+    /**
+     * Tope de páginas al juntar las publicaciones de un vendedor: el perfil las
+     * muestra todas en una lista, pero no tiene sentido seguir pidiendo sin fin si
+     * el servidor respondiera mal {@code hayMas}.
+     */
+    private static final int MAXIMO_PAGINAS_PUBLICACIONES = 10;
+
     private final UsuarioApi api;
-    private final ContentResolver resolver;
     private final Handler handlerPrincipal = new Handler(Looper.getMainLooper());
-    /** Para comprimir y decodificar fotos fuera del Main Thread. */
+    /** Para decodificar fotos fuera del Main Thread. */
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
-    public PerfilRepositoryApi(UsuarioApi api, Context context) {
+    public PerfilRepositoryApi(UsuarioApi api) {
         this.api = api;
-        this.resolver = context.getApplicationContext().getContentResolver();
     }
 
     @Override
@@ -65,7 +71,15 @@ public class PerfilRepositoryApi implements PerfilRepository {
 
     @Override
     public void actualizarMiPerfil(Usuario usuario, RepositorioCallback<Usuario> callback) {
-        api.actualizarMiPerfil(new ActualizarPerfilRequest(usuario)).enqueue(
+        // El backend todavía no valida formato: sin esto guardaría un email sin @
+        // o un teléfono con letras.
+        String errorValidacion = ValidadorPerfil.validar(usuario);
+        if (errorValidacion != null) {
+            handlerPrincipal.post(() -> callback.onError(errorValidacion));
+            return;
+        }
+        Usuario normalizado = ValidadorPerfil.normalizar(usuario);
+        api.actualizarMiPerfil(new ActualizarPerfilRequest(normalizado)).enqueue(
                 adaptar(callback, "No pudimos guardar los cambios", PerfilRepositoryApi::perfilPropio));
     }
 
@@ -76,20 +90,21 @@ public class PerfilRepositoryApi implements PerfilRepository {
     }
 
     @Override
+    public void obtenerPublicacionesActivas(String usuarioId,
+                                            RepositorioCallback<List<Publicacion>> callback) {
+        pedirPaginaDePublicaciones(usuarioId, 0, new ArrayList<>(), callback);
+    }
+
+    @Override
+    public boolean permiteCambiarFoto() {
+        return false;
+    }
+
+    /** El backend no tiene endpoint de foto: se contesta sin mandar nada. */
+    @Override
     public void actualizarFoto(Uri foto, RepositorioCallback<Usuario> callback) {
-        executor.execute(() -> {
-            byte[] jpeg;
-            try {
-                jpeg = ImagenUtils.comprimirJpeg(resolver, foto, ImagenUtils.LADO_MAXIMO_FOTO_PERFIL);
-            } catch (IOException | RuntimeException excepcion) {
-                handlerPrincipal.post(() -> callback.onError("No pudimos leer la imagen elegida"));
-                return;
-            }
-            RequestBody cuerpo = RequestBody.create(jpeg, MediaType.get("image/jpeg"));
-            MultipartBody.Part parte = MultipartBody.Part.createFormData("foto", "perfil.jpg", cuerpo);
-            api.subirFoto(parte).enqueue(
-                    adaptar(callback, "No pudimos subir la foto", UsuarioResponse::aModelo));
-        });
+        handlerPrincipal.post(() ->
+                callback.onError("Por ahora no se puede cambiar la foto de perfil"));
     }
 
     @Override
@@ -149,6 +164,54 @@ public class PerfilRepositoryApi implements PerfilRepository {
         Usuario usuario = json.aModelo();
         SesionUsuario.getInstancia().actualizarDesdePerfil(usuario);
         return usuario;
+    }
+
+    /**
+     * Pide una página y, si el servidor dice que hay más, la siguiente, juntando
+     * todo en {@code acumuladas}. Las páginas van de a una (cada pedido sale
+     * recién cuando llegó el anterior), así el orden se conserva.
+     */
+    private void pedirPaginaDePublicaciones(String usuarioId, int pagina,
+                                            List<Publicacion> acumuladas,
+                                            RepositorioCallback<List<Publicacion>> callback) {
+        String errorPorDefecto = "No pudimos cargar las publicaciones";
+        api.obtenerPublicacionesDeVendedor(usuarioId, pagina).enqueue(
+                adaptar(new RepositorioCallback<PaginaPublicacionesResponse>() {
+                    @Override
+                    public void onExito(PaginaPublicacionesResponse respuesta) {
+                        acumuladas.addAll(activas(respuesta));
+                        if (respuesta.hayMas && pagina + 1 < MAXIMO_PAGINAS_PUBLICACIONES) {
+                            pedirPaginaDePublicaciones(usuarioId, pagina + 1, acumuladas, callback);
+                        } else {
+                            callback.onExito(acumuladas);
+                        }
+                    }
+
+                    @Override
+                    public void onError(String mensaje) {
+                        callback.onError(mensaje);
+                    }
+                }, errorPorDefecto, respuesta -> respuesta));
+    }
+
+    /**
+     * Las publicaciones activas de una página, ya como modelo. Se descartan las que
+     * no son activas (el perfil muestra solo esas) y las que traen un valor que la
+     * app no conoce.
+     */
+    static List<Publicacion> activas(PaginaPublicacionesResponse respuesta) {
+        List<Publicacion> resultado = new ArrayList<>();
+        if (respuesta.publicaciones == null) {
+            return resultado;
+        }
+        for (PublicacionResumenResponse json : respuesta.publicaciones) {
+            Publicacion publicacion = json.aModelo();
+            if (publicacion != null
+                    && publicacion.getEstadoPublicacion() == EstadoPublicacion.ACTIVA) {
+                resultado.add(publicacion);
+            }
+        }
+        return resultado;
     }
 
     /**

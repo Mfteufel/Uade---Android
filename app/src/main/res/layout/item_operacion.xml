@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Una operación concretada en el historial (Punto 9): fecha, artículo, monto
-    final y contraparte, que son los cuatro datos que pide el enunciado, más el
-    estado de la calificación.
+    Una operación del historial (Punto 9): fecha, artículo, monto final y
+    contraparte, que son los cuatro datos que pide el enunciado, más el estado
+    de la entrega y de la calificación.
 
-    La zona de calificación muestra una sola de tres cosas (la decide el
-    servidor, ver Operacion.puedeCalificar()):
+    Si la entrega todavía no se confirmó, abajo va "Confirmar entrega" (solo el
+    comprador) o el aviso de que falta. Si ya se confirmó, la zona de
+    calificación muestra una sola de tres cosas (la decide el servidor, ver
+    Operacion.puedeCalificar()):
       - botón "Calificar" + hasta cuándo se puede;
       - las estrellas que ya se dejaron;
       - que el plazo de 7 días venció.
@@ -76,6 +78,34 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/espaciado_mediano" />
+
+        <!-- Entrega sin confirmar: el comprador la confirma, el vendedor espera. -->
+        <LinearLayout
+            android:id="@+id/contenedorPendienteEntrega"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/espaciado_chico"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/textoPendienteEntrega"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                tools:text="@string/historial_ya_recibiste" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/botonConfirmarEntrega"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/espaciado_chico"
+                android:text="@string/historial_confirmar_entrega" />
+        </LinearLayout>
 
         <!-- Calificación: una sola de las tres variantes está visible. -->
         <LinearLayout

@@ -3,10 +3,11 @@ import uuid
 from pathlib import Path
 from typing import List, Optional
 
-from fastapi import APIRouter, File, Form, HTTPException, Query, Request, Response, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, Response, UploadFile, status
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 import database
+import seguridad
 from models.publicacion import (
     CambioEstado,
     EdicionPublicacion,
@@ -51,7 +52,7 @@ def urls_de_fotos(request, publicacion_id):
     return [base + "fotos/" + archivo for archivo in database.fotos_de(publicacion_id)]
 
 
-def a_json(request, fila):
+def a_json(request, fila, usuario=None):
     fotos = urls_de_fotos(request, fila["id"])
     return {
         "id": str(fila["id"]),
@@ -67,6 +68,14 @@ def a_json(request, fila):
         "nombreVendedor": database.nombre_de_vendedor(fila["vendedor_id"]),
         "fotoPrincipalUrl": fotos[0] if fotos else None,
         "fotos": fotos,
+        # Punto 8: la direccion exacta solo se manda si quien pregunta es el
+        # dueño de la publicacion. El comprador la ve por GET /ofertas/{id}
+        # una vez que su oferta queda ACEPTADA (routers/ofertas.py).
+        "direccionEntrega": (
+            fila["direccion_entrega"]
+            if usuario is not None and str(usuario["id"]) == fila["vendedor_id"]
+            else None
+        ),
     }
 
 
@@ -150,11 +159,12 @@ def listar_mias(request: Request, vendedorId: str):
 
 
 @router.get("/{publicacion_id}", response_model=PublicacionDetalle)
-def ver_detalle(request: Request, publicacion_id: int):
+def ver_detalle(request: Request, publicacion_id: int,
+                usuario: dict = Depends(seguridad.usuario_actual_opcional)):
     fila = database.buscar_publicacion(publicacion_id)
     if fila is None:
         raise error(404, "La publicacion no existe")
-    return a_json(request, fila)
+    return a_json(request, fila, usuario)
 
 
 @router.put("/{publicacion_id}", response_model=PublicacionDetalle)
