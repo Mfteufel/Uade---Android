@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    "Mis ofertas" (Punto 7): toolbar + TabLayout (Enviadas/Recibidas) + un solo
-    RecyclerView que se recarga al cambiar de tab. Progreso/estado vacío
-    superpuestos en un FrameLayout.
+    "Mis ofertas" (Punto 7): toolbar (con acción "Recargar" en el menú) +
+    TabLayout (Enviadas/Recibidas) + un solo RecyclerView que se recarga al
+    cambiar de tab. Progreso/estado vacío superpuestos en un FrameLayout.
 -->
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"

@@ -1,6 +1,5 @@
 package com.example.tpo.ui.misofertas;
 
-import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,20 +14,19 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tpo.R;
-import com.example.tpo.data.OfertasPublicacion;
-import com.example.tpo.data.PublicacionRepository;
-import com.example.tpo.data.PublicacionRepositoryMock;
+import com.example.tpo.data.OfertasRepository;
 import com.example.tpo.data.RepositorioCallback;
-import com.example.tpo.data.SesionUsuario;
-import com.example.tpo.model.Oferta;
-import com.example.tpo.model.Publicacion;
+import com.example.tpo.model.OfertaNegociacion;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
 
-import java.util.ArrayList;
 import java.util.List;
+
+import javax.inject.Inject;
+
+import dagger.hilt.android.AndroidEntryPoint;
 
 /**
  * "Mis ofertas" (Punto 7): dos tabs sobre el mismo {@code RecyclerView} — "Enviadas"
@@ -36,12 +34,17 @@ import java.util.List;
  * vendedor). No usa {@code ViewPager2}: son solo dos listas que se recargan al
  * cambiar de tab, agregar esa dependencia sería de más para este caso.
  * <p>
- * Al entrar se marcan como vencidas las ofertas pendientes cuyo plazo ya pasó (ver
- * {@link OfertasPublicacion#marcarVencidas}), antes de cargar la tab activa.
+ * El servidor resuelve el vencimiento automático en cada lectura, así que acá
+ * no hace falta un paso previo para marcar vencidas antes de cargar la tab.
+ * <p>
+ * "Siempre actualizadas" sin {@code SwipeRefreshLayout} (no visto en la
+ * materia): se recarga solo al volver a la pantalla ({@link #onResume}) y con
+ * la acción "Recargar" del menú de la toolbar.
  * <p>
  * {@code generacionConsulta} descarta resultados de una tab que el usuario ya
  * abandonó — mismo criterio anti-obsolescencia que {@code HomeFragment}.
  */
+@AndroidEntryPoint
 public class MisOfertasFragment extends Fragment implements OfertaAdapter.OnOfertaClickListener {
 
     private static final int TAB_ENVIADAS = 0;
@@ -49,9 +52,9 @@ public class MisOfertasFragment extends Fragment implements OfertaAdapter.OnOfer
 
     private static final String RESULTADO_OFERTA = DetalleOfertaBottomSheet.RESULTADO_OFERTA;
 
-    private final PublicacionRepository repositorio = PublicacionRepositoryMock.getInstancia();
-
-    private OfertasPublicacion ofertasPublicacion;
+    /** Lo inyecta Hilt: la pantalla no sabe si del otro lado hay datos falsos o Retrofit. */
+    @Inject
+    OfertasRepository repositorio;
 
     private RecyclerView listaMisOfertas;
     private CircularProgressIndicator progreso;
@@ -63,12 +66,6 @@ public class MisOfertasFragment extends Fragment implements OfertaAdapter.OnOfer
 
     private int tabActual = TAB_ENVIADAS;
     private int generacionConsulta = 0;
-
-    @Override
-    public void onAttach(@NonNull Context context) {
-        super.onAttach(context);
-        ofertasPublicacion = OfertasPublicacion.getInstancia(context);
-    }
 
     @Nullable
     @Override
@@ -90,6 +87,14 @@ public class MisOfertasFragment extends Fragment implements OfertaAdapter.OnOfer
         textoVacio = view.findViewById(R.id.textoVacioMisOfertas);
 
         toolbar.setNavigationOnClickListener(v -> NavHostFragment.findNavController(this).navigateUp());
+        toolbar.inflateMenu(R.menu.menu_mis_ofertas);
+        toolbar.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == R.id.menuRecargarOfertas) {
+                cargarTabActual();
+                return true;
+            }
+            return false;
+        });
 
         adapter = new OfertaAdapter(this);
         listaMisOfertas.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -120,23 +125,18 @@ public class MisOfertasFragment extends Fragment implements OfertaAdapter.OnOfer
                     cargarTabActual();
                 });
 
-        ofertasPublicacion.marcarVencidas(new RepositorioCallback<Void>() {
-            @Override
-            public void onExito(Void resultado) {
-                if (listaMisOfertas == null) {
-                    return; // la vista ya se destruyó
-                }
-                cargarTabActual();
-            }
+        cargarTabActual();
+    }
 
-            @Override
-            public void onError(String mensaje) {
-                if (listaMisOfertas == null) {
-                    return;
-                }
-                cargarTabActual();
-            }
-        });
+    @Override
+    public void onResume() {
+        super.onResume();
+        // "Siempre actualizadas" (Fase 3): recargar al volver a la pantalla, además
+        // de al cambiar de tab, para que una oferta que cambió de estado en otro
+        // lado (o venció) se refleje sin que el usuario tenga que hacer nada.
+        if (listaMisOfertas != null) {
+            cargarTabActual();
+        }
     }
 
     @Override
@@ -158,14 +158,13 @@ public class MisOfertasFragment extends Fragment implements OfertaAdapter.OnOfer
         listaMisOfertas.setVisibility(View.GONE);
         estadoVacio.setVisibility(View.GONE);
 
-        String idUsuario = SesionUsuario.getInstancia().getIdUsuario();
-        RepositorioCallback<List<Oferta>> callback = new RepositorioCallback<List<Oferta>>() {
+        RepositorioCallback<List<OfertaNegociacion>> callback = new RepositorioCallback<List<OfertaNegociacion>>() {
             @Override
-            public void onExito(List<Oferta> ofertas) {
+            public void onExito(List<OfertaNegociacion> ofertas) {
                 if (listaMisOfertas == null || generacion != generacionConsulta) {
                     return; // la vista se destruyó, o el usuario ya cambió de tab
                 }
-                combinarConPublicaciones(ofertas, soyComprador, generacion);
+                mostrarOfertas(ofertas, soyComprador);
             }
 
             @Override
@@ -178,59 +177,17 @@ public class MisOfertasFragment extends Fragment implements OfertaAdapter.OnOfer
         };
 
         if (soyComprador) {
-            ofertasPublicacion.misOfertasComoComprador(idUsuario, callback);
+            repositorio.enviadas(callback);
         } else {
-            ofertasPublicacion.misOfertasComoVendedor(idUsuario, callback);
+            repositorio.recibidas(callback);
         }
     }
 
-    /** Segundo paso de la carga: resuelve la publicación de cada oferta contra el catálogo. */
-    private void combinarConPublicaciones(List<Oferta> ofertas, boolean soyComprador, int generacion) {
-        List<String> idsPublicaciones = new ArrayList<>();
-        for (Oferta oferta : ofertas) {
-            idsPublicaciones.add(oferta.getPublicacionId());
-        }
-        repositorio.obtenerVarias(idsPublicaciones, new RepositorioCallback<List<Publicacion>>() {
-            @Override
-            public void onExito(List<Publicacion> publicaciones) {
-                if (listaMisOfertas == null || generacion != generacionConsulta) {
-                    return;
-                }
-                List<FilaOferta> filas = new ArrayList<>();
-                for (Oferta oferta : ofertas) {
-                    Publicacion publicacion = buscarPorId(publicaciones, oferta.getPublicacionId());
-                    if (publicacion != null) {
-                        filas.add(new FilaOferta(oferta, publicacion));
-                    }
-                }
-                mostrarFilas(filas, soyComprador);
-            }
-
-            @Override
-            public void onError(String mensaje) {
-                if (listaMisOfertas == null || generacion != generacionConsulta) {
-                    return;
-                }
-                mostrarError(mensaje);
-            }
-        });
-    }
-
-    @Nullable
-    private static Publicacion buscarPorId(List<Publicacion> publicaciones, String id) {
-        for (Publicacion publicacion : publicaciones) {
-            if (publicacion.getId().equals(id)) {
-                return publicacion;
-            }
-        }
-        return null;
-    }
-
-    private void mostrarFilas(List<FilaOferta> filas, boolean soyComprador) {
+    private void mostrarOfertas(List<OfertaNegociacion> ofertas, boolean soyComprador) {
         progreso.setVisibility(View.GONE);
-        adapter.reemplazar(filas, soyComprador);
+        adapter.reemplazar(ofertas, soyComprador);
 
-        boolean vacio = filas.isEmpty();
+        boolean vacio = ofertas.isEmpty();
         textoVacio.setText(soyComprador
                 ? R.string.mis_ofertas_vacio_enviadas
                 : R.string.mis_ofertas_vacio_recibidas);
@@ -246,8 +203,8 @@ public class MisOfertasFragment extends Fragment implements OfertaAdapter.OnOfer
     }
 
     @Override
-    public void onOfertaClick(FilaOferta fila) {
-        DetalleOfertaBottomSheet.nuevaInstancia(fila.getOferta().getId())
+    public void onOfertaClick(OfertaNegociacion oferta) {
+        DetalleOfertaBottomSheet.nuevaInstancia(oferta.getId())
                 .show(getParentFragmentManager(), DetalleOfertaBottomSheet.TAG);
     }
 }

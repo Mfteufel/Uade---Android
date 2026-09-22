@@ -10,11 +10,13 @@ import androidx.lifecycle.MutableLiveData;
 import com.example.tpo.data.BorradorRepository;
 import com.example.tpo.data.BorradorRepositoryLocal;
 import com.example.tpo.data.MisPublicacionesRepository;
-import com.example.tpo.data.MisPublicacionesRepositoryLocal;
 import com.example.tpo.data.PublicacionRepositoryMock;
 import com.example.tpo.data.RepositorioCallback;
+import com.example.tpo.di.PublicarEntryPoint;
 import com.example.tpo.model.BorradorPublicacion;
 import com.example.tpo.model.MiPublicacion;
+
+import dagger.hilt.android.EntryPointAccessors;
 
 /**
  * Estado compartido entre los cinco pasos del wizard de "Publicar artículo" (Punto 5).
@@ -41,9 +43,13 @@ public class PublicarArticuloViewModel extends AndroidViewModel {
     public PublicarArticuloViewModel(@NonNull Application application) {
         super(application);
         borradorRepository = BorradorRepositoryLocal.getInstancia(application);
-        // TODO: cuando exista el backend de FastAPI, reemplazar por
-        // new MisPublicacionesRepositoryApi(application).
-        misPublicacionesRepository = MisPublicacionesRepositoryLocal.getInstancia(application);
+        // No es un @HiltViewModel (lo scopea a mano el nav graph del wizard), así
+        // que no puede recibir el repositorio por @Inject directo: se pide por
+        // EntryPoint, la forma estándar de Hilt para clases no administradas por
+        // el framework (ver PublicarEntryPoint).
+        PublicarEntryPoint entryPoint = EntryPointAccessors.fromApplication(
+                application, PublicarEntryPoint.class);
+        misPublicacionesRepository = entryPoint.misPublicacionesRepository();
         cargarBorradorGuardado();
     }
 

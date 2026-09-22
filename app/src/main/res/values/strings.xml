@@ -250,8 +250,6 @@
     <string name="detalle_oferta_muy_alta">Tu oferta supera el precio publicado. Podés comprarlo directo por %1$s</string>
     <string name="detalle_oferta_enviar">Ofertar</string>
     <string name="detalle_oferta_enviada">Le ofertaste %1$s a %2$s</string>
-    <!-- Helper del diálogo de oferta cuando el usuario ya tenía una oferta hecha: ofertar de nuevo la reemplaza. -->
-    <string name="detalle_oferta_vigente">Ya ofertaste %1$s por esta publicación</string>
 
     <!-- Acción común a los diálogos del Detalle -->
     <string name="dialogo_cancelar">Cancelar</string>
@@ -413,6 +411,7 @@
     <string name="mis_ofertas_tab_recibidas">Recibidas</string>
     <string name="mis_ofertas_vacio_enviadas">Todavía no ofertaste en ninguna publicación</string>
     <string name="mis_ofertas_vacio_recibidas">Todavía no recibiste ofertas</string>
+    <string name="mis_ofertas_recargar">Recargar</string>
     <!-- Fila de la lista: "De Martina G." (recibidas) o "A Martina G." (enviadas) -->
     <string name="item_oferta_de">De %1$s</string>
     <string name="item_oferta_a">A %1$s</string>
@@ -435,4 +434,5 @@
     <string name="detalle_oferta_neg_monto_vacio">Ingresá un monto</string>
     <string name="detalle_oferta_neg_monto_invalido">El monto tiene que ser mayor a cero</string>
     <string name="detalle_oferta_neg_error">No pudimos cargar esta oferta</string>
+    <string name="detalle_oferta_neg_sin_direccion">El vendedor no cargó una dirección</string>
 </resources>

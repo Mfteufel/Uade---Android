@@ -6,8 +6,7 @@ import android.net.Uri;
 
 import androidx.annotation.NonNull;
 
-import com.example.tpo.data.remote.ApiClient;
-import com.example.tpo.data.remote.ApiService;
+import com.example.tpo.data.remote.PublicacionesApi;
 import com.example.tpo.data.remote.dto.CambiarEstadoPublicacionRequest;
 import com.example.tpo.data.remote.dto.MiPublicacionResponse;
 import com.example.tpo.data.remote.dto.PublicacionCreadaResponse;
@@ -45,11 +44,12 @@ import retrofit2.Response;
 public class MisPublicacionesRepositoryApi implements MisPublicacionesRepository {
 
     private final Context contextoApp;
-    private final ApiService api = ApiClient.getInstancia();
+    private final PublicacionesApi api;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
-    public MisPublicacionesRepositoryApi(Context context) {
+    public MisPublicacionesRepositoryApi(Context context, PublicacionesApi api) {
         this.contextoApp = context.getApplicationContext();
+        this.api = api;
     }
 
     @Override

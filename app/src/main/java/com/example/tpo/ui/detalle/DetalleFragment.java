@@ -24,6 +24,7 @@ import com.example.tpo.R;
 import com.example.tpo.data.FavoritoRepository;
 import com.example.tpo.data.FavoritoRepositoryMock;
 import com.example.tpo.data.OfertasPublicacion;
+import com.example.tpo.data.OfertasRepository;
 import com.example.tpo.data.PreguntasPublicacion;
 import com.example.tpo.data.PublicacionRepository;
 import com.example.tpo.data.PublicacionRepositoryMock;
@@ -32,6 +33,7 @@ import com.example.tpo.data.SesionUsuario;
 import com.example.tpo.model.EstadoOferta;
 import com.example.tpo.model.EstadoPublicacion;
 import com.example.tpo.model.Oferta;
+import com.example.tpo.model.OfertaNegociacion;
 import com.example.tpo.model.Pregunta;
 import com.example.tpo.model.Publicacion;
 import com.example.tpo.model.Vendedor;
@@ -51,6 +53,10 @@ import com.google.android.material.textfield.TextInputLayout;
 
 import java.util.List;
 
+import javax.inject.Inject;
+
+import dagger.hilt.android.AndroidEntryPoint;
+
 /**
  * Detalle de publicación — Punto 4 del TPO.
  * <p>
@@ -68,6 +74,7 @@ import java.util.List;
  * rol se decide comparando el id del vendedor contra el del usuario logueado
  * (no el nombre, que puede repetirse entre personas distintas).
  */
+@AndroidEntryPoint
 public class DetalleFragment extends Fragment {
 
     private static final String ARG_PUBLICACION_ID = "publicacionId";
@@ -79,6 +86,15 @@ public class DetalleFragment extends Fragment {
 
     private final PublicacionRepository repositorio = PublicacionRepositoryMock.getInstancia();
     private final FavoritoRepository favoritoRepositorio = FavoritoRepositoryMock.getInstancia();
+
+    /**
+     * Lo inyecta Hilt (Punto 7): manda la oferta al backend real, a diferencia
+     * de {@link #ofertasPublicacion} (Room), que acá sigue usándose solo para
+     * mostrar "lo que ya le enviaste" (Punto 4, sin migrar todavía).
+     */
+    @Inject
+    OfertasRepository ofertasRepository;
+
     private String publicacionId;
 
     /**
@@ -746,48 +762,26 @@ public class DetalleFragment extends Fragment {
         dialogo.show();
     }
 
+    /**
+     * A diferencia de la versión anterior (Room), no hay pre-chequeo local de "ya
+     * ofertaste": el backend real ya valida una sola oferta PENDIENTE por
+     * publicación y devuelve 409 con el mensaje si se repite (ver
+     * {@code docs/ofertas-api.md}) — se muestra directo, en {@link #registrarOferta}.
+     */
     private void mostrarDialogoOferta(Publicacion publicacion) {
-        // Si ya había una oferta hecha, se avisa: mandar una nueva la reemplaza. Se pide
-        // primero y se arma el diálogo recién en el callback: mostrarlo antes y completar
-        // el aviso después dejaría ver el diálogo "saltar" apenas se abre.
-        ofertasPublicacion.delUsuario(publicacion.getId(), SesionUsuario.getInstancia().getIdUsuario(),
-                new RepositorioCallback<Oferta>() {
-                    @Override
-                    public void onExito(Oferta ofertaVigente) {
-                        if (barraAcciones == null) {
-                            return; // la vista ya se destruyó
-                        }
-                        armarYMostrarDialogoOferta(publicacion, ofertaVigente);
-                    }
-
-                    @Override
-                    public void onError(String mensaje) {
-                        if (barraAcciones == null) {
-                            return;
-                        }
-                        // No bloquea la acción principal: se muestra el diálogo igual, solo
-                        // que sin el aviso de "ya ofertaste".
-                        armarYMostrarDialogoOferta(publicacion, null);
-                    }
-                });
+        armarYMostrarDialogoOferta(publicacion);
     }
 
-    private void armarYMostrarDialogoOferta(Publicacion publicacion, @Nullable Oferta ofertaVigente) {
+    private void armarYMostrarDialogoOferta(Publicacion publicacion) {
         View contenido = LayoutInflater.from(requireContext())
                 .inflate(R.layout.dialogo_oferta, null, false);
         TextView precioPedido = contenido.findViewById(R.id.textoPrecioPedido);
-        TextView textoOfertaVigente = contenido.findViewById(R.id.textoOfertaVigente);
         TextInputLayout input = contenido.findViewById(R.id.inputOferta);
         TextInputEditText campo = contenido.findViewById(R.id.campoOferta);
+        TextInputEditText campoMensaje = contenido.findViewById(R.id.campoMensajeOferta);
 
         precioPedido.setText(getString(R.string.detalle_oferta_ayuda,
                 FormatoUtils.precio(publicacion.getPrecio())));
-
-        if (ofertaVigente != null) {
-            textoOfertaVigente.setText(getString(
-                    R.string.detalle_oferta_vigente, FormatoUtils.precio(ofertaVigente.getMonto())));
-            textoOfertaVigente.setVisibility(View.VISIBLE);
-        }
 
         double minimo = publicacion.getPrecio() * PROPORCION_MINIMA_OFERTA;
 
@@ -830,9 +824,8 @@ public class DetalleFragment extends Fragment {
                     input.setError(null);
                     dialogo.dismiss();
 
-                    registrarOferta(publicacion, monto);
-                    mostrarSnackbar(getString(R.string.detalle_oferta_enviada,
-                            FormatoUtils.precio(monto), publicacion.getVendedor().getNombre()));
+                    String mensaje = leerTexto(campoMensaje);
+                    registrarOferta(publicacion, monto, mensaje.isEmpty() ? null : mensaje);
                 }));
 
         dialogoActivo = dialogo;
@@ -874,31 +867,28 @@ public class DetalleFragment extends Fragment {
     }
 
     /**
-     * Guarda la oferta en Room (reemplazando la anterior del usuario, si tenía
-     * una — ver {@link OfertasPublicacion#guardar}) y refresca "lo que ya le
-     * enviaste".
+     * Manda la oferta al backend real (Punto 7: {@code POST /ofertas}).
+     * <p>
+     * ⚠️ Solo funciona si {@code publicacion.getId()} existe en el servidor: el
+     * Detalle hoy muestra el catálogo de {@code PublicacionRepositoryMock}, así
+     * que salvo publicaciones creadas de verdad por el Punto 5, esto va a dar
+     * {@code 404}. Queda así hasta que el Detalle también consuma publicaciones
+     * reales (fuera de este alcance).
      */
-    private void registrarOferta(Publicacion publicacion, double monto) {
-        SesionUsuario sesion = SesionUsuario.getInstancia();
-        Oferta oferta = ofertasPublicacion.crearOferta(
-                publicacion, sesion.getIdUsuario(), sesion.getNombre(), monto);
-        ofertasPublicacion.guardar(oferta, new RepositorioCallback<Void>() {
-            @Override
-            public void onExito(Void resultado) {
-                if (grupoMisInteracciones == null) {
-                    return;
-                }
-                mostrarMisInteracciones(publicacion);
-            }
+    private void registrarOferta(Publicacion publicacion, double monto, @Nullable String mensaje) {
+        ofertasRepository.crear(publicacion.getId(), monto, mensaje,
+                new RepositorioCallback<OfertaNegociacion>() {
+                    @Override
+                    public void onExito(OfertaNegociacion resultado) {
+                        mostrarSnackbar(getString(R.string.detalle_oferta_enviada,
+                                FormatoUtils.precio(monto), publicacion.getVendedor().getNombre()));
+                    }
 
-            @Override
-            public void onError(String mensaje) {
-                if (barraAcciones == null) {
-                    return;
-                }
-                mostrarSnackbar(mensaje);
-            }
-        });
+                    @Override
+                    public void onError(String mensajeError) {
+                        mostrarSnackbar(mensajeError);
+                    }
+                });
     }
 
     // ------------------------------------------------------------------

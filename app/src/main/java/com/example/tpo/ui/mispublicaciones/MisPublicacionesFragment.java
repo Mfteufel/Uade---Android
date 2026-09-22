@@ -14,7 +14,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tpo.R;
 import com.example.tpo.data.MisPublicacionesRepository;
-import com.example.tpo.data.MisPublicacionesRepositoryLocal;
 import com.example.tpo.data.RepositorioCallback;
 import com.example.tpo.model.EstadoPublicacion;
 import com.example.tpo.model.MiPublicacion;
@@ -24,6 +23,10 @@ import com.google.android.material.snackbar.Snackbar;
 
 import java.util.List;
 
+import javax.inject.Inject;
+
+import dagger.hilt.android.AndroidEntryPoint;
+
 /**
  * "Mis publicaciones" (Punto 5): estado de cada publicación propia (activa,
  * pausada, vendida) y acciones para pausar o reactivar.
@@ -32,6 +35,7 @@ import java.util.List;
  * (lista, vacío, error, carga) para que las dos pantallas se comporten igual
  * ante los mismos casos.
  */
+@AndroidEntryPoint
 public class MisPublicacionesFragment extends Fragment implements MiPublicacionAdapter.OnAccionClickListener {
 
     private RecyclerView listaMisPublicaciones;
@@ -40,21 +44,9 @@ public class MisPublicacionesFragment extends Fragment implements MiPublicacionA
     private View estadoError;
     private MiPublicacionAdapter adapter;
 
-    /**
-     * {@link MisPublicacionesRepositoryLocal} necesita un {@code Context}, que
-     * todavía no existe cuando se inicializan los campos del Fragment; por eso
-     * se obtiene recién en {@link #onAttach}, que es el primer momento del
-     * ciclo de vida en el que hay uno disponible.
-     */
-    private MisPublicacionesRepository repositorio;
-
-    @Override
-    public void onAttach(@NonNull android.content.Context context) {
-        super.onAttach(context);
-        // TODO: cuando exista el backend de FastAPI, reemplazar por
-        // new MisPublicacionesRepositoryApi(context).
-        repositorio = MisPublicacionesRepositoryLocal.getInstancia(context);
-    }
+    /** Lo inyecta Hilt: la pantalla no sabe si del otro lado hay un mock o Retrofit. */
+    @Inject
+    MisPublicacionesRepository repositorio;
 
     @Nullable
     @Override
