@@ -1,7 +1,12 @@
 package com.example.tpo.ui.detalle;
 
 import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -103,6 +108,32 @@ public class DetalleFragment extends Fragment {
 
     /** Cuántas fotos tiene la galería actual, para el contador ("2 de 3") y sus límites. */
     private int cantidadFotosGaleria = 1;
+
+    /** true mientras lo que se ve en pantalla es el cache offline, no una respuesta real. */
+    private boolean mostrandoDatosSinConexion = false;
+
+    private final ConnectivityManager.NetworkCallback callbackConectividad = new ConnectivityManager.NetworkCallback() {
+        @Override
+        public void onAvailable(@NonNull Network network) {
+            intentarRecargaAutomatica();
+        }
+
+        @Override
+        public void onCapabilitiesChanged(@NonNull Network network, @NonNull NetworkCapabilities capacidades) {
+            if (capacidades.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)) {
+                intentarRecargaAutomatica();
+            }
+        }
+    };
+
+    /** Al recuperar la conexión, si se estaba mostrando el cache, se refresca con el dato real. */
+    private void intentarRecargaAutomatica() {
+        new Handler(Looper.getMainLooper()).post(() -> {
+            if (mostrandoDatosSinConexion && scrollContenido != null) {
+                cargarPublicacion();
+            }
+        });
+    }
 
     // --- Vistas. Son null fuera del rango onCreateView..onDestroyView ---
     private MaterialToolbar toolbar;
@@ -215,7 +246,24 @@ public class DetalleFragment extends Fragment {
         escucharResultadoDeGestion();
         view.findViewById(R.id.botonReintentar).setOnClickListener(v -> cargarPublicacion());
 
+        registrarCallbackConectividad();
         cargarPublicacion();
+    }
+
+    private void registrarCallbackConectividad() {
+        ConnectivityManager manager = (ConnectivityManager)
+                requireContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (manager != null) {
+            manager.registerDefaultNetworkCallback(callbackConectividad);
+        }
+    }
+
+    private void desregistrarCallbackConectividad() {
+        ConnectivityManager manager = (ConnectivityManager)
+                requireContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (manager != null) {
+            manager.unregisterNetworkCallback(callbackConectividad);
+        }
     }
 
     /** Recalcula el contador de fotos ("2 de 3") a medida que el usuario scrollea la tira. */
@@ -280,6 +328,7 @@ public class DetalleFragment extends Fragment {
             dialogoActivo.dismiss();
             dialogoActivo = null;
         }
+        desregistrarCallbackConectividad();
         itemGuardar = null;
 
         toolbar = null;
@@ -334,6 +383,8 @@ public class DetalleFragment extends Fragment {
                 if (scrollContenido == null) {
                     return; // la vista ya se destruyó
                 }
+                mostrandoDatosSinConexion = false;
+                publicacionesVistas.registrarVista(resultado);
                 mostrarPublicacion(resultado);
             }
 
@@ -354,6 +405,7 @@ public class DetalleFragment extends Fragment {
                 if (scrollContenido == null) {
                     return;
                 }
+                mostrandoDatosSinConexion = true;
                 mostrarPublicacion(resultado);
                 mostrarSnackbar(getString(R.string.detalle_mostrando_sin_conexion));
             }

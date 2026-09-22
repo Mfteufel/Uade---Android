@@ -25,6 +25,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.android.material.snackbar.Snackbar;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -94,6 +95,11 @@ public class FavoritosFragment extends Fragment implements
         listaFavoritos.setVisibility(View.GONE);
         estadoVacio.setVisibility(View.GONE);
 
+        if (!ConectividadUtils.hayConexion(requireContext())) {
+            mostrarFavoritosSinConexion();
+            return;
+        }
+
         favoritoRepositorio.listar(new RepositorioCallback<List<Publicacion>>() {
             @Override
             public void onExito(List<Publicacion> favoritos) {
@@ -101,11 +107,7 @@ public class FavoritosFragment extends Fragment implements
                     return; // la vista ya no existe
                 }
                 progreso.setVisibility(View.GONE);
-                adapter.reemplazar(favoritos);
-
-                boolean sinFavoritos = favoritos.isEmpty();
-                estadoVacio.setVisibility(sinFavoritos ? View.VISIBLE : View.GONE);
-                listaFavoritos.setVisibility(sinFavoritos ? View.GONE : View.VISIBLE);
+                mostrarLista(favoritos);
             }
 
             @Override
@@ -119,6 +121,41 @@ public class FavoritosFragment extends Fragment implements
                         .show();
             }
         });
+    }
+
+    private void mostrarFavoritosSinConexion() {
+        publicacionesVistas.listar(new RepositorioCallback<List<Publicacion>>() {
+            @Override
+            public void onExito(List<Publicacion> cacheadas) {
+                if (listaFavoritos == null) {
+                    return;
+                }
+                progreso.setVisibility(View.GONE);
+                List<Publicacion> favoritas = new ArrayList<>();
+                for (Publicacion publicacion : cacheadas) {
+                    if (favoritoRepositorio.esFavorito(publicacion.getId())) {
+                        favoritas.add(publicacion);
+                    }
+                }
+                mostrarLista(favoritas);
+                Snackbar.make(requireView(), getString(favoritas.isEmpty()
+                                ? R.string.favoritos_sin_conexion_sin_cache
+                                : R.string.favoritos_sin_conexion_mostrando_cache),
+                        Snackbar.LENGTH_LONG).show();
+            }
+
+            @Override
+            public void onError(String mensaje) {
+                // PublicacionesVistas.listar no falla: es una lectura local.
+            }
+        });
+    }
+
+    private void mostrarLista(List<Publicacion> favoritos) {
+        adapter.reemplazar(favoritos);
+        boolean sinFavoritos = favoritos.isEmpty();
+        estadoVacio.setVisibility(sinFavoritos ? View.VISIBLE : View.GONE);
+        listaFavoritos.setVisibility(sinFavoritos ? View.GONE : View.VISIBLE);
     }
 
     @Override

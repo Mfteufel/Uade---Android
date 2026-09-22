@@ -63,6 +63,10 @@ public class BusquedaGuardadaRepositoryApi implements BusquedaGuardadaRepository
         return instancia;
     }
 
+    static synchronized BusquedaGuardadaRepositoryApi instanciaActual() {
+        return instancia;
+    }
+
     @Override
     public void precargar(RepositorioCallback<Void> callback) {
         listar(new RepositorioCallback<List<BusquedaGuardada>>() {
@@ -281,19 +285,28 @@ public class BusquedaGuardadaRepositoryApi implements BusquedaGuardadaRepository
         }
         // Si alguna de las publicaciones que cambiaron de precio acá también es
         // favorita, Favoritos tiene que dar por vista la misma novedad (ver
-        // NovedadesDePrecio) — sin esto, aplicar la búsqueda la limpiaría acá
-        // pero seguiría marcada en Favoritos.
+        // NovedadesDePrecio)
         Map<String, Boolean> cambios = cambiosDePrecioPorBusqueda.get(id);
         if (cambios != null && ultimaConsulta != null) {
+            FavoritoRepositoryApi favoritos = FavoritoRepositoryApi.instanciaActual();
             for (String publicacionId : cambios.keySet()) {
                 Double precioActual = ultimaConsulta.get(publicacionId);
                 if (precioActual != null) {
                     NovedadesDePrecio.reconocer(publicacionId, precioActual);
+                    if (favoritos != null) {
+                        favoritos.quitarNovedad(publicacionId);
+                    }
                 }
             }
         }
         nuevasPorBusqueda.remove(id);
         cambiosDePrecioPorBusqueda.remove(id);
+    }
+
+    void quitarNovedadDePrecio(String publicacionId) {
+        for (Map<String, Boolean> cambios : cambiosDePrecioPorBusqueda.values()) {
+            cambios.remove(publicacionId);
+        }
     }
 
     @Override

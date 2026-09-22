@@ -104,6 +104,8 @@
     <string name="error_accion_requiere_conexion">Necesitás conexión a internet para continuar.</string>
     <string name="detalle_sin_conexion_sin_cache">Estás sin conexión y no tenés esta publicación guardada.</string>
     <string name="detalle_mostrando_sin_conexion">Sin conexión: mostrando la última vez que viste esta publicación.</string>
+    <string name="favoritos_sin_conexion_mostrando_cache">Sin conexión: mostrando tus favoritos que viste guardados en el dispositivo.</string>
+    <string name="favoritos_sin_conexion_sin_cache">Estás sin conexión y no tenés favoritos guardados en el dispositivo para mostrarte.</string>
 
     <!-- ===================== Bottom sheet de filtros ===================== -->
     <string name="filtros_titulo">Filtros</string>
