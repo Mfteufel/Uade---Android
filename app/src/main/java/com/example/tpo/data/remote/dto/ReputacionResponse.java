@@ -12,7 +12,6 @@ public class ReputacionResponse {
     @SerializedName("promedioEstrellas")
     public double promedio;
 
-    @SerializedName("cantidad_calificaciones")
     public int cantidadCalificaciones;
 
     @SerializedName("operacionesComoComprador")

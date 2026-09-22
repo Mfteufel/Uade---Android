@@ -4,13 +4,12 @@ import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
 
-/** JSON de una página de {@code GET /publicaciones}. */
+/** JSON de una página del listado. */
 public class PaginaPublicacionesResponse {
 
     @SerializedName("publicaciones")
-    public List<PublicacionResponse> publicaciones;
+    public List<PublicacionResumenResponse> publicaciones;
 
-    /** Número de página devuelta, empezando en 0. */
     @SerializedName("pagina")
     public int pagina;
 

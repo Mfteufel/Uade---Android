@@ -15,7 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tpo.R;
 import com.example.tpo.data.FavoritoRepository;
-import com.example.tpo.data.FavoritoRepositoryMock;
+import com.example.tpo.data.FavoritoRepositoryApi;
 import com.example.tpo.data.PublicacionesVistas;
 import com.example.tpo.data.RepositorioCallback;
 import com.example.tpo.model.Publicacion;
@@ -39,7 +39,7 @@ public class FavoritosFragment extends Fragment implements
     private View estadoVacio;
 
     private PublicacionAdapter adapter;
-    private final FavoritoRepository favoritoRepositorio = FavoritoRepositoryMock.getInstancia();
+    private FavoritoRepository favoritoRepositorio;
 
     private PublicacionesVistas publicacionesVistas;
 
@@ -47,6 +47,7 @@ public class FavoritosFragment extends Fragment implements
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         publicacionesVistas = PublicacionesVistas.getInstancia(context);
+        favoritoRepositorio = FavoritoRepositoryApi.getInstancia(context);
     }
 
     @Nullable

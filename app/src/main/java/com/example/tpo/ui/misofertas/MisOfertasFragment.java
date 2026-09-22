@@ -17,7 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.tpo.R;
 import com.example.tpo.data.OfertasPublicacion;
 import com.example.tpo.data.PublicacionRepository;
-import com.example.tpo.data.PublicacionRepositoryMock;
+import com.example.tpo.data.PublicacionRepositoryApi;
 import com.example.tpo.data.RepositorioCallback;
 import com.example.tpo.data.SesionUsuario;
 import com.example.tpo.model.Oferta;
@@ -49,7 +49,7 @@ public class MisOfertasFragment extends Fragment implements OfertaAdapter.OnOfer
 
     private static final String RESULTADO_OFERTA = DetalleOfertaBottomSheet.RESULTADO_OFERTA;
 
-    private final PublicacionRepository repositorio = PublicacionRepositoryMock.getInstancia();
+    private PublicacionRepository repositorio;
 
     private OfertasPublicacion ofertasPublicacion;
 
@@ -68,6 +68,7 @@ public class MisOfertasFragment extends Fragment implements OfertaAdapter.OnOfer
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         ofertasPublicacion = OfertasPublicacion.getInstancia(context);
+        repositorio = PublicacionRepositoryApi.getInstancia(context);
     }
 
     @Nullable

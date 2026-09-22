@@ -35,14 +35,14 @@ public class UsuarioResponse {
     @SerializedName("fechaAlta")
     public long fechaAlta;
 
-    @SerializedName("foto_url")
+    @SerializedName("fotoUrl")
     public String fotoUrl;
 
     @SerializedName("reputacion")
     public ReputacionResponse reputacion;
 
     /** Solo viene en el perfil propio. */
-    @SerializedName("calificaciones_pendientes")
+    @SerializedName("calificacionesPendientes")
     public Integer calificacionesPendientes;
 
     public Usuario aModelo() {

@@ -106,6 +106,11 @@ public class FavoritoRepositoryMock implements FavoritoRepository {
     }
 
     @Override
+    public boolean subioDePrecio(String publicacionId) {
+        return false;
+    }
+
+    @Override
     public boolean hayAlgunaNovedad() {
         return !conNovedadDelUsuario().isEmpty();
     }
