@@ -7,6 +7,7 @@ from models.publicacion import PublicacionResumen
 
 class Reputacion(BaseModel):
     promedioEstrellas: float
+    cantidadCalificaciones: int = 0
     operacionesComoComprador: int
     operacionesComoVendedor: int
 

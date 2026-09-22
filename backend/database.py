@@ -54,7 +54,19 @@ CREATE TABLE IF NOT EXISTS ofertas (
     estado         TEXT NOT NULL DEFAULT 'PENDIENTE',
     turno          TEXT NOT NULL DEFAULT 'VENDEDOR',
     fecha_creacion INTEGER NOT NULL,
-    vence_en       INTEGER NOT NULL
+    vence_en       INTEGER NOT NULL,
+    fecha_entrega  INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS calificaciones (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    oferta_id     INTEGER NOT NULL,
+    autor_id      INTEGER NOT NULL,
+    calificado_id INTEGER NOT NULL,
+    estrellas     INTEGER NOT NULL CHECK (estrellas BETWEEN 1 AND 5),
+    comentario    TEXT,
+    fecha         INTEGER NOT NULL,
+    UNIQUE (oferta_id, autor_id)
 );
 
 CREATE TABLE IF NOT EXISTS favoritos (
@@ -127,6 +139,9 @@ def inicializar():
         columnas = [fila["name"] for fila in conexion.execute("PRAGMA table_info(publicaciones)")]
         if "direccion_entrega" not in columnas:
             conexion.execute("ALTER TABLE publicaciones ADD COLUMN direccion_entrega TEXT")
+        columnas = [fila["name"] for fila in conexion.execute("PRAGMA table_info(ofertas)")]
+        if "fecha_entrega" not in columnas:
+            conexion.execute("ALTER TABLE ofertas ADD COLUMN fecha_entrega INTEGER")
 
 
 def buscar_usuario_por_email(email):
@@ -524,3 +539,113 @@ def contraofertar(oferta_id, precio, turno, vence_en):
             "UPDATE ofertas SET precio = ?, turno = ?, vence_en = ? WHERE id = ?",
             (precio, turno, vence_en, oferta_id),
         )
+
+
+# una oferta aceptada es la venta; queda concretada cuando el comprador confirma la entrega.
+# El historial muestra solo las concretadas
+def operaciones_de(usuario_id, tipo=None, desde=None, hasta=None):
+    condiciones = ["o.estado = 'ACEPTADA'", "o.fecha_entrega IS NOT NULL"]
+    valores = []
+    if tipo == "COMPRA":
+        condiciones.append("o.comprador_id = ?")
+        valores.append(usuario_id)
+    elif tipo == "VENTA":
+        condiciones.append("o.vendedor_id = ?")
+        valores.append(str(usuario_id))
+    else:
+        condiciones.append("(o.comprador_id = ? OR o.vendedor_id = ?)")
+        valores.extend([usuario_id, str(usuario_id)])
+    # el rango se compara contra la entrega, que es cuando la operacion se concreto
+    if desde is not None:
+        condiciones.append("o.fecha_entrega >= ?")
+        valores.append(desde)
+    if hasta is not None:
+        condiciones.append("o.fecha_entrega <= ?")
+        valores.append(hasta)
+    with conectar() as conexion:
+        return conexion.execute(
+            OFERTA_CON_PUBLICACION + " WHERE " + " AND ".join(condiciones)
+            + " ORDER BY o.fecha_entrega DESC, o.id DESC",
+            valores,
+        ).fetchall()
+
+
+# ventas aceptadas que el comprador todavia no confirmo que recibio: no son parte del historial
+def pendientes_de_entrega(usuario_id):
+    with conectar() as conexion:
+        return conexion.execute(
+            OFERTA_CON_PUBLICACION + " WHERE o.estado = 'ACEPTADA' AND o.fecha_entrega IS NULL"
+            " AND (o.comprador_id = ? OR o.vendedor_id = ?) ORDER BY o.id DESC",
+            (usuario_id, str(usuario_id)),
+        ).fetchall()
+
+
+# el AND fecha_entrega IS NULL evita que dos confirmaciones simultaneas pisen la fecha
+def confirmar_entrega(oferta_id, fecha_entrega):
+    with conectar() as conexion:
+        cursor = conexion.execute(
+            "UPDATE ofertas SET fecha_entrega = ?"
+            " WHERE id = ? AND estado = 'ACEPTADA' AND fecha_entrega IS NULL",
+            (fecha_entrega, oferta_id),
+        )
+        return cursor.rowcount > 0
+
+
+CALIFICACION_CON_ARTICULO = (
+    "SELECT c.*, p.titulo FROM calificaciones c"
+    " JOIN ofertas o ON o.id = c.oferta_id"
+    " JOIN publicaciones p ON p.id = o.publicacion_id"
+)
+
+
+def crear_calificacion(oferta_id, autor_id, calificado_id, estrellas, comentario, fecha):
+    with conectar() as conexion:
+        cursor = conexion.execute(
+            "INSERT INTO calificaciones (oferta_id, autor_id, calificado_id, estrellas,"
+            " comentario, fecha) VALUES (?, ?, ?, ?, ?, ?)",
+            (oferta_id, autor_id, calificado_id, estrellas, comentario, fecha),
+        )
+        return cursor.lastrowid
+
+
+def calificacion_de(oferta_id, autor_id):
+    with conectar() as conexion:
+        return conexion.execute(
+            CALIFICACION_CON_ARTICULO + " WHERE c.oferta_id = ? AND c.autor_id = ?",
+            (oferta_id, autor_id),
+        ).fetchone()
+
+
+def calificaciones_recibidas(usuario_id):
+    with conectar() as conexion:
+        return conexion.execute(
+            CALIFICACION_CON_ARTICULO + " WHERE c.calificado_id = ? ORDER BY c.fecha DESC, c.id DESC",
+            (usuario_id,),
+        ).fetchall()
+
+
+def contar_calificaciones():
+    with conectar() as conexion:
+        return conexion.execute("SELECT COUNT(*) FROM calificaciones").fetchone()[0]
+
+
+def contar_entregas():
+    with conectar() as conexion:
+        return conexion.execute(
+            "SELECT COUNT(*) FROM ofertas WHERE fecha_entrega IS NOT NULL"
+        ).fetchone()[0]
+
+
+# se calcula en cada lectura: no hay contadores guardados que se puedan desincronizar
+def reputacion_de(usuario_id):
+    with conectar() as conexion:
+        return conexion.execute(
+            "SELECT"
+            " (SELECT AVG(estrellas) FROM calificaciones WHERE calificado_id = ?) AS promedio,"
+            " (SELECT COUNT(*) FROM calificaciones WHERE calificado_id = ?) AS cantidad,"
+            " (SELECT COUNT(*) FROM ofertas WHERE estado = 'ACEPTADA'"
+            "  AND fecha_entrega IS NOT NULL AND comprador_id = ?) AS como_comprador,"
+            " (SELECT COUNT(*) FROM ofertas WHERE estado = 'ACEPTADA'"
+            "  AND fecha_entrega IS NOT NULL AND vendedor_id = ?) AS como_vendedor",
+            (usuario_id, usuario_id, usuario_id, str(usuario_id)),
+        ).fetchone()

@@ -1,3 +1,5 @@
+import os
+
 import database
 from seguridad import hashear_password
 
@@ -49,6 +51,18 @@ OFERTAS = [
     (0, 3, 80, "Paso el fin de semana", "PENDIENTE", "VENDEDOR", 80, True),
 ]
 
+# ventas ya acordadas para el historial: comprador y vendedor (posiciones en USUARIOS), titulo
+# de la publicacion, porcentaje del precio publicado, hace cuantos dias se confirmo la entrega
+# (None si todavia no se confirmo) y las calificaciones que ya se dejaron (autor, estrellas, comentario).
+# Venden publicaciones, asi que solo se cargan si se pide con RONDA_OPERACIONES_DE_PRUEBA=1
+# (desarrollo local y tests): en Railway no se definen y no tocan la base
+OPERACIONES = [
+    (1, 2, "Microondas BGH", 90, 2, [(1, 4, "Buena predisposicion para coordinar")]),
+    (3, 1, "Lámpara de pie", 95, 3, [(3, 5, "Todo como en la foto, muy amable")]),
+    (1, 0, "Campera de abrigo", 90, 10, []),
+    (1, 3, "Juego de ollas", 90, None, []),
+]
+
 
 def cargar():
     ids = []
@@ -67,6 +81,10 @@ def cargar():
 
     if database.contar_ofertas() == 0:
         cargar_ofertas(ids)
+
+    pedidas = os.environ.get("RONDA_OPERACIONES_DE_PRUEBA") == "1"
+    if pedidas and database.contar_entregas() == 0 and database.contar_calificaciones() == 0:
+        cargar_operaciones(ids)
 
 
 def cargar_publicaciones(ids):
@@ -98,3 +116,34 @@ def cargar_ofertas(ids):
         )
         if estado == "ACEPTADA":
             database.cambiar_estado_publicacion(publicacion["id"], "VENDIDA")
+
+
+def cargar_operaciones(ids):
+    ahora = database.ahora_en_milisegundos()
+    hora = 3600 * 1000
+    dia = 24 * hora
+    for comprador, vendedor, titulo, porcentaje, dias, calificaciones in OPERACIONES:
+        publicacion = None
+        for fila in database.publicaciones_de(ids[vendedor]):
+            if fila["titulo"] == titulo and fila["estado_publicacion"] == "ACTIVA":
+                publicacion = fila
+        # si esa publicacion ya se vendio o se pauso, la operacion de prueba no se arma
+        if publicacion is None:
+            continue
+        creada = ahora - ((dias or 0) + 2) * dia
+        oferta_id = database.crear_oferta(
+            publicacion["id"], ids[comprador], ids[vendedor],
+            publicacion["precio"] * porcentaje / 100, None, creada + 6 * hora,
+            fecha_creacion=creada,
+        )
+        # misma transaccion que cuando el vendedor acepta: la publicacion queda vendida
+        database.aceptar_oferta(oferta_id, publicacion["id"])
+        if dias is None:
+            continue
+        entrega = ahora - dias * dia
+        database.confirmar_entrega(oferta_id, entrega)
+        for autor, estrellas, comentario in calificaciones:
+            calificado = vendedor if autor == comprador else comprador
+            database.crear_calificacion(
+                oferta_id, ids[autor], ids[calificado], estrellas, comentario, entrega + dia,
+            )
