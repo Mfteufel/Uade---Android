@@ -18,7 +18,7 @@ import com.example.tpo.R;
 import com.example.tpo.data.OfertasPublicacion;
 import com.example.tpo.data.PreguntasPublicacion;
 import com.example.tpo.data.PublicacionRepository;
-import com.example.tpo.data.PublicacionRepositoryMock;
+import com.example.tpo.data.PublicacionRepositoryApi;
 import com.example.tpo.data.RepositorioCallback;
 import com.example.tpo.model.EstadoPublicacion;
 import com.example.tpo.model.Oferta;
@@ -58,14 +58,9 @@ public class GestionPublicacionBottomSheet extends BottomSheetDialogFragment {
 
     private static final String ARG_PUBLICACION_ID = "arg_publicacion_id";
 
-    private final PublicacionRepository repositorio = PublicacionRepositoryMock.getInstancia();
+    private PublicacionRepository repositorio;
     private String publicacionId;
 
-    /**
-     * Necesitan un {@code Context} para Room; se obtienen en {@link #onAttach}, igual que
-     * en {@link DetalleFragment}. No hace falta el favorito acá: el vendedor no marca como
-     * favorita su propia publicación.
-     */
     private PreguntasPublicacion preguntasPublicacion;
     private OfertasPublicacion ofertasPublicacion;
 
@@ -112,6 +107,7 @@ public class GestionPublicacionBottomSheet extends BottomSheetDialogFragment {
         super.onAttach(context);
         preguntasPublicacion = PreguntasPublicacion.getInstancia(context);
         ofertasPublicacion = OfertasPublicacion.getInstancia(context);
+        repositorio = PublicacionRepositoryApi.getInstancia(context);
     }
 
     @Override

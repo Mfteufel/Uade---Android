@@ -1,6 +1,8 @@
 package com.example.tpo;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 
 import androidx.activity.EdgeToEdge;
@@ -14,11 +16,19 @@ import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
 
-import com.example.tpo.data.FavoritoRepositoryMock;
-import com.example.tpo.debug.SimulacionNovedadesReceiver;
+import com.example.tpo.data.BusquedaGuardadaRepositoryApi;
+import com.example.tpo.data.FavoritoRepositoryApi;
+import com.example.tpo.data.RepositorioCallback;
+import com.example.tpo.login.TokenManager;
+import com.example.tpo.model.BusquedaGuardada;
+import com.example.tpo.model.Publicacion;
 import com.example.tpo.ui.home.HomeFragment;
 import com.google.android.material.badge.BadgeDrawable;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+
+import java.util.List;
+
+import javax.inject.Inject;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
@@ -33,9 +43,26 @@ import dagger.hilt.android.AndroidEntryPoint;
 @AndroidEntryPoint
 public class MainActivity extends AppCompatActivity {
 
+    /**
+     * Cada cuánto se vuelve a consultar el servidor por novedades de favoritos
+     * y búsquedas guardadas mientras la app está en primer plano.
+     */
+    private static final long INTERVALO_SONDEO_MS = 5_000;
+
+    @Inject
+    TokenManager tokenManager;
+
     private BottomNavigationView bottomNav;
-    private SimulacionNovedadesReceiver receptorNovedades;
     private NavHostFragment navHostFragment;
+
+    private final Handler handlerSondeo = new Handler(Looper.getMainLooper());
+    private final Runnable sondeoNovedades = new Runnable() {
+        @Override
+        public void run() {
+            sondearNovedades();
+            handlerSondeo.postDelayed(this, INTERVALO_SONDEO_MS);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,36 +102,70 @@ public class MainActivity extends AppCompatActivity {
                     || destination.getId() == R.id.codigoFragment
                     || destination.getId() == R.id.registroFragment;
             bottomNav.setVisibility(esLogin ? View.GONE : View.VISIBLE);
+
+            if (destination.getId() == R.id.homeFragment) {
+                sondearNovedades();
+            }
         });
 
-        // RECEIVER_EXPORTED porque el broadcast de prueba llega desde `adb shell am
-        // broadcast`, que corre como shell y no como este mismo paquete.
-        receptorNovedades = new SimulacionNovedadesReceiver(this::onNovedadSimulada);
-        ContextCompat.registerReceiver(this, receptorNovedades, SimulacionNovedadesReceiver.crearFiltro(),
-                ContextCompat.RECEIVER_EXPORTED);
         actualizarBadgeFavoritos();
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        unregisterReceiver(receptorNovedades);
+    protected void onResume() {
+        super.onResume();
+        // Arranca ya (no espera el primer intervalo) y se reprograma solo.
+        handlerSondeo.post(sondeoNovedades);
     }
 
-    private void onNovedadSimulada() {
-        actualizarBadgeFavoritos();
-        Fragment actual = navHostFragment.getChildFragmentManager().getPrimaryNavigationFragment();
-        if (actual instanceof HomeFragment) {
-            ((HomeFragment) actual).actualizarIndicadorNovedadBusquedas();
+    @Override
+    protected void onPause() {
+        super.onPause();
+        handlerSondeo.removeCallbacks(sondeoNovedades);
+    }
+
+    private void sondearNovedades() {
+        if (tokenManager.getToken() == null) {
+            return;
         }
+
+        FavoritoRepositoryApi.getInstancia(this).listar(new RepositorioCallback<List<Publicacion>>() {
+            @Override
+            public void onExito(List<Publicacion> resultado) {
+                actualizarBadgeFavoritos();
+            }
+
+            @Override
+            public void onError(String mensaje) {
+                // Sin red o el servidor no respondió: se reintenta en el próximo ciclo.
+            }
+        });
+
+        BusquedaGuardadaRepositoryApi.getInstancia(this).listar(new RepositorioCallback<List<BusquedaGuardada>>() {
+            @Override
+            public void onExito(List<BusquedaGuardada> resultado) {
+                avisarNovedadBusquedasAlHome();
+            }
+
+            @Override
+            public void onError(String mensaje) {
+            }
+        });
     }
 
     private void actualizarBadgeFavoritos() {
-        if (FavoritoRepositoryMock.getInstancia().hayAlgunaNovedad()) {
+        if (FavoritoRepositoryApi.getInstancia(this).hayAlgunaNovedad()) {
             BadgeDrawable badge = bottomNav.getOrCreateBadge(R.id.favoritosFragment);
             badge.setBackgroundColor(ContextCompat.getColor(this, R.color.color_indicador_novedad));
         } else {
             bottomNav.removeBadge(R.id.favoritosFragment);
+        }
+    }
+
+    private void avisarNovedadBusquedasAlHome() {
+        Fragment actual = navHostFragment.getChildFragmentManager().getPrimaryNavigationFragment();
+        if (actual instanceof HomeFragment) {
+            ((HomeFragment) actual).actualizarIndicadorNovedadBusquedas();
         }
     }
 }

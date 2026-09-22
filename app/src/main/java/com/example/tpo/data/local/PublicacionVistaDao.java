@@ -1,5 +1,6 @@
 package com.example.tpo.data.local;
 
+import androidx.annotation.Nullable;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
@@ -20,6 +21,11 @@ public interface PublicacionVistaDao {
 
     @Query("SELECT * FROM publicaciones_vistas WHERE usuarioId = :usuarioId ORDER BY guardadoEn DESC")
     List<PublicacionVistaEntity> obtenerTodas(String usuarioId);
+
+    /** Para el Detalle sin conexión: si esta publicación puntual ya se vio, se puede mostrar de nuevo. */
+    @Nullable
+    @Query("SELECT * FROM publicaciones_vistas WHERE usuarioId = :usuarioId AND id = :publicacionId")
+    PublicacionVistaEntity obtenerPorId(String usuarioId, String publicacionId);
 
     /**
      * Se queda con las {@code limite} más recientes del usuario y borra el

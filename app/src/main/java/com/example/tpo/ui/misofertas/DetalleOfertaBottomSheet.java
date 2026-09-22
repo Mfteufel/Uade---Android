@@ -15,7 +15,7 @@ import androidx.core.widget.NestedScrollView;
 import com.example.tpo.R;
 import com.example.tpo.data.OfertasPublicacion;
 import com.example.tpo.data.PublicacionRepository;
-import com.example.tpo.data.PublicacionRepositoryMock;
+import com.example.tpo.data.PublicacionRepositoryApi;
 import com.example.tpo.data.RepositorioCallback;
 import com.example.tpo.data.SesionUsuario;
 import com.example.tpo.model.EstadoOferta;
@@ -63,7 +63,7 @@ public class DetalleOfertaBottomSheet extends BottomSheetDialogFragment {
 
     private static final String ARG_OFERTA_ID = "arg_oferta_id";
 
-    private final PublicacionRepository repositorio = PublicacionRepositoryMock.getInstancia();
+    private PublicacionRepository repositorio;
     private String ofertaId;
 
     private OfertasPublicacion ofertasPublicacion;
@@ -99,6 +99,7 @@ public class DetalleOfertaBottomSheet extends BottomSheetDialogFragment {
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         ofertasPublicacion = OfertasPublicacion.getInstancia(context);
+        repositorio = PublicacionRepositoryApi.getInstancia(context);
     }
 
     @Override

@@ -30,12 +30,12 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.tpo.R;
 import com.example.tpo.data.BusquedaGuardadaRepository;
-import com.example.tpo.data.BusquedaGuardadaRepositoryMock;
+import com.example.tpo.data.BusquedaGuardadaRepositoryApi;
 import com.example.tpo.data.FavoritoRepository;
-import com.example.tpo.data.FavoritoRepositoryMock;
+import com.example.tpo.data.FavoritoRepositoryApi;
 import com.example.tpo.data.PaginaPublicaciones;
 import com.example.tpo.data.PublicacionRepository;
-import com.example.tpo.data.PublicacionRepositoryMock;
+import com.example.tpo.data.PublicacionRepositoryApi;
 import com.example.tpo.data.PublicacionesVistas;
 import com.example.tpo.data.RepositorioCallback;
 import com.example.tpo.model.Categoria;
@@ -59,6 +59,8 @@ import com.google.android.material.textfield.TextInputEditText;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Home / Explorar publicaciones — Punto 3 del TPO.
@@ -123,9 +125,9 @@ public class HomeFragment extends Fragment implements
     private PublicacionAdapter adapter;
 
     // --- Estado de la pantalla (sobrevive a la destrucción de las vistas) ---
-    private final PublicacionRepository repositorio = PublicacionRepositoryMock.getInstancia();
-    private final FavoritoRepository favoritoRepositorio = FavoritoRepositoryMock.getInstancia();
-    private final BusquedaGuardadaRepository busquedaGuardadaRepositorio = BusquedaGuardadaRepositoryMock.getInstancia();
+    private PublicacionRepository repositorio;
+    private FavoritoRepository favoritoRepositorio;
+    private BusquedaGuardadaRepository busquedaGuardadaRepositorio;
     private FiltroPublicaciones filtro = new FiltroPublicaciones();
 
     private int paginaActual = 0;
@@ -194,6 +196,9 @@ public class HomeFragment extends Fragment implements
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         publicacionesVistas = PublicacionesVistas.getInstancia(context);
+        repositorio = PublicacionRepositoryApi.getInstancia(context);
+        favoritoRepositorio = FavoritoRepositoryApi.getInstancia(context);
+        busquedaGuardadaRepositorio = BusquedaGuardadaRepositoryApi.getInstancia(context);
     }
 
     @Override
@@ -597,11 +602,17 @@ public class HomeFragment extends Fragment implements
         actualizarBotonFiltros();
         recargarDesdeCero();
 
-        // recargarDesdeCero() ya limpió el destacado de la carga anterior; acá se
-        // vuelve a marcar con las publicaciones nuevas de esta búsqueda puntual.
-        if (adapter != null && busquedaId != null) {
-            adapter.marcarNuevasDeBusqueda(busquedaGuardadaRepositorio.publicacionesNuevasDe(busquedaId));
+        if (busquedaId == null) {
+            return;
         }
+        Set<String> nuevas = busquedaGuardadaRepositorio.publicacionesNuevasDe(busquedaId);
+        Map<String, Boolean> cambiosDePrecio = busquedaGuardadaRepositorio.publicacionesConCambioDePrecioDe(busquedaId);
+        if (adapter != null) {
+            adapter.marcarNuevasDeBusqueda(nuevas);
+            adapter.marcarCambiosDePrecioDeBusqueda(cambiosDePrecio);
+        }
+        busquedaGuardadaRepositorio.marcarVisto(busquedaId);
+        actualizarIndicadorNovedadBusquedas();
     }
 
     /** Guarda una copia del filtro vigente — Punto 10. El nombre se genera solo. */
@@ -702,10 +713,11 @@ public class HomeFragment extends Fragment implements
         paginaActual = 0;
         hayMasPaginas = true;
         actualizarBotonGuardarBusqueda();
-        // Cualquier búsqueda nueva descarta el destacado "Nueva" de la anterior;
-        // aplicarBusquedaGuardada() lo vuelve a poner si corresponde, después de esto.
+        // Cualquier búsqueda nueva descarta los destacados de la anterior;
+        // aplicarBusquedaGuardada() los vuelve a poner si corresponde.
         if (adapter != null) {
             adapter.marcarNuevasDeBusqueda(Collections.emptySet());
+            adapter.marcarCambiosDePrecioDeBusqueda(Collections.emptyMap());
         }
         cargarPagina(0);
     }
