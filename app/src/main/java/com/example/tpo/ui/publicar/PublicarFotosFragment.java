@@ -1,7 +1,10 @@
 package com.example.tpo.ui.publicar;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,10 +12,10 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.PickVisualMediaRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -20,6 +23,7 @@ import com.example.tpo.R;
 import com.example.tpo.model.BorradorPublicacion;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,36 +50,49 @@ public class PublicarFotosFragment extends PublicarPasoFragment {
     private boolean yaEvaluoElPasoGuardado = false;
 
     /**
-     * Selector de fotos del sistema (Photo Picker). No pide permisos de galería
-     * en el manifest: a partir de este contrato Android resuelve el acceso a las
-     * fotos elegidas sin necesidad de READ_MEDIA_IMAGES.
+     * Dos {@code ActivityResultLauncher} separados (Clase 6): pedir el permiso
+     * y elegir la foto son dos acciones distintas, no se puede lanzar la
+     * segunda si la primera no se concedió. Se declara primero
+     * {@code elegirFoto} porque {@code pedirPermisoGaleria} la referencia en su
+     * callback (Java no permite la referencia inversa entre inicializadores de
+     * campo, aunque esté dentro de un lambda que recién corre después).
      */
-    private final ActivityResultLauncher<PickVisualMediaRequest> selectorFotos =
-            registerForActivityResult(new ActivityResultContracts.PickMultipleVisualMedia(), uris -> {
-                if (uris.isEmpty()) {
-                    return;
+
+    /** Abre la galería del sistema y devuelve la {@code Uri} elegida (una por invocación). */
+    private final ActivityResultLauncher<String> elegirFoto =
+            registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
+                if (uri == null) {
+                    return; // el usuario canceló el selector sin elegir nada
                 }
                 BorradorPublicacion borrador = viewModel.getBorrador().getValue();
                 if (borrador == null) {
                     return;
                 }
-                // El Photo Picker solo da permiso de lectura mientras dura este
-                // proceso; como la foto se guarda en el borrador de Room para
-                // poder retomarlo después de cerrar la app, hay que pedir que el
-                // permiso persista más allá de este proceso.
-                for (Uri uri : uris) {
-                    try {
-                        requireContext().getContentResolver()
-                                .takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    } catch (SecurityException excepcion) {
-                        // Algunos orígenes del picker no soportan permiso persistente;
-                        // la foto igual se puede mostrar en esta misma sesión.
-                    }
+                // El permiso que da el selector es de esta sesión; como la foto
+                // se guarda en el borrador de Room para poder retomarlo después
+                // de cerrar la app, hay que pedir que persista más allá de eso.
+                try {
+                    requireContext().getContentResolver()
+                            .takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                } catch (SecurityException excepcion) {
+                    // Algunos orígenes no soportan permiso persistente; la foto
+                    // igual se puede mostrar en esta misma sesión.
                 }
                 List<Uri> fotos = new ArrayList<>(borrador.getFotos());
-                fotos.addAll(uris);
+                fotos.add(uri);
                 borrador.setFotos(fotos);
                 mostrarFotos(fotos);
+            });
+
+    /** Pide el permiso de galería en runtime; declararlo en el Manifest no alcanza. */
+    private final ActivityResultLauncher<String> pedirPermisoGaleria =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), concedido -> {
+                if (concedido) {
+                    elegirFoto.launch("image/*");
+                } else if (textoErrorFotos != null) {
+                    Snackbar.make(requireView(), R.string.publicar_fotos_permiso_necesario,
+                            Snackbar.LENGTH_LONG).show();
+                }
             });
 
     @Nullable
@@ -99,9 +116,7 @@ public class PublicarFotosFragment extends PublicarPasoFragment {
         adapter = new FotoSeleccionadaAdapter(this::quitarFoto);
         listaFotos.setAdapter(adapter);
 
-        botonAgregarFotos.setOnClickListener(v -> selectorFotos.launch(new PickVisualMediaRequest.Builder()
-                .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
-                .build()));
+        botonAgregarFotos.setOnClickListener(v -> agregarFoto());
 
         botonSiguiente.setOnClickListener(v -> validarYContinuar());
 
@@ -126,6 +141,28 @@ public class PublicarFotosFragment extends PublicarPasoFragment {
         textoErrorFotos = null;
         progresoBorrador = null;
         adapter = null;
+    }
+
+    /**
+     * Punto de entrada de "Agregar fotos": si el permiso de galería ya está
+     * concedido, abre el selector directo; si no, lo pide primero (Clase 6 —
+     * nunca alcanza con haberlo declarado en el Manifest).
+     */
+    private void agregarFoto() {
+        String permiso = permisoDeGaleria();
+        if (ContextCompat.checkSelfPermission(requireContext(), permiso)
+                == PackageManager.PERMISSION_GRANTED) {
+            elegirFoto.launch("image/*");
+        } else {
+            pedirPermisoGaleria.launch(permiso);
+        }
+    }
+
+    /** READ_MEDIA_IMAGES reemplazó a READ_EXTERNAL_STORAGE recién en API 33. */
+    private static String permisoDeGaleria() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                ? Manifest.permission.READ_MEDIA_IMAGES
+                : Manifest.permission.READ_EXTERNAL_STORAGE;
     }
 
     private void quitarFoto(int posicion) {

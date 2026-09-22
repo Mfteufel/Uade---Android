@@ -148,6 +148,11 @@ public class FavoritoRepositoryApi implements FavoritoRepository {
         List<Publicacion> resultado = new ArrayList<>();
         for (FavoritoResponse item : json) {
             Publicacion publicacion = item.aModelo();
+            if (publicacion == null) {
+                // Valor de enum que la app no conoce: se descarta esta sola,
+                // no hace falta tirar todo el listado de favoritos abajo.
+                continue;
+            }
             favoritos.put(publicacion.getId(), publicacion);
             precioAlGuardar.put(publicacion.getId(), item.precioAlGuardar);
             boolean cambioDePrecio = item.precio != item.precioAlGuardar;

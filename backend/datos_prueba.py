@@ -3,11 +3,12 @@ from seguridad import hashear_password
 
 CLAVE = "ronda1234"
 
+# email, nombre, zona, direccion de entrega de sus publicaciones
 USUARIOS = [
-    ("walter@uade.edu.ar", "Walter", "CABALLITO"),
-    ("ana@ronda.com", "Ana", "PALERMO"),
-    ("bruno@ronda.com", "Bruno", "QUILMES"),
-    ("carla@ronda.com", "Carla", "SAN_ISIDRO"),
+    ("walter@uade.edu.ar", "Walter", "CABALLITO", "Av. Rivadavia 5100, Caballito"),
+    ("ana@ronda.com", "Ana", "PALERMO", "Thames 1800, Palermo"),
+    ("bruno@ronda.com", "Bruno", "QUILMES", "Av. Mitre 650, Quilmes"),
+    ("carla@ronda.com", "Carla", "SAN_ISIDRO", "Av. Centenario 300, San Isidro"),
 ]
 
 # titulo, descripcion, precio, categoria, estado, zona, vendedor (posicion en USUARIOS), hace cuantas horas
@@ -35,20 +36,65 @@ PUBLICACIONES = [
 ]
 
 
+# las pendientes de prueba duran una semana para que no se venzan antes de poder usarlas
+DIAS_DE_VIGENCIA_DE_PRUEBA = 7
+
+# comprador y vendedor (posiciones en USUARIOS), porcentaje del precio publicado, mensaje,
+# estado, turno, hace cuantas horas se creo y si ya paso su vencimiento
+OFERTAS = [
+    (1, 0, 90, "Te la retiro hoy mismo", "PENDIENTE", "VENDEDOR", 1, False),
+    (0, 1, 85, None, "PENDIENTE", "COMPRADOR", 3, False),
+    (0, 2, 95, "Pago en efectivo", "ACEPTADA", "VENDEDOR", 30, False),
+    (3, 0, 60, None, "RECHAZADA", "VENDEDOR", 50, False),
+    (0, 3, 80, "Paso el fin de semana", "PENDIENTE", "VENDEDOR", 80, True),
+]
+
+
 def cargar():
     ids = []
-    for email, nombre, zona in USUARIOS:
+    for email, nombre, zona, direccion in USUARIOS:
         usuario = database.buscar_usuario_por_email(email)
         if usuario is None:
             usuario = database.crear_usuario(email, nombre, hashear_password(CLAVE), zona)
         ids.append(usuario["id"])
 
-    if database.contar_publicaciones() > 0:
-        return
+    if database.contar_publicaciones() == 0:
+        cargar_publicaciones(ids)
 
+    # solo completa las que no tienen direccion: no pisa lo que cargo el vendedor
+    for usuario_id, (email, nombre, zona, direccion) in zip(ids, USUARIOS):
+        database.completar_direccion(usuario_id, direccion)
+
+    if database.contar_ofertas() == 0:
+        cargar_ofertas(ids)
+
+
+def cargar_publicaciones(ids):
     ahora = database.ahora_en_milisegundos()
     for titulo, descripcion, precio, categoria, estado, zona, vendedor, horas in PUBLICACIONES:
         database.crear_publicacion(
             titulo, descripcion, precio, categoria, estado, zona,
             ids[vendedor], ahora - horas * 3600 * 1000,
         )
+
+
+def cargar_ofertas(ids):
+    ahora = database.ahora_en_milisegundos()
+    hora = 3600 * 1000
+    for comprador, vendedor, porcentaje, mensaje, estado, turno, horas, vencida in OFERTAS:
+        publicaciones = database.publicaciones_de(ids[vendedor])
+        if not publicaciones:
+            continue
+        # la mas vieja del vendedor es siempre una de las de prueba
+        publicacion = publicaciones[-1]
+        if vencida:
+            vence_en = ahora - hora
+        else:
+            vence_en = ahora + DIAS_DE_VIGENCIA_DE_PRUEBA * 24 * hora
+        database.crear_oferta(
+            publicacion["id"], ids[comprador], ids[vendedor],
+            publicacion["precio"] * porcentaje / 100, mensaje, vence_en,
+            estado, turno, ahora - horas * hora,
+        )
+        if estado == "ACEPTADA":
+            database.cambiar_estado_publicacion(publicacion["id"], "VENDIDA")

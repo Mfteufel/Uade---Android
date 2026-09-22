@@ -91,7 +91,13 @@ public class PublicacionRepositoryApi implements PublicacionRepository {
     private static PaginaPublicaciones aModelo(PaginaPublicacionesResponse json) {
         List<Publicacion> publicaciones = new ArrayList<>();
         for (PublicacionResumenResponse item : json.publicaciones) {
-            publicaciones.add(item.aModelo());
+            // Una publicación con un valor de enum que la app no conoce (por
+            // ejemplo el backend agrega una categoría nueva) se descarta sola,
+            // no tira la página entera abajo.
+            Publicacion publicacion = item.aModelo();
+            if (publicacion != null) {
+                publicaciones.add(publicacion);
+            }
         }
         return new PaginaPublicaciones(publicaciones, json.pagina, json.hayMas, json.totalResultados);
     }
@@ -107,10 +113,8 @@ public class PublicacionRepositoryApi implements PublicacionRepository {
                     callback.onError(ErrorApi.mensaje(response, "No pudimos cargar la publicación"));
                     return;
                 }
-                Publicacion sinVendedorReal;
-                try {
-                    sinVendedorReal = cuerpo.aModelo();
-                } catch (RuntimeException excepcion) {
+                Publicacion sinVendedorReal = cuerpo.aModelo();
+                if (sinVendedorReal == null) {
                     callback.onError("No pudimos cargar la publicación");
                     return;
                 }
@@ -160,6 +164,8 @@ public class PublicacionRepositoryApi implements PublicacionRepository {
                 original.getFechaPublicacion(), vendedor, original.getCantidadFotos(),
                 original.getDireccionEntrega());
         actualizada.setEstadoPublicacion(original.getEstadoPublicacion());
+        actualizada.setFotoPrincipalUrl(original.getFotoPrincipalUrl());
+        actualizada.setFotos(original.getFotos());
         return actualizada;
     }
 

@@ -8,6 +8,15 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Desbloqueo por huella/cara/PIN del dispositivo (Punto 1). -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <!--
+        Elegir fotos de la galería al publicar (Punto 5). Dos permisos porque el
+        de medios reemplazó al de almacenamiento a partir de API 33: se declaran
+        los dos y se pide en runtime el que corresponda según versión (ver
+        PublicarFotosFragment), nunca alcanza con declararlo acá solo.
+    -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
 
     <application
         android:name=".login.RondaApp"

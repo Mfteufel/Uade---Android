@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Menú de la toolbar de "Mis ofertas" (Punto 7): recarga manual de la tab
+     actual, sin SwipeRefreshLayout (no visto en la materia). -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/menuRecargarOfertas"
+        android:title="@string/mis_ofertas_recargar"
+        app:showAsAction="ifRoom|withText" />
+
+</menu>

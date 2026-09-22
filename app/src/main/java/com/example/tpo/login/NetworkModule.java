@@ -1,5 +1,7 @@
 package com.example.tpo.login;
 
+import com.example.tpo.BuildConfig;
+
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Singleton;
@@ -17,7 +19,10 @@ import retrofit2.converter.gson.GsonConverterFactory;
 @InstallIn(SingletonComponent.class)
 public class NetworkModule {
 
-    private static final String BASE_URL = "https://ronda-api-production.up.railway.app/";
+    // Sale de local.properties (API_BASE_URL, ver app/build.gradle.kts): cada
+    // dev apunta a su propio backend (por ejemplo el local, 10.0.2.2:8000 desde
+    // el emulador) sin tocar este archivo. Sin ese valor cargado, cae a Railway.
+    private static final String BASE_URL = BuildConfig.API_BASE_URL;
 
     @Provides
     @Singleton
