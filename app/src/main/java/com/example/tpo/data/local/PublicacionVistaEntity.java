@@ -10,9 +10,14 @@ import com.example.tpo.model.Publicacion;
 import com.example.tpo.model.Vendedor;
 import com.example.tpo.model.Zona;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Punto 6 (modo sin conexión): copia local de una {@link Publicacion} que el
- * usuario tocó en el Home, para poder mostrarla de nuevo sin conexión.
+ * usuario consultó, para poder mostrarla de nuevo sin conexión.
  */
 @Entity(tableName = "publicaciones_vistas", primaryKeys = {"usuarioId", "id"})
 public class PublicacionVistaEntity {
@@ -37,6 +42,8 @@ public class PublicacionVistaEntity {
     public long vendedorMiembroDesde;
 
     public int cantidadFotos;
+    public String fotoPrincipalUrl;
+    public String fotos;
     public String estadoPublicacion;
     public String direccionEntrega;
 
@@ -63,6 +70,8 @@ public class PublicacionVistaEntity {
         entidad.vendedorMiembroDesde = vendedor.getMiembroDesde();
 
         entidad.cantidadFotos = publicacion.getCantidadFotos();
+        entidad.fotoPrincipalUrl = publicacion.getFotoPrincipalUrl();
+        entidad.fotos = String.join("|", publicacion.getFotos());
         entidad.estadoPublicacion = publicacion.getEstadoPublicacion().name();
         entidad.direccionEntrega = publicacion.getDireccionEntrega();
         entidad.guardadoEn = guardadoEn;
@@ -79,6 +88,15 @@ public class PublicacionVistaEntity {
                 Zona.valueOf(zona),
                 fechaPublicacion, vendedor, cantidadFotos, direccionEntrega);
         publicacion.setEstadoPublicacion(EstadoPublicacion.valueOf(estadoPublicacion));
+        publicacion.setFotoPrincipalUrl(fotoPrincipalUrl);
+        publicacion.setFotos(fotosComoLista());
         return publicacion;
+    }
+
+    private List<String> fotosComoLista() {
+        if (fotos == null || fotos.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return new ArrayList<>(Arrays.asList(fotos.split("\\|")));
     }
 }

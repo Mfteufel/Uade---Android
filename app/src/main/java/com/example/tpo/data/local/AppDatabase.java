@@ -56,6 +56,12 @@ import androidx.room.RoomDatabase;
  * locales quedaron 100% muertas, junto con las clases que las usaban
  * ({@code PreguntasPublicacion}, {@code OfertasPublicacion}, el modelo
  * {@code Oferta}).
+ * <p>
+ * {@code version = 10}: {@code PublicacionVistaEntity} suma {@code fotos} y
+ * {@code fotoPrincipalUrl}. Antes solo guardaba {@code cantidadFotos} (un
+ * número), así que el modo sin conexión del Detalle (Punto 6) terminaba
+ * mostrando placeholders en vez de las fotos reales que la persona ya había
+ * visto online.
  */
 @Database(entities = {
         BorradorPublicacionEntity.class,
@@ -63,7 +69,7 @@ import androidx.room.RoomDatabase;
         PublicacionEstadoEntity.class,
         PublicacionVistaEntity.class,
         PublicacionCreadaEntity.class
-}, version = 9, exportSchema = false)
+}, version = 10, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
     private static final String NOMBRE_ARCHIVO = "ronda.db";
