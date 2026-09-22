@@ -49,6 +49,10 @@ public class FavoritoRepositoryApi implements FavoritoRepository {
         return instancia;
     }
 
+    static synchronized FavoritoRepositoryApi instanciaActual() {
+        return instancia;
+    }
+
     @Override
     public void precargar(RepositorioCallback<Void> callback) {
         listar(new RepositorioCallback<List<Publicacion>>() {
@@ -177,6 +181,10 @@ public class FavoritoRepositoryApi implements FavoritoRepository {
         return !conNovedad.isEmpty();
     }
 
+    void quitarNovedad(String publicacionId) {
+        conNovedad.remove(publicacionId);
+    }
+
     @Override
     public boolean subioDePrecio(String publicacionId) {
         Publicacion publicacion = favoritos.get(publicacionId);
@@ -189,10 +197,14 @@ public class FavoritoRepositoryApi implements FavoritoRepository {
         // Se anota acá antes de limpiar: si alguna de estas publicaciones
         // también matchea una búsqueda guardada, esa búsqueda tiene que dar
         // por vista la misma novedad de precio (ver NovedadesDePrecio).
+        BusquedaGuardadaRepositoryApi busquedas = BusquedaGuardadaRepositoryApi.instanciaActual();
         for (String id : conNovedad) {
             Publicacion publicacion = favoritos.get(id);
             if (publicacion != null) {
                 NovedadesDePrecio.reconocer(id, publicacion.getPrecio());
+                if (busquedas != null) {
+                    busquedas.quitarNovedadDePrecio(id);
+                }
             }
         }
         conNovedad.clear();
