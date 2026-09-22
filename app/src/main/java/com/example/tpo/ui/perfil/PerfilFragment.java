@@ -141,6 +141,9 @@ public class PerfilFragment extends Fragment {
         botonCancelar.setOnClickListener(v -> cancelarEdicion());
         botonGuardar.setOnClickListener(v -> guardarCambios());
 
+        // Sin endpoint de foto en el backend no se ofrece la acción: el avatar queda
+        // con las iniciales.
+        botonCambiarFoto.setVisibility(repositorio.permiteCambiarFoto() ? View.VISIBLE : View.GONE);
         botonCambiarFoto.setOnClickListener(v -> selectorFoto.launch(new PickVisualMediaRequest.Builder()
                 .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
                 .build()));

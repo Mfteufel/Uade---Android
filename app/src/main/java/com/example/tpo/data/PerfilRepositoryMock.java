@@ -6,13 +6,14 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Patterns;
 
 import com.example.tpo.model.Calificacion;
+import com.example.tpo.model.Publicacion;
 import com.example.tpo.model.Usuario;
 import com.example.tpo.util.ImagenUtils;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -27,10 +28,9 @@ import java.util.concurrent.Executors;
  * {@code PerfilRepositoryApi} en {@code di/RepositoryModule} no cambia nada en
  * las pantallas: el camino de éxito y el de error son los mismos.
  * <p>
- * Las validaciones de los datos editados también se hacen acá y no en el Fragment.
- * En la app final esa responsabilidad es del backend, así que dejarla del lado del
- * repositorio es lo que hace que el reemplazo sea directo: el día que responda un
- * 400, la pantalla ya sabe qué hacer porque el camino de error es el mismo.
+ * Las validaciones de los datos editados se hacen del lado del repositorio (con
+ * {@link ValidadorPerfil}, compartido con la API) y no en el Fragment: así el
+ * error local y un 400 del servidor llegan a la pantalla por el mismo camino.
  */
 public class PerfilRepositoryMock implements PerfilRepository {
 
@@ -90,7 +90,7 @@ public class PerfilRepositoryMock implements PerfilRepository {
                 return;
             }
 
-            String errorValidacion = validar(usuario);
+            String errorValidacion = ValidadorPerfil.validar(usuario);
             if (errorValidacion != null) {
                 callback.onError(errorValidacion);
                 return;
@@ -137,6 +137,33 @@ public class PerfilRepositoryMock implements PerfilRepository {
             }
             callback.onExito(usuario);
         });
+    }
+
+    /**
+     * Las publicaciones siguen en el catálogo simulado del Home. Ese mock responde
+     * error cuando la persona no tiene ninguna publicación (alguien que solo
+     * compra): para el perfil eso es la lista vacía, igual que en la API.
+     */
+    @Override
+    public void obtenerPublicacionesActivas(String usuarioId,
+                                            RepositorioCallback<List<Publicacion>> callback) {
+        PublicacionRepositoryMock.getInstancia().obtenerPerfilVendedor(usuarioId,
+                new RepositorioCallback<PerfilVendedor>() {
+                    @Override
+                    public void onExito(PerfilVendedor resultado) {
+                        callback.onExito(resultado.getPublicaciones());
+                    }
+
+                    @Override
+                    public void onError(String mensaje) {
+                        callback.onExito(Collections.emptyList());
+                    }
+                });
+    }
+
+    @Override
+    public boolean permiteCambiarFoto() {
+        return true;
     }
 
     @Override
@@ -211,33 +238,5 @@ public class PerfilRepositoryMock implements PerfilRepository {
     /** postDelayed simula la latencia de red y deja el callback en el Main Thread. */
     private void responderDemorado(Runnable accion) {
         handlerPrincipal.postDelayed(accion, DEMORA_SIMULADA_MS);
-    }
-
-    /**
-     * Valida los datos editables. Devuelve el mensaje de error, o null si está todo bien.
-     * <p>
-     * Devuelve String y no lanza excepción porque el mensaje va derecho al callback
-     * de error, que es el mismo camino que va a usar la API cuando responda un 400.
-     */
-    private String validar(Usuario usuario) {
-        if (usuario.getNombre() == null || usuario.getNombre().trim().isEmpty()) {
-            return "Ingresá tu nombre";
-        }
-        if (usuario.getEmail() == null || usuario.getEmail().trim().isEmpty()) {
-            return "Ingresá tu email";
-        }
-        if (!Patterns.EMAIL_ADDRESS.matcher(usuario.getEmail().trim()).matches()) {
-            return "El email no tiene un formato válido";
-        }
-        if (usuario.getZona() == null) {
-            return "Elegí tu zona";
-        }
-        // El teléfono es opcional, pero si lo cargan tiene que ser usable: es el
-        // dato con el que la otra parte coordina la entrega en mano.
-        String telefono = usuario.getTelefono() == null ? "" : usuario.getTelefono().trim();
-        if (!telefono.isEmpty() && telefono.replaceAll("[^0-9]", "").length() < 8) {
-            return "El teléfono debe tener al menos 8 dígitos";
-        }
-        return null;
     }
 }
