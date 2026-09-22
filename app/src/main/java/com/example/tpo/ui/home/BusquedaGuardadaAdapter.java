@@ -59,7 +59,7 @@ public class BusquedaGuardadaAdapter extends RecyclerView.Adapter<BusquedaGuarda
     static class BusquedaViewHolder extends RecyclerView.ViewHolder {
 
         private final TextView nombre;
-        private final View indicadorNovedad;
+        private final TextView indicadorNovedad;
         private final ImageButton botonEliminar;
 
         BusquedaViewHolder(@NonNull View itemView) {
@@ -74,11 +74,30 @@ public class BusquedaGuardadaAdapter extends RecyclerView.Adapter<BusquedaGuarda
                      Consumer<BusquedaGuardada> alElegir,
                      Consumer<BusquedaGuardada> alEliminar) {
             nombre.setText(busqueda.getNombre());
-            indicadorNovedad.setVisibility(
-                    repositorio.tieneNovedad(busqueda.getId()) ? View.VISIBLE : View.GONE);
+            pintarNovedad(busqueda, repositorio);
 
             itemView.setOnClickListener(v -> alElegir.accept(busqueda));
             botonEliminar.setOnClickListener(v -> alEliminar.accept(busqueda));
+        }
+
+        private void pintarNovedad(BusquedaGuardada busqueda, BusquedaGuardadaRepository repositorio) {
+            if (!repositorio.tieneNovedad(busqueda.getId())) {
+                indicadorNovedad.setVisibility(View.GONE);
+                return;
+            }
+            boolean hayNuevas = !repositorio.publicacionesNuevasDe(busqueda.getId()).isEmpty();
+            boolean hayCambioDePrecio = !repositorio.publicacionesConCambioDePrecioDe(busqueda.getId()).isEmpty();
+
+            int textoResId;
+            if (hayNuevas && hayCambioDePrecio) {
+                textoResId = R.string.busqueda_guardada_novedad_mixta;
+            } else if (hayCambioDePrecio) {
+                textoResId = R.string.busqueda_guardada_novedad_precio;
+            } else {
+                textoResId = R.string.busqueda_guardada_novedad;
+            }
+            indicadorNovedad.setText(textoResId);
+            indicadorNovedad.setVisibility(View.VISIBLE);
         }
     }
 }

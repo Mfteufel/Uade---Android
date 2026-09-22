@@ -8,6 +8,7 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tpo.R;
@@ -19,6 +20,7 @@ import com.example.tpo.util.FormatoUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -57,6 +59,8 @@ public class PublicacionAdapter extends RecyclerView.Adapter<PublicacionAdapter.
     private final OnFavoritoClickListener favoritoListener;
     /** IDs a destacar como "Nueva" porque matchean la búsqueda guardada recién aplicada (Punto 10). */
     private Set<String> idsNuevaBusqueda = Collections.emptySet();
+    /** id -> true si subió / false si bajó, para publicaciones de la búsqueda aplicada que cambiaron de precio. */
+    private Map<String, Boolean> cambiosPrecioBusqueda = Collections.emptyMap();
 
     public PublicacionAdapter(FavoritoRepository favoritoRepositorio,
                               OnPublicacionClickListener listener,
@@ -79,12 +83,19 @@ public class PublicacionAdapter extends RecyclerView.Adapter<PublicacionAdapter.
     public void onBindViewHolder(@NonNull PublicacionViewHolder holder, int position) {
         Publicacion publicacion = publicaciones.get(position);
         boolean esNuevaDeBusqueda = idsNuevaBusqueda.contains(publicacion.getId());
-        holder.enlazar(publicacion, favoritoRepositorio, esNuevaDeBusqueda, listener, favoritoListener);
+        Boolean cambioDePrecioBusqueda = cambiosPrecioBusqueda.get(publicacion.getId());
+        holder.enlazar(publicacion, favoritoRepositorio, esNuevaDeBusqueda, cambioDePrecioBusqueda,
+                listener, favoritoListener);
     }
 
     /** Punto 10: qué publicaciones destacar como "Nueva" al aplicar una búsqueda guardada con novedad. */
     public void marcarNuevasDeBusqueda(Set<String> ids) {
         idsNuevaBusqueda = ids;
+        notifyDataSetChanged();
+    }
+
+    public void marcarCambiosDePrecioDeBusqueda(Map<String, Boolean> cambios) {
+        cambiosPrecioBusqueda = cambios;
         notifyDataSetChanged();
     }
 
@@ -147,7 +158,7 @@ public class PublicacionAdapter extends RecyclerView.Adapter<PublicacionAdapter.
         private final TextView titulo;
         private final View indicadorNuevaBusqueda;
         private final TextView precio;
-        private final View indicadorNovedadPrecio;
+        private final TextView indicadorNovedadPrecio;
         private final TextView estado;
         private final TextView estadoPublicacion;
         private final TextView zona;
@@ -168,6 +179,7 @@ public class PublicacionAdapter extends RecyclerView.Adapter<PublicacionAdapter.
         void enlazar(Publicacion publicacion,
                      FavoritoRepository favoritoRepositorio,
                      boolean esNuevaDeBusqueda,
+                     @Nullable Boolean cambioDePrecioBusqueda,
                      OnPublicacionClickListener listener,
                      OnFavoritoClickListener favoritoListener) {
             Context contexto = itemView.getContext();
@@ -175,8 +187,7 @@ public class PublicacionAdapter extends RecyclerView.Adapter<PublicacionAdapter.
             titulo.setText(publicacion.getTitulo());
             indicadorNuevaBusqueda.setVisibility(esNuevaDeBusqueda ? View.VISIBLE : View.GONE);
             precio.setText(FormatoUtils.precio(publicacion.getPrecio()));
-            indicadorNovedadPrecio.setVisibility(
-                    favoritoRepositorio.tieneNovedad(publicacion.getId()) ? View.VISIBLE : View.GONE);
+            pintarNovedadDePrecio(favoritoRepositorio, publicacion, cambioDePrecioBusqueda);
             estado.setText(publicacion.getEstado().getEtiqueta());
 
             // Badge de "Pausada"/"Vendida" — Punto 4, gestión de la publicación.
@@ -205,6 +216,30 @@ public class PublicacionAdapter extends RecyclerView.Adapter<PublicacionAdapter.
             });
 
             itemView.setOnClickListener(v -> listener.onPublicacionClick(publicacion));
+        }
+
+        /**
+         * El tag Bajó/Subió de precio tiene dos fuentes posibles, que la
+         * publicación sea favorita y le haya cambiado el precio, o que matchee
+         * la búsqueda guardada recién aplicada y también le haya cambiado. Si
+         * las dos aplican (puede ser favorita Y venir de una búsqueda) se
+         * prioriza favoritos, que tiene el dato más preciso.
+         */
+        private void pintarNovedadDePrecio(FavoritoRepository favoritoRepositorio,
+                                           Publicacion publicacion,
+                                           @Nullable Boolean cambioDePrecioBusqueda) {
+            boolean esFavoritoConNovedad = favoritoRepositorio.tieneNovedad(publicacion.getId());
+            boolean hayNovedadPrecio = esFavoritoConNovedad || cambioDePrecioBusqueda != null;
+            indicadorNovedadPrecio.setVisibility(hayNovedadPrecio ? View.VISIBLE : View.GONE);
+            if (!hayNovedadPrecio) {
+                return;
+            }
+            boolean subio = esFavoritoConNovedad
+                    ? favoritoRepositorio.subioDePrecio(publicacion.getId())
+                    : cambioDePrecioBusqueda;
+            indicadorNovedadPrecio.setText(subio
+                    ? R.string.item_novedad_subio_precio
+                    : R.string.item_novedad_bajo_precio);
         }
 
         private void pintarFavorito(boolean favorito) {

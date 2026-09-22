@@ -16,11 +16,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tpo.R;
 import com.example.tpo.data.FavoritoRepository;
-import com.example.tpo.data.FavoritoRepositoryMock;
+import com.example.tpo.data.FavoritoRepositoryApi;
 import com.example.tpo.data.PerfilRepository;
 import com.example.tpo.data.PerfilVendedor;
 import com.example.tpo.data.PublicacionRepository;
-import com.example.tpo.data.PublicacionRepositoryMock;
+import com.example.tpo.data.PublicacionRepositoryApi;
 import com.example.tpo.data.PublicacionesVistas;
 import com.example.tpo.data.RepositorioCallback;
 import com.example.tpo.data.SesionUsuario;
@@ -74,9 +74,10 @@ public class PerfilVendedorFragment extends Fragment
     @Inject
     PerfilRepository perfilRepositorio;
 
-    // Publicaciones y favoritos son de otros puntos y todavía no pasan por Hilt.
-    private final PublicacionRepository publicacionRepositorio = PublicacionRepositoryMock.getInstancia();
-    private final FavoritoRepository favoritoRepositorio = FavoritoRepositoryMock.getInstancia();
+    // Publicaciones y favoritos no pasan por Hilt, mismo criterio que el
+    // resto de las pantallas, singleton estático inicializado en onAttach.
+    private PublicacionRepository publicacionRepositorio;
+    private FavoritoRepository favoritoRepositorio;
 
     private PublicacionesVistas publicacionesVistas;
 
@@ -86,6 +87,8 @@ public class PerfilVendedorFragment extends Fragment
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         publicacionesVistas = PublicacionesVistas.getInstancia(context);
+        publicacionRepositorio = PublicacionRepositoryApi.getInstancia(context);
+        favoritoRepositorio = FavoritoRepositoryApi.getInstancia(context);
     }
 
     // --- Vistas. Son null fuera del rango onCreateView..onDestroyView ---

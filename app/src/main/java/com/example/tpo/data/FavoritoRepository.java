@@ -21,6 +21,11 @@ public interface FavoritoRepository {
     /** true si esta publicación favorita tiene una novedad sin ver (Punto 10). */
     boolean tieneNovedad(String publicacionId);
 
+    /**
+     * true si el precio subió desde que se marcó como favorita; false si bajó.
+     */
+    boolean subioDePrecio(String publicacionId);
+
     /** true si hay alguna novedad sin ver entre todos los favoritos. */
     boolean hayAlgunaNovedad();
 
