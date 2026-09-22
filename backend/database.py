@@ -84,7 +84,9 @@ CREATE TABLE IF NOT EXISTS preguntas (
     publicacion_id INTEGER NOT NULL,
     autor_id       INTEGER NOT NULL,
     texto          TEXT NOT NULL,
-    creado_en      INTEGER NOT NULL
+    creado_en      INTEGER NOT NULL,
+    respuesta      TEXT,
+    respuesta_en   INTEGER
 );
 
 CREATE INDEX IF NOT EXISTS indice_preguntas_publicacion ON preguntas (publicacion_id);
@@ -137,6 +139,11 @@ def inicializar():
         columnas = [fila["name"] for fila in conexion.execute("PRAGMA table_info(publicaciones)")]
         if "direccion_entrega" not in columnas:
             conexion.execute("ALTER TABLE publicaciones ADD COLUMN direccion_entrega TEXT")
+        columnas = [fila["name"] for fila in conexion.execute("PRAGMA table_info(preguntas)")]
+        if "respuesta" not in columnas:
+            conexion.execute("ALTER TABLE preguntas ADD COLUMN respuesta TEXT")
+        if "respuesta_en" not in columnas:
+            conexion.execute("ALTER TABLE preguntas ADD COLUMN respuesta_en INTEGER")
 
 
 def buscar_usuario_por_email(email):
@@ -371,6 +378,22 @@ def preguntas_de(publicacion_id):
             "SELECT * FROM preguntas WHERE publicacion_id = ? ORDER BY id",
             (publicacion_id,),
         ).fetchall()
+
+
+def buscar_pregunta(pregunta_id):
+    with conectar() as conexion:
+        return conexion.execute(
+            "SELECT * FROM preguntas WHERE id = ?", (pregunta_id,)
+        ).fetchone()
+
+
+def responder_pregunta(pregunta_id, texto):
+    respuesta_en = ahora_en_milisegundos()
+    with conectar() as conexion:
+        conexion.execute(
+            "UPDATE preguntas SET respuesta = ?, respuesta_en = ? WHERE id = ?",
+            (texto, respuesta_en, pregunta_id),
+        )
 
 
 def nombre_de_vendedor(vendedor_id):

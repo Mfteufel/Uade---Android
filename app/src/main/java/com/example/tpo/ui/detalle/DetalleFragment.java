@@ -11,7 +11,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
@@ -41,6 +40,7 @@ import com.example.tpo.ui.VendedorUi;
 import com.example.tpo.ui.perfil.PerfilVendedorFragment;
 import com.example.tpo.util.ConectividadUtils;
 import com.example.tpo.util.FormatoUtils;
+import com.example.tpo.util.ImagenRemota;
 import com.example.tpo.util.MapaUtils;
 import com.example.tpo.util.TextoUtils;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -394,7 +394,7 @@ public class DetalleFragment extends Fragment {
     private void mostrarPublicacion(Publicacion publicacion) {
         publicacionCargada = publicacion;
 
-        mostrarGaleria(publicacion.getCantidadFotos());
+        mostrarGaleria(publicacion);
 
         tituloDetalle.setText(publicacion.getTitulo());
         precioDetalle.setText(FormatoUtils.precio(publicacion.getPrecio()));
@@ -430,17 +430,24 @@ public class DetalleFragment extends Fragment {
     }
 
     /**
-     * Llena la galería con un placeholder por foto (sin swipe, ver
-     * dimens/detalle_foto_tamano) y arma el contador ("2 de 3"), con una
-     * contentDescription distinta por foto para TalkBack.
+     * Llena la galería: una foto real por URL si la publicación las tiene
+     * (backend real), o un placeholder por {@code cantidadFotos} si no (catálogo
+     * de prueba, sin fotos reales) — sin swipe, ver dimens/detalle_foto_tamano.
+     * Arma también el contador ("2 de 3"), con una contentDescription distinta
+     * por foto para TalkBack.
      */
-    private void mostrarGaleria(int cantidadFotos) {
+    private void mostrarGaleria(Publicacion publicacion) {
         grupoFotos.removeAllViews();
-        cantidadFotosGaleria = Math.max(cantidadFotos, 1);
+        List<String> fotos = publicacion.getFotos();
+        boolean hayFotosReales = !fotos.isEmpty();
+        cantidadFotosGaleria = hayFotosReales
+                ? fotos.size()
+                : Math.max(publicacion.getCantidadFotos(), 1);
         LayoutInflater inflater = LayoutInflater.from(requireContext());
         for (int i = 0; i < cantidadFotosGaleria; i++) {
             ImageView foto = (ImageView) inflater.inflate(R.layout.item_foto_detalle, grupoFotos, false);
             foto.setContentDescription(getString(R.string.detalle_foto_numero, i + 1, cantidadFotosGaleria));
+            ImagenRemota.cargarEn(foto, hayFotosReales ? fotos.get(i) : null, R.drawable.ic_imagen);
             grupoFotos.addView(foto);
         }
         scrollFotos.scrollTo(0, 0);
@@ -503,7 +510,7 @@ public class DetalleFragment extends Fragment {
         }
 
         actualizarIconoGuardar();
-        mostrarMisInteracciones(publicacion);
+        mostrarInteracciones(publicacion);
         if (activa) {
             textoRolAviso.setVisibility(View.GONE);
             // Preguntar y ofertar requieren conexión.
@@ -528,53 +535,46 @@ public class DetalleFragment extends Fragment {
     }
 
     // ------------------------------------------------------------------
-    // Lo que el interesado ya le envió al vendedor
+    // Preguntas (públicas) y mi oferta (privada)
     // ------------------------------------------------------------------
 
     /**
-     * Muestra las preguntas y la oferta vigente que el usuario logueado ya le
-     * mandó al vendedor sobre esta publicación. Si no mandó nada, el bloque
-     * entero queda oculto. No se llama para el propio vendedor: sus
+     * Muestra las preguntas de la publicación (públicas: las hizo quien las
+     * hizo, cualquiera que mira la publicación las ve, junto con la respuesta
+     * del vendedor si ya la contestó — mismo criterio que cualquier
+     * marketplace) y la oferta vigente que el usuario logueado le mandó al
+     * vendedor (esa sí es privada). No se llama para el propio vendedor: sus
      * preguntas/ofertas recibidas se ven desde "Gestionar publicación", no acá.
      * <p>
      * Las dos consultas van contra el backend real y están anidadas (la de
-     * oferta arranca en el {@code onExito} de la de preguntas), mismo criterio
-     * que antes de migrar de Room: evita coordinar dos callbacks independientes
-     * para saber cuándo terminaron los dos. El listado de preguntas es público
-     * por publicación ({@code GET /publicaciones/{id}/preguntas}, se filtra
-     * "las mías" del lado del cliente) y las ofertas salen de
+     * oferta arranca en el {@code onExito} de la de preguntas): son lecturas
+     * chicas y anidarlas evita coordinar dos callbacks independientes para
+     * saber cuándo terminaron los dos. Las ofertas salen de
      * {@code GET /ofertas/enviadas} (todas las del usuario, se filtra por esta
      * publicación) — mismo criterio de filtrado client-side que ya usa
      * {@code OfertasRepositoryRemoto} para separar enviadas/recibidas.
      */
-    private void mostrarMisInteracciones(Publicacion publicacion) {
-        String idUsuario = SesionUsuario.getInstancia().getIdUsuario();
+    private void mostrarInteracciones(Publicacion publicacion) {
         preguntaRepository.deLaPublicacion(publicacion.getId(),
                 new RepositorioCallback<List<Pregunta>>() {
                     @Override
-                    public void onExito(List<Pregunta> todas) {
+                    public void onExito(List<Pregunta> preguntas) {
                         if (grupoMisInteracciones == null) {
                             return; // la vista ya se destruyó
                         }
-                        List<Pregunta> misPreguntas = new ArrayList<>();
-                        for (Pregunta pregunta : todas) {
-                            if (pregunta.getAutorId().equals(idUsuario)) {
-                                misPreguntas.add(pregunta);
-                            }
-                        }
-                        cargarMiOferta(publicacion, misPreguntas);
+                        cargarMiOferta(publicacion, preguntas);
                     }
 
                     @Override
                     public void onError(String mensaje) {
-                        // No hay nada que romper: si falla, el bloque de "lo mío"
-                        // simplemente no se completa con las preguntas.
+                        // No hay nada que romper: si falla, el bloque simplemente
+                        // no se completa con las preguntas.
                         cargarMiOferta(publicacion, new ArrayList<>());
                     }
                 });
     }
 
-    private void cargarMiOferta(Publicacion publicacion, List<Pregunta> misPreguntas) {
+    private void cargarMiOferta(Publicacion publicacion, List<Pregunta> preguntas) {
         if (grupoMisInteracciones == null) {
             return;
         }
@@ -584,14 +584,14 @@ public class DetalleFragment extends Fragment {
                 if (grupoMisInteracciones == null) {
                     return;
                 }
-                pintarMisInteracciones(publicacion, misPreguntas, ultimaOfertaDe(todas, publicacion.getId()));
+                pintarInteracciones(publicacion, preguntas, ultimaOfertaDe(todas, publicacion.getId()));
             }
 
             @Override
             public void onError(String mensaje) {
                 // Ídem: sin oferta propia, no rompe el resto del bloque.
                 if (grupoMisInteracciones != null) {
-                    pintarMisInteracciones(publicacion, misPreguntas, null);
+                    pintarInteracciones(publicacion, preguntas, null);
                 }
             }
         });
@@ -609,17 +609,17 @@ public class DetalleFragment extends Fragment {
         return null;
     }
 
-    private void pintarMisInteracciones(Publicacion publicacion, List<Pregunta> misPreguntas,
-                                        @Nullable OfertaNegociacion miOferta) {
+    private void pintarInteracciones(Publicacion publicacion, List<Pregunta> preguntas,
+                                     @Nullable OfertaNegociacion miOferta) {
         grupoMisInteracciones.removeAllViews();
         LayoutInflater inflater = LayoutInflater.from(requireContext());
+        String idUsuario = SesionUsuario.getInstancia().getIdUsuario();
 
-        if (!misPreguntas.isEmpty()) {
+        if (!preguntas.isEmpty()) {
             grupoMisInteracciones.addView(
-                    inflarEncabezado(inflater, R.string.detalle_mis_preguntas_titulo));
-            for (Pregunta pregunta : misPreguntas) {
-                grupoMisInteracciones.addView(inflarFilaInteraccion(
-                        inflater, R.drawable.ic_preguntar, pregunta.getTexto(), pregunta.getFecha()));
+                    inflarEncabezado(inflater, R.string.detalle_preguntas_titulo));
+            for (Pregunta pregunta : preguntas) {
+                grupoMisInteracciones.addView(inflarFilaPregunta(inflater, pregunta, idUsuario));
             }
         }
         if (miOferta != null) {
@@ -639,7 +639,7 @@ public class DetalleFragment extends Fragment {
             grupoMisInteracciones.addView(filaOferta);
         }
 
-        boolean hayAlgoQueMostrar = !misPreguntas.isEmpty() || miOferta != null;
+        boolean hayAlgoQueMostrar = !preguntas.isEmpty() || miOferta != null;
         bloqueMisInteracciones.setVisibility(hayAlgoQueMostrar ? View.VISIBLE : View.GONE);
 
         // Antes de tener una oferta ACEPTADA no hay ninguna dirección que mostrar
@@ -656,17 +656,34 @@ public class DetalleFragment extends Fragment {
         return encabezado;
     }
 
-    /** Fila de {@code item_interaccion.xml} para "lo mío": sin nombre de autor, solo la antigüedad. */
-    private View inflarFilaInteraccion(LayoutInflater inflater,
-                                       @DrawableRes int icono,
-                                       String texto,
-                                       long fecha) {
-        View fila = inflater.inflate(R.layout.item_interaccion, grupoMisInteracciones, false);
-        ((ImageView) fila.findViewById(R.id.iconoInteraccion)).setImageResource(icono);
-        ((TextView) fila.findViewById(R.id.textoInteraccion)).setText(texto);
-        ((TextView) fila.findViewById(R.id.autorInteraccion))
-                .setText(FormatoUtils.antiguedad(requireContext(), fecha));
-        return fila;
+    /**
+     * Fila de una pregunta pública: autor (o "Vos" si es la del usuario
+     * logueado) y antigüedad, igual que ya se arma en
+     * {@code item_zona_y_fecha}. Si el vendedor ya la contestó, se agrega una
+     * segunda fila indentada con la respuesta, mismo layout con otro ícono.
+     */
+    private View inflarFilaPregunta(LayoutInflater inflater, Pregunta pregunta, String idUsuario) {
+        boolean esMia = pregunta.getAutorId().equals(idUsuario);
+        String autor = esMia ? getString(R.string.detalle_pregunta_autor_vos) : pregunta.getAutorNombre();
+        String autorYFecha = getString(R.string.item_zona_y_fecha, autor,
+                FormatoUtils.antiguedad(requireContext(), pregunta.getFecha()));
+
+        View grupo = inflater.inflate(R.layout.item_pregunta_publica, grupoMisInteracciones, false);
+        ((TextView) grupo.findViewById(R.id.textoInteraccion)).setText(pregunta.getTexto());
+        ((TextView) grupo.findViewById(R.id.autorInteraccion)).setText(autorYFecha);
+
+        View filaRespuesta = grupo.findViewById(R.id.filaRespuestaPregunta);
+        if (pregunta.tieneRespuesta()) {
+            ((TextView) grupo.findViewById(R.id.textoRespuestaPregunta)).setText(pregunta.getRespuesta());
+            ((TextView) grupo.findViewById(R.id.autorRespuestaPregunta)).setText(
+                    getString(R.string.item_zona_y_fecha,
+                            getString(R.string.detalle_pregunta_autor_vendedor),
+                            FormatoUtils.antiguedad(requireContext(), pregunta.getRespuestaFecha())));
+            filaRespuesta.setVisibility(View.VISIBLE);
+        } else {
+            filaRespuesta.setVisibility(View.GONE);
+        }
+        return grupo;
     }
 
     // ------------------------------------------------------------------
@@ -677,7 +694,7 @@ public class DetalleFragment extends Fragment {
      * Pinta el bloque de punto de entrega a partir de la dirección que le pasa
      * cada caller (el dueño la tiene siempre disponible en su propia
      * publicación; el interesado recién la recibe del backend cuando su oferta
-     * queda {@code ACEPTADA}, ver {@link #pintarMisInteracciones}). Si no hay
+     * queda {@code ACEPTADA}, ver {@link #pintarInteracciones}). Si no hay
      * dirección, el bloque entero queda oculto: no tiene sentido mostrar ni
      * siquiera el aviso de "bloqueada" si no hay ninguna esperando del otro
      * lado — y para el interesado sin oferta aceptada tampoco hay forma de
@@ -894,7 +911,7 @@ public class DetalleFragment extends Fragment {
         return contenido == null ? "" : contenido.toString().trim();
     }
 
-    /** Manda la pregunta al backend real y refresca "lo que ya le enviaste" de la pantalla. */
+    /** Manda la pregunta al backend real y refresca el bloque de preguntas de la pantalla. */
     private void registrarPregunta(String texto) {
         if (publicacionCargada == null) {
             return; // no debería pasar: el diálogo solo se abre con una publicación cargada
@@ -905,7 +922,7 @@ public class DetalleFragment extends Fragment {
                 if (grupoMisInteracciones == null) {
                     return;
                 }
-                mostrarMisInteracciones(publicacionCargada);
+                mostrarInteracciones(publicacionCargada);
             }
 
             @Override

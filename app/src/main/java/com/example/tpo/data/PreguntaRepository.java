@@ -15,4 +15,7 @@ public interface PreguntaRepository {
 
     /** Envía una pregunta nueva sobre esta publicación, en nombre del usuario logueado. */
     void crear(String publicacionId, String texto, RepositorioCallback<Pregunta> callback);
+
+    /** Contesta una pregunta recibida. Solo el dueño de la publicación puede hacerlo (el backend lo valida). */
+    void responder(String publicacionId, String preguntaId, String texto, RepositorioCallback<Pregunta> callback);
 }

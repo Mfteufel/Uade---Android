@@ -12,6 +12,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
+import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
 import androidx.core.widget.NestedScrollView;
 
 import com.example.tpo.R;
@@ -28,8 +30,11 @@ import com.example.tpo.model.Publicacion;
 import com.example.tpo.util.FormatoUtils;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -96,6 +101,10 @@ public class GestionPublicacionBottomSheet extends BottomSheetDialogFragment {
     private TextView cantidadOfertasGestion;
     private TextView textoSinOfertas;
     private LinearLayout grupoOfertasGestion;
+
+    /** Diálogo "Responder a ..." abierto, si hay. Se cierra en onDestroyView para no filtrar la Activity. */
+    @Nullable
+    private AlertDialog dialogoActivo;
 
     /**
      * Crea la hoja para gestionar una publicación puntual.
@@ -176,6 +185,10 @@ public class GestionPublicacionBottomSheet extends BottomSheetDialogFragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        if (dialogoActivo != null) {
+            dialogoActivo.dismiss();
+            dialogoActivo = null;
+        }
         scrollGestion = null;
         progresoGestion = null;
         estadoErrorGestion = null;
@@ -288,6 +301,14 @@ public class GestionPublicacionBottomSheet extends BottomSheetDialogFragment {
         });
     }
 
+    /**
+     * Lista las preguntas recibidas, mismo layout que usa el Detalle para
+     * mostrarlas ({@code item_pregunta_publica.xml}: pregunta + fila de
+     * respuesta debajo). La diferencia acá es que la fila de respuesta nunca
+     * se oculta: si la pregunta ya está contestada muestra el texto, y si no,
+     * un link "Responder" que abre el diálogo — es la única pantalla desde
+     * donde el vendedor puede hacerlo.
+     */
     private void pintarPreguntasRecibidas(List<Pregunta> preguntas) {
         int cantidad = preguntas.size();
         cantidadPreguntasGestion.setText(getResources().getQuantityString(
@@ -297,15 +318,85 @@ public class GestionPublicacionBottomSheet extends BottomSheetDialogFragment {
         grupoPreguntasGestion.removeAllViews();
         LayoutInflater inflater = LayoutInflater.from(requireContext());
         for (Pregunta pregunta : preguntas) {
-            View fila = inflater.inflate(R.layout.item_interaccion, grupoPreguntasGestion, false);
-            ((ImageView) fila.findViewById(R.id.iconoInteraccion)).setImageResource(R.drawable.ic_preguntar);
+            View fila = inflater.inflate(R.layout.item_pregunta_publica, grupoPreguntasGestion, false);
             ((TextView) fila.findViewById(R.id.textoInteraccion)).setText(pregunta.getTexto());
             ((TextView) fila.findViewById(R.id.autorInteraccion)).setText(getString(
                     R.string.item_zona_y_fecha,
                     pregunta.getAutorNombre(),
                     FormatoUtils.antiguedad(requireContext(), pregunta.getFecha())));
+
+            TextView textoRespuesta = fila.findViewById(R.id.textoRespuestaPregunta);
+            TextView autorRespuesta = fila.findViewById(R.id.autorRespuestaPregunta);
+            if (pregunta.tieneRespuesta()) {
+                textoRespuesta.setText(pregunta.getRespuesta());
+                textoRespuesta.setOnClickListener(null);
+                autorRespuesta.setVisibility(View.VISIBLE);
+                autorRespuesta.setText(getString(R.string.item_zona_y_fecha,
+                        getString(R.string.detalle_pregunta_autor_vos),
+                        FormatoUtils.antiguedad(requireContext(), pregunta.getRespuestaFecha())));
+            } else {
+                textoRespuesta.setText(R.string.gestion_responder_pregunta);
+                textoRespuesta.setTextColor(ContextCompat.getColor(requireContext(), R.color.ronda_primary));
+                textoRespuesta.setOnClickListener(v -> mostrarDialogoResponder(pregunta));
+                autorRespuesta.setVisibility(View.GONE);
+            }
             grupoPreguntasGestion.addView(fila);
         }
+    }
+
+    // ------------------------------------------------------------------
+    // Responder una pregunta
+    // ------------------------------------------------------------------
+
+    private void mostrarDialogoResponder(Pregunta pregunta) {
+        View contenido = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialogo_pregunta, null, false);
+        TextInputLayout input = contenido.findViewById(R.id.inputPregunta);
+        TextInputEditText campo = contenido.findViewById(R.id.campoPregunta);
+        input.setHint(getString(R.string.gestion_respuesta_hint));
+
+        AlertDialog dialogo = new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(getString(R.string.gestion_respuesta_titulo, pregunta.getAutorNombre()))
+                .setView(contenido)
+                .setNegativeButton(R.string.dialogo_cancelar, null)
+                .setPositiveButton(R.string.gestion_respuesta_enviar, null)
+                .create();
+
+        dialogo.setOnShowListener(d -> dialogo.getButton(AlertDialog.BUTTON_POSITIVE)
+                .setOnClickListener(v -> {
+                    CharSequence contenidoCampo = campo.getText();
+                    String texto = contenidoCampo == null ? "" : contenidoCampo.toString().trim();
+                    if (texto.isEmpty()) {
+                        input.setError(getString(R.string.gestion_respuesta_vacia));
+                        return;
+                    }
+                    input.setError(null);
+                    dialogo.dismiss();
+                    responderPregunta(pregunta, texto);
+                }));
+
+        dialogoActivo = dialogo;
+        dialogo.show();
+    }
+
+    private void responderPregunta(Pregunta pregunta, String texto) {
+        preguntaRepository.responder(publicacionId, pregunta.getId(), texto, new RepositorioCallback<Pregunta>() {
+            @Override
+            public void onExito(Pregunta resultado) {
+                if (grupoPreguntasGestion == null) {
+                    return; // la hoja ya se cerró
+                }
+                mostrarPreguntasRecibidas();
+            }
+
+            @Override
+            public void onError(String mensaje) {
+                if (scrollGestion == null) {
+                    return;
+                }
+                Snackbar.make(requireView(), mensaje, Snackbar.LENGTH_LONG).show();
+            }
+        });
     }
 
     /**

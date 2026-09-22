@@ -3,6 +3,8 @@ package com.example.tpo.model;
 import androidx.annotation.Nullable;
 
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Una publicación del listado del Home y del Detalle.
@@ -40,10 +42,10 @@ public class Publicacion implements Serializable {
     /**
      * Cantidad de fotos de la publicación, para la galería del Detalle.
      * <p>
-     * Todavía no hay librería de carga de imágenes (Glide/Picasso) ni fotos
-     * reales: la galería muestra este número de placeholders (ver
-     * {@code ic_imagen}). Cuando se suba la foto de verdad en el Punto 5 esto
-     * pasa a ser una lista de URLs.
+     * Sigue existiendo para el catálogo de prueba, que no tiene fotos reales:
+     * la galería muestra este número de placeholders (ver {@code ic_imagen}).
+     * Contra el backend real, {@link #getFotos()} trae las URLs de verdad y es
+     * lo que usa la galería cuando no está vacía (ver {@code DetalleFragment}).
      */
     private final int cantidadFotos;
     /**
@@ -76,6 +78,20 @@ public class Publicacion implements Serializable {
      */
     @Nullable
     private final String direccionEntrega;
+
+    /**
+     * URL de la foto principal, contra la API real. No va en el constructor a
+     * propósito, mismo criterio que {@link #estadoPublicacion}: el catálogo de
+     * prueba ({@code PublicacionRepositoryMock}) no tiene fotos reales y sigue
+     * mostrando {@code cantidadFotos} placeholders; las respuestas del backend
+     * ({@code PublicacionResumenResponse}/{@code PublicacionDetalleResponse})
+     * la completan después de construir el objeto.
+     */
+    @Nullable
+    private String fotoPrincipalUrl;
+
+    /** URLs de toda la galería, para el Detalle. Vacía si no hay fotos reales (ver {@link #fotoPrincipalUrl}). */
+    private List<String> fotos = Collections.emptyList();
 
     public Publicacion(String id,
                        String titulo,
@@ -161,5 +177,22 @@ public class Publicacion implements Serializable {
     @Nullable
     public String getDireccionEntrega() {
         return direccionEntrega;
+    }
+
+    @Nullable
+    public String getFotoPrincipalUrl() {
+        return fotoPrincipalUrl;
+    }
+
+    public void setFotoPrincipalUrl(@Nullable String fotoPrincipalUrl) {
+        this.fotoPrincipalUrl = fotoPrincipalUrl;
+    }
+
+    public List<String> getFotos() {
+        return fotos;
+    }
+
+    public void setFotos(@Nullable List<String> fotos) {
+        this.fotos = fotos != null ? fotos : Collections.emptyList();
     }
 }

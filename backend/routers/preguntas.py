@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 import database
 import seguridad
-from models.pregunta import Pregunta, PreguntaNueva
+from models.pregunta import Pregunta, PreguntaNueva, RespuestaNueva
 
 router = APIRouter(prefix="/publicaciones", tags=["Preguntas"])
 
@@ -26,6 +26,8 @@ def a_json(fila):
         "autorNombre": database.nombre_de_vendedor(fila["autor_id"]),
         "texto": fila["texto"],
         "fecha": fila["creado_en"],
+        "respuesta": fila["respuesta"],
+        "respuestaFecha": fila["respuesta_en"],
     }
 
 
@@ -55,3 +57,24 @@ def preguntar(publicacion_id: int, datos: PreguntaNueva,
     for fila in database.preguntas_de(publicacion_id):
         if fila["id"] == pregunta_id:
             return a_json(fila)
+
+
+@router.post("/{publicacion_id}/preguntas/{pregunta_id}/respuesta", response_model=Pregunta)
+def responder(publicacion_id: int, pregunta_id: int, datos: RespuestaNueva,
+             usuario: dict = Depends(seguridad.usuario_actual)):
+    texto = datos.texto.strip()
+    if not texto:
+        raise error(400, "La respuesta no puede estar vacia")
+
+    publicacion = database.buscar_publicacion(publicacion_id)
+    if publicacion is None:
+        raise error(404, "La publicacion no existe")
+    if publicacion["vendedor_id"] != str(usuario["id"]):
+        raise error(403, "Solo el dueño de la publicacion puede responder")
+
+    pregunta = database.buscar_pregunta(pregunta_id)
+    if pregunta is None or pregunta["publicacion_id"] != publicacion_id:
+        raise error(404, "La pregunta no existe")
+
+    database.responder_pregunta(pregunta_id, texto)
+    return a_json(database.buscar_pregunta(pregunta_id))

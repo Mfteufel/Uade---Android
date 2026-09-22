@@ -10,6 +10,9 @@ import com.example.tpo.model.Vendedor;
 import com.example.tpo.model.Zona;
 import com.google.gson.annotations.SerializedName;
 
+import java.util.Collections;
+import java.util.List;
+
 public class PublicacionResumenResponse {
 
     @SerializedName("id")
@@ -64,6 +67,17 @@ public class PublicacionResumenResponse {
     }
 
     /**
+     * El resumen del listado no trae la lista completa, solo la principal;
+     * {@link PublicacionDetalleResponse} la sobreescribe con {@code fotos} de
+     * verdad (para la galería del Detalle).
+     */
+    protected List<String> fotos() {
+        return fotoPrincipalUrl != null
+                ? Collections.singletonList(fotoPrincipalUrl)
+                : Collections.emptyList();
+    }
+
+    /**
      * {@code null} si algún campo obligatorio o algún valor de enum no coincide
      * con lo que la app conoce (por ejemplo, el backend agrega una categoría
      * nueva antes de que la app se actualice): así una publicación rara no
@@ -84,6 +98,8 @@ public class PublicacionResumenResponse {
                 estadoModelo, categoriaModelo, zonaModelo, fechaPublicacion, vendedor,
                 cantidadFotos(), direccionEntrega());
         publicacion.setEstadoPublicacion(estadoPublicacionModelo);
+        publicacion.setFotoPrincipalUrl(fotoPrincipalUrl);
+        publicacion.setFotos(fotos());
         return publicacion;
     }
 

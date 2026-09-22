@@ -24,7 +24,14 @@ public class PreguntaResponse {
     @SerializedName("fecha")
     public long fecha;
 
+    /** {@code null} si el vendedor todavía no la contestó. */
+    @SerializedName("respuesta")
+    public String respuesta;
+
+    @SerializedName("respuestaFecha")
+    public Long respuestaFecha;
+
     public Pregunta aModelo() {
-        return new Pregunta(publicacionId, autorId, autorNombre, texto, fecha);
+        return new Pregunta(id, publicacionId, autorId, autorNombre, texto, fecha, respuesta, respuestaFecha);
     }
 }

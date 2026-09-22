@@ -4,6 +4,7 @@ import androidx.annotation.Nullable;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.util.Collections;
 import java.util.List;
 
 /** JSON del resumen más la lista de fotos y, si el que pregunta es el dueño, la dirección de entrega. */
@@ -30,5 +31,10 @@ public class PublicacionDetalleResponse extends PublicacionResumenResponse {
     @Override
     protected String direccionEntrega() {
         return direccionEntregaJson;
+    }
+
+    @Override
+    protected List<String> fotos() {
+        return fotos != null ? fotos : Collections.emptyList();
     }
 }

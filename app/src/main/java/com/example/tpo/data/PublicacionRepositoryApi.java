@@ -164,6 +164,8 @@ public class PublicacionRepositoryApi implements PublicacionRepository {
                 original.getFechaPublicacion(), vendedor, original.getCantidadFotos(),
                 original.getDireccionEntrega());
         actualizada.setEstadoPublicacion(original.getEstadoPublicacion());
+        actualizada.setFotoPrincipalUrl(original.getFotoPrincipalUrl());
+        actualizada.setFotos(original.getFotos());
         return actualizada;
     }
 

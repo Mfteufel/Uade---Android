@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -16,6 +17,7 @@ import com.example.tpo.data.FavoritoRepository;
 import com.example.tpo.model.EstadoPublicacion;
 import com.example.tpo.model.Publicacion;
 import com.example.tpo.util.FormatoUtils;
+import com.example.tpo.util.ImagenRemota;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -155,6 +157,7 @@ public class PublicacionAdapter extends RecyclerView.Adapter<PublicacionAdapter.
      */
     static class PublicacionViewHolder extends RecyclerView.ViewHolder {
 
+        private final ImageView foto;
         private final TextView titulo;
         private final View indicadorNuevaBusqueda;
         private final TextView precio;
@@ -166,6 +169,7 @@ public class PublicacionAdapter extends RecyclerView.Adapter<PublicacionAdapter.
 
         PublicacionViewHolder(@NonNull View itemView) {
             super(itemView);
+            foto = itemView.findViewById(R.id.fotoPublicacion);
             titulo = itemView.findViewById(R.id.tituloPublicacion);
             indicadorNuevaBusqueda = itemView.findViewById(R.id.indicadorNuevaBusqueda);
             precio = itemView.findViewById(R.id.precioPublicacion);
@@ -184,6 +188,7 @@ public class PublicacionAdapter extends RecyclerView.Adapter<PublicacionAdapter.
                      OnFavoritoClickListener favoritoListener) {
             Context contexto = itemView.getContext();
 
+            ImagenRemota.cargarEn(foto, publicacion.getFotoPrincipalUrl(), R.drawable.ic_imagen);
             titulo.setText(publicacion.getTitulo());
             indicadorNuevaBusqueda.setVisibility(esNuevaDeBusqueda ? View.VISIBLE : View.GONE);
             precio.setText(FormatoUtils.precio(publicacion.getPrecio()));

@@ -8,6 +8,7 @@ import com.example.tpo.data.remote.ErrorApi;
 import com.example.tpo.data.remote.PreguntaApi;
 import com.example.tpo.data.remote.dto.PreguntaNuevaRequest;
 import com.example.tpo.data.remote.dto.PreguntaResponse;
+import com.example.tpo.data.remote.dto.RespuestaNuevaRequest;
 import com.example.tpo.di.RetrofitEntryPoint;
 import com.example.tpo.model.Pregunta;
 
@@ -89,5 +90,28 @@ public class PreguntaRepositoryApi implements PreguntaRepository {
                 callback.onError(ErrorApi.SIN_CONEXION);
             }
         });
+    }
+
+    @Override
+    public void responder(String publicacionId, String preguntaId, String texto,
+                          RepositorioCallback<Pregunta> callback) {
+        api.responder(publicacionId, preguntaId, new RespuestaNuevaRequest(texto))
+                .enqueue(new Callback<PreguntaResponse>() {
+                    @Override
+                    public void onResponse(@NonNull Call<PreguntaResponse> call,
+                                           @NonNull Response<PreguntaResponse> response) {
+                        PreguntaResponse cuerpo = response.body();
+                        if (!response.isSuccessful() || cuerpo == null) {
+                            callback.onError(ErrorApi.mensaje(response, "No pudimos enviar la respuesta"));
+                            return;
+                        }
+                        callback.onExito(cuerpo.aModelo());
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull Call<PreguntaResponse> call, @NonNull Throwable throwable) {
+                        callback.onError(ErrorApi.SIN_CONEXION);
+                    }
+                });
     }
 }
