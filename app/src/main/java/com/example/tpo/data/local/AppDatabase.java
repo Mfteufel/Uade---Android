@@ -38,6 +38,15 @@ import androidx.room.RoomDatabase;
  * que esa tabla se unificó dentro de favoritos y dejó de existir acá. Mismo
  * criterio de siempre: el esquema cambió (una tabla menos), así que necesita
  * su propio número de versión.
+ * <p>
+ * {@code version = 8}: se agrega {@code PublicacionCreadaEntity} (tabla
+ * {@code publicacion_creada}). Antes de esto, la publicación que el usuario
+ * creaba en el wizard se sumaba al catálogo mock de {@code PublicacionRepositoryMock}
+ * solo en memoria: al reiniciar el proceso el catálogo se reconstruía desde
+ * {@code crearCatalogoDePrueba()} (siempre las mismas 28 de prueba) y la publicación
+ * nueva desaparecía del Home y de su propio Detalle, aunque seguía viéndose en "Mis
+ * publicaciones" (Room). Esta tabla persiste esa publicación para que
+ * {@code PublicacionRepositoryMock} la vuelva a sumar al catálogo en cada arranque.
  */
 @Database(entities = {
         BorradorPublicacionEntity.class,
@@ -45,8 +54,9 @@ import androidx.room.RoomDatabase;
         PublicacionEstadoEntity.class,
         PreguntaEntity.class,
         OfertaEntity.class,
-        PublicacionVistaEntity.class
-}, version = 7, exportSchema = false)
+        PublicacionVistaEntity.class,
+        PublicacionCreadaEntity.class
+}, version = 8, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 
     private static final String NOMBRE_ARCHIVO = "ronda.db";
@@ -64,6 +74,8 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract OfertaDao ofertaDao();
 
     public abstract PublicacionVistaDao publicacionVistaDao();
+
+    public abstract PublicacionCreadaDao publicacionCreadaDao();
 
     public static AppDatabase getInstancia(Context context) {
         if (instancia == null) {
