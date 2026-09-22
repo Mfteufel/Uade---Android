@@ -36,6 +36,9 @@ public class OperacionAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         /** Se tocó "Calificar" en una operación calificable. */
         void onCalificarClick(Operacion operacion);
 
+        /** El comprador tocó "Confirmar entrega" en una operación pendiente de entrega. */
+        void onConfirmarEntregaClick(Operacion operacion);
+
         /** Se tocó la contraparte: abrir su perfil público. */
         void onContraparteClick(UsuarioResumen contraparte);
     }
@@ -133,6 +136,9 @@ public class OperacionAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         private final TextView monto;
         private final TextView contraparte;
         private final TextView fecha;
+        private final View contenedorPendienteEntrega;
+        private final TextView textoPendienteEntrega;
+        private final View botonConfirmarEntrega;
         private final View contenedorCalificable;
         private final TextView plazo;
         private final View botonCalificar;
@@ -146,6 +152,9 @@ public class OperacionAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
             monto = vista.findViewById(R.id.textoMontoOperacion);
             contraparte = vista.findViewById(R.id.textoContraparteOperacion);
             fecha = vista.findViewById(R.id.textoFechaOperacion);
+            contenedorPendienteEntrega = vista.findViewById(R.id.contenedorPendienteEntrega);
+            textoPendienteEntrega = vista.findViewById(R.id.textoPendienteEntrega);
+            botonConfirmarEntrega = vista.findViewById(R.id.botonConfirmarEntrega);
             contenedorCalificable = vista.findViewById(R.id.contenedorCalificable);
             plazo = vista.findViewById(R.id.textoPlazoCalificacion);
             botonCalificar = vista.findViewById(R.id.botonCalificar);
@@ -164,15 +173,29 @@ public class OperacionAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
             contraparte.setText(context.getString(textoContraparte,
                     operacion.getContraparte().getNombre()));
             contraparte.setOnClickListener(v -> listener.onContraparteClick(operacion.getContraparte()));
-            fecha.setText(context.getString(R.string.historial_entregada_el,
-                    FormatoUtils.fechaCompleta(operacion.getFechaReferencia())));
+            // Una venta aceptada sin entrega confirmada todavía no está concretada:
+            // no tiene fecha de entrega ni se puede calificar.
+            boolean pendiente = operacion.estaPendienteDeEntrega();
+            if (pendiente) {
+                fecha.setText(R.string.historial_pendiente_entrega);
+            } else {
+                fecha.setText(context.getString(R.string.historial_entregada_el,
+                        FormatoUtils.fechaCompleta(operacion.getFechaReferencia())));
+            }
+            boolean puedoConfirmar = operacion.puedeConfirmarEntrega();
+            contenedorPendienteEntrega.setVisibility(pendiente ? View.VISIBLE : View.GONE);
+            textoPendienteEntrega.setText(puedoConfirmar
+                    ? R.string.historial_ya_recibiste : R.string.historial_esperando_entrega);
+            botonConfirmarEntrega.setVisibility(puedoConfirmar ? View.VISIBLE : View.GONE);
+            botonConfirmarEntrega.setOnClickListener(v -> listener.onConfirmarEntregaClick(operacion));
 
             // Qué mostrar lo decidió el servidor; acá solo se refleja.
             boolean calificable = operacion.puedeCalificar();
             boolean calificada = operacion.yaCalifique();
             contenedorCalificable.setVisibility(calificable ? View.VISIBLE : View.GONE);
             contenedorCalificado.setVisibility(calificada ? View.VISIBLE : View.GONE);
-            plazoVencido.setVisibility(!calificable && !calificada ? View.VISIBLE : View.GONE);
+            plazoVencido.setVisibility(!pendiente && !calificable && !calificada
+                    ? View.VISIBLE : View.GONE);
 
             if (calificable && operacion.getCalificableHasta() != null) {
                 plazo.setText(context.getString(R.string.historial_calificar_hasta,

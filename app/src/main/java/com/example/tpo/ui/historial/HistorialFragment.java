@@ -29,6 +29,7 @@ import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.datepicker.CalendarConstraints;
 import com.google.android.material.datepicker.DateValidatorPointBackward;
 import com.google.android.material.datepicker.MaterialDatePicker;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -43,10 +44,14 @@ import dagger.hilt.android.AndroidEntryPoint;
 /**
  * Historial de operaciones concretadas — Punto 9 del TPO.
  * <p>
- * Lista las compras y ventas del usuario con fecha, artículo, monto final y
- * contraparte, separadas por tipo, y permite filtrar por tipo y por rango de
- * fechas. Desde cada operación se puede calificar a la contraparte (si el
- * servidor dice que todavía se puede) o abrir su perfil público.
+ * Lista las compras y ventas concretadas del usuario con fecha, artículo, monto
+ * final y contraparte, separadas por tipo, y permite filtrar por tipo y por rango
+ * de fechas. Desde cada una se puede calificar a la contraparte (si el servidor
+ * dice que todavía se puede) o abrir su perfil público.
+ * <p>
+ * Arriba, aparte y sin filtros, van las ventas aceptadas que todavía esperan la
+ * entrega: el comprador la confirma ahí, y recién entonces la operación queda
+ * concretada y pasa al historial.
  * <p>
  * Igual que el Home, todo lo que define la lista vive en un
  * {@link FiltroOperaciones} y hay un único método de recarga.
@@ -65,6 +70,7 @@ public class HistorialFragment extends Fragment implements OperacionAdapter.List
     private FiltroOperaciones filtro = new FiltroOperaciones();
 
     // --- Vistas. Son null fuera del rango onCreateView..onDestroyView ---
+    private View bloquePendientes;
     private ChipGroup grupoTipo;
     private Chip chipFechas;
     private RecyclerView lista;
@@ -75,6 +81,7 @@ public class HistorialFragment extends Fragment implements OperacionAdapter.List
     private TextView textoError;
 
     private OperacionAdapter adapter;
+    private OperacionAdapter adapterPendientes;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -110,6 +117,7 @@ public class HistorialFragment extends Fragment implements OperacionAdapter.List
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        bloquePendientes = view.findViewById(R.id.bloquePendientesEntrega);
         grupoTipo = view.findViewById(R.id.grupoTipoOperacion);
         chipFechas = view.findViewById(R.id.chipFechas);
         lista = view.findViewById(R.id.listaOperaciones);
@@ -121,11 +129,16 @@ public class HistorialFragment extends Fragment implements OperacionAdapter.List
 
         view.<com.google.android.material.appbar.MaterialToolbar>findViewById(R.id.toolbarHistorial)
                 .setNavigationOnClickListener(v -> Navigation.findNavController(view).navigateUp());
-        view.findViewById(R.id.botonReintentarHistorial).setOnClickListener(v -> cargarHistorial());
+        view.findViewById(R.id.botonReintentarHistorial).setOnClickListener(v -> cargarTodo());
 
         adapter = new OperacionAdapter(this);
         lista.setLayoutManager(new LinearLayoutManager(requireContext()));
         lista.setAdapter(adapter);
+
+        adapterPendientes = new OperacionAdapter(this);
+        RecyclerView listaPendientes = view.findViewById(R.id.listaPendientesEntrega);
+        listaPendientes.setLayoutManager(new LinearLayoutManager(requireContext()));
+        listaPendientes.setAdapter(adapterPendientes);
 
         configurarChipsTipo();
         chipFechas.setOnClickListener(v -> abrirCalendario());
@@ -136,7 +149,7 @@ public class HistorialFragment extends Fragment implements OperacionAdapter.List
         });
         actualizarChipFechas();
 
-        cargarHistorial();
+        cargarTodo();
     }
 
     @Override
@@ -148,6 +161,7 @@ public class HistorialFragment extends Fragment implements OperacionAdapter.List
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        bloquePendientes = null;
         grupoTipo = null;
         chipFechas = null;
         lista = null;
@@ -157,6 +171,7 @@ public class HistorialFragment extends Fragment implements OperacionAdapter.List
         estadoError = null;
         textoError = null;
         adapter = null;
+        adapterPendientes = null;
     }
 
     // ------------------------------------------------------------------
@@ -219,6 +234,35 @@ public class HistorialFragment extends Fragment implements OperacionAdapter.List
     // Carga de datos
     // ------------------------------------------------------------------
 
+    /**
+     * Pendientes y después el historial. Los filtros recargan solo el historial:
+     * las pendientes no se filtran. Si fallan las pendientes, se muestra el error
+     * en el lugar de la lista, con el mismo "Reintentar".
+     */
+    private void cargarTodo() {
+        mostrarCarga();
+        repositorio.obtenerPendientesDeEntrega(new RepositorioCallback<List<Operacion>>() {
+            @Override
+            public void onExito(List<Operacion> pendientes) {
+                if (lista == null) {
+                    return; // la vista ya se destruyó
+                }
+                adapterPendientes.mostrar(pendientes, false);
+                bloquePendientes.setVisibility(pendientes.isEmpty() ? View.GONE : View.VISIBLE);
+                cargarHistorial();
+            }
+
+            @Override
+            public void onError(String mensaje) {
+                if (lista == null) {
+                    return;
+                }
+                bloquePendientes.setVisibility(View.GONE);
+                mostrarError(mensaje);
+            }
+        });
+    }
+
     private void cargarHistorial() {
         mostrarCarga();
         repositorio.obtenerHistorial(filtro, new RepositorioCallback<List<Operacion>>() {
@@ -277,6 +321,41 @@ public class HistorialFragment extends Fragment implements OperacionAdapter.List
     @Override
     public void onCalificarClick(Operacion operacion) {
         CalificarBottomSheet.nueva(operacion).show(getChildFragmentManager(), TAG_CALIFICAR);
+    }
+
+    /** Se pide confirmación: una vez registrada, la entrega no se puede deshacer. */
+    @Override
+    public void onConfirmarEntregaClick(Operacion operacion) {
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.historial_confirmar_entrega_titulo)
+                .setMessage(R.string.historial_confirmar_entrega_mensaje)
+                .setNegativeButton(R.string.dialogo_cancelar, null)
+                .setPositiveButton(R.string.historial_confirmar_entrega,
+                        (dialogo, boton) -> confirmarEntrega(operacion))
+                .show();
+    }
+
+    /** Si sale bien se recarga todo: la operación deja las pendientes y pasa al historial. */
+    private void confirmarEntrega(Operacion operacion) {
+        repositorio.confirmarEntrega(operacion.getId(), new RepositorioCallback<Operacion>() {
+            @Override
+            public void onExito(Operacion actualizada) {
+                if (lista == null) {
+                    return; // la vista ya se destruyó
+                }
+                Snackbar.make(requireView(), R.string.historial_entrega_confirmada,
+                        Snackbar.LENGTH_SHORT).show();
+                cargarTodo();
+            }
+
+            @Override
+            public void onError(String mensaje) {
+                if (lista == null) {
+                    return;
+                }
+                Snackbar.make(requireView(), mensaje, Snackbar.LENGTH_LONG).show();
+            }
+        });
     }
 
     @Override

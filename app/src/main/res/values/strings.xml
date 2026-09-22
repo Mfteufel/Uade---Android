@@ -392,6 +392,15 @@
     <string name="historial_calificar_hasta">Podés calificar hasta el %1$s</string>
     <string name="historial_ya_calificaste">Calificaste con</string>
     <string name="historial_plazo_vencido">El plazo de 7 días para calificar ya venció</string>
+    <string name="historial_titulo_pendientes">Pendientes de entrega</string>
+    <string name="historial_titulo_concretadas">Historial</string>
+    <string name="historial_pendiente_entrega">Pendiente de entrega</string>
+    <string name="historial_ya_recibiste">¿Ya recibiste el artículo?</string>
+    <string name="historial_esperando_entrega">Esperando que el comprador confirme la entrega</string>
+    <string name="historial_confirmar_entrega">Confirmar entrega</string>
+    <string name="historial_confirmar_entrega_titulo">¿Recibiste el artículo?</string>
+    <string name="historial_confirmar_entrega_mensaje">Al confirmar la entrega la operación queda concretada y desde hoy los dos tienen 7 días para calificarse.</string>
+    <string name="historial_entrega_confirmada">Entrega confirmada. Ya podés calificar</string>
     <string name="historial_vacio">Todavía no concretaste operaciones</string>
     <string name="historial_vacio_con_filtros">No hay operaciones con estos filtros</string>
     <string name="calificar_titulo">Calificá a %1$s</string>

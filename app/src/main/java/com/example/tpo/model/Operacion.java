@@ -6,7 +6,8 @@ import java.io.Serializable;
 
 /**
  * Una operación entre comprador y vendedor (Punto 9): nace cuando el vendedor
- * acepta una oferta (Punto 7) y se concreta con la entrega en mano (Punto 8).
+ * acepta una oferta (Punto 7) y se concreta cuando el comprador confirma que
+ * recibió el artículo.
  * <p>
  * Modela exactamente lo que el servidor devuelve en {@code GET /operaciones}: los
  * datos de la operación más tres campos calculados <em>para el usuario que
@@ -31,8 +32,13 @@ public class Operacion implements Serializable {
     /** Precio final acordado (el de la oferta o contraoferta aceptada), en pesos. */
     private final double montoFinal;
 
-    /** Cuándo se cerró el trato (oferta aceptada), en milisegundos desde epoch. */
-    private final long fechaOperacion;
+    /**
+     * Cuándo se cerró el trato (oferta aceptada), en milisegundos desde epoch, o
+     * {@code null} si no se conoce: el backend no guarda la fecha de aceptación,
+     * porque la fecha que importa para el historial y la reputación es la de entrega.
+     */
+    @Nullable
+    private final Long fechaOperacion;
 
     /** Cuándo se confirmó la entrega, o {@code null} si todavía no se entregó. */
     @Nullable
@@ -61,7 +67,7 @@ public class Operacion implements Serializable {
                      @Nullable String publicacionId,
                      String tituloArticulo,
                      double montoFinal,
-                     long fechaOperacion,
+                     @Nullable Long fechaOperacion,
                      @Nullable Long fechaEntrega,
                      EstadoOperacion estado,
                      UsuarioResumen comprador,
@@ -102,7 +108,8 @@ public class Operacion implements Serializable {
         return montoFinal;
     }
 
-    public long getFechaOperacion() {
+    @Nullable
+    public Long getFechaOperacion() {
         return fechaOperacion;
     }
 
@@ -145,6 +152,18 @@ public class Operacion implements Serializable {
         return puedeCalificar;
     }
 
+    public boolean estaPendienteDeEntrega() {
+        return estado == EstadoOperacion.PENDIENTE_ENTREGA;
+    }
+
+    /**
+     * Solo el comprador confirma la entrega: es quien sabe que recibió el artículo.
+     * El servidor vuelve a validarlo; esto es para mostrar u ocultar el botón.
+     */
+    public boolean puedeConfirmarEntrega() {
+        return tipo == TipoOperacion.COMPRA && estaPendienteDeEntrega();
+    }
+
     @Nullable
     public Long getCalificableHasta() {
         return calificableHasta;
@@ -152,9 +171,11 @@ public class Operacion implements Serializable {
 
     /**
      * Fecha con la que se muestra y se filtra la operación en el historial: la de
-     * entrega, que es cuando se concretó. Si todavía no se entregó, la del acuerdo.
+     * entrega, que es cuando se concretó. Si todavía no se entregó, la del acuerdo,
+     * que puede no conocerse ({@code null}).
      */
-    public long getFechaReferencia() {
+    @Nullable
+    public Long getFechaReferencia() {
         return fechaEntrega != null ? fechaEntrega : fechaOperacion;
     }
 }

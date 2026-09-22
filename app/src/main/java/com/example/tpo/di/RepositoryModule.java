@@ -39,12 +39,12 @@ public class RepositoryModule {
     /**
      * false = datos simulados ({@code BaseDeDatosMock}); true = API REST.
      * <p>
-     * Cada repositorio tiene su propio switch: el perfil (Punto 2) ya tiene sus
-     * endpoints en el backend, pero {@code /operaciones} (Punto 9) todavía no
-     * existe, así que el historial y las calificaciones siguen simulados.
+     * Cada repositorio tiene su propio switch. {@code /operaciones} (Punto 9)
+     * necesita el backend de {@code feature/punto9-backend} desplegado: contra un
+     * servidor sin esos endpoints el historial muestra el error, sin romperse.
      */
     private static final boolean USAR_API_PERFIL = true;
-    private static final boolean USAR_API_OPERACIONES = false;
+    private static final boolean USAR_API_OPERACIONES = true;
 
     @Provides
     @Singleton

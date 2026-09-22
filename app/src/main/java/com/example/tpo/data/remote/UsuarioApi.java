@@ -1,8 +1,11 @@
 package com.example.tpo.data.remote;
 
 import com.example.tpo.data.remote.dto.ActualizarPerfilRequest;
+import com.example.tpo.data.remote.dto.CalificacionResponse;
 import com.example.tpo.data.remote.dto.PaginaPublicacionesResponse;
 import com.example.tpo.data.remote.dto.UsuarioResponse;
+
+import java.util.List;
 
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -21,9 +24,8 @@ import retrofit2.http.Url;
  * {@code login/NetworkModule}, que ya agrega {@code Authorization: Bearer} en
  * cada request. Ningún Fragment la conoce: la usa {@code PerfilRepositoryApi}.
  * <p>
- * El backend todavía no tiene endpoints de foto de perfil ni de calificaciones
- * recibidas: por eso no se declaran acá, así ninguna pantalla puede disparar un
- * pedido que sabemos que responde 404.
+ * El backend todavía no tiene endpoint de foto de perfil: por eso no se declara
+ * acá, así ninguna pantalla puede disparar un pedido que sabemos que responde 404.
  */
 public interface UsuarioApi {
 
@@ -39,6 +41,10 @@ public interface UsuarioApi {
 
     @GET("usuarios/{id}")
     Call<UsuarioResponse> obtenerPerfilPublico(@Path("id") String usuarioId);
+
+    /** Calificaciones que recibió el usuario, más recientes primero (Punto 9). */
+    @GET("usuarios/{id}/calificaciones")
+    Call<List<CalificacionResponse>> obtenerCalificacionesRecibidas(@Path("id") String usuarioId);
 
     /**
      * Publicaciones de un vendedor, para su perfil público. Es el mismo listado

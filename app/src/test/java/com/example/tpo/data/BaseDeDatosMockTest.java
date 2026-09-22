@@ -7,6 +7,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.example.tpo.model.Calificacion;
+import com.example.tpo.model.EstadoOperacion;
 import com.example.tpo.model.FiltroOperaciones;
 import com.example.tpo.model.Operacion;
 import com.example.tpo.model.Reputacion;
@@ -180,6 +181,47 @@ public class BaseDeDatosMockTest {
     @Test(expected = IllegalArgumentException.class)
     public void nadiePuedeComprarseASiMismo() {
         base.crearOperacion(null, "Bici", "a", "a", 100, AHORA);
+    }
+
+    // ------------------------------------------------------------------
+    // Entrega
+    // ------------------------------------------------------------------
+
+    @Test
+    public void soloElCompradorConfirmaLaEntregaYUnaSolaVez() {
+        String id = base.crearOperacion("p1", "Bicicleta", "a", "b", 85000, AHORA - DIA);
+
+        assertEquals("Solo el comprador puede confirmar la entrega", base.validarEntrega(id, "b"));
+        assertEquals("No participaste de esta operación", base.validarEntrega(id, "c"));
+        assertNull(base.validarEntrega(id, "a"));
+
+        Operacion entregada = base.confirmarEntrega(id, "a", AHORA);
+        assertEquals(EstadoOperacion.ENTREGADA, entregada.getEstado());
+        assertTrue(entregada.puedeCalificar());
+        assertEquals("La entrega ya estaba confirmada", base.validarEntrega(id, "a"));
+    }
+
+    @Test
+    public void unaVentaSinEntregaVaAPendientesYNoSumaHastaQueElCompradorConfirma() {
+        String id = base.crearOperacion("p1", "Bicicleta", "a", "b", 85000, AHORA - 30 * DIA);
+
+        // Aceptada pero sin entrega: no es historial ni suma a la reputación.
+        assertTrue(base.historial("a", new FiltroOperaciones(), AHORA).isEmpty());
+        assertEquals(TipoOperacion.COMPRA, base.pendientesDeEntrega("a", AHORA).get(0).getTipo());
+        assertEquals(TipoOperacion.VENTA, base.pendientesDeEntrega("b", AHORA).get(0).getTipo());
+        assertTrue(base.pendientesDeEntrega("c", AHORA).isEmpty());
+        assertEquals(0, base.calcularReputacion("a").getOperacionesComoComprador());
+        assertEquals(0, base.calcularReputacion("b").getOperacionesComoVendedor());
+
+        Operacion entregada = base.confirmarEntrega(id, "a", AHORA);
+
+        assertEquals(id, base.historial("a", new FiltroOperaciones(), AHORA).get(0).getId());
+        assertTrue(base.pendientesDeEntrega("a", AHORA).isEmpty());
+        assertEquals(1, base.calcularReputacion("a").getOperacionesComoComprador());
+        assertEquals(1, base.calcularReputacion("b").getOperacionesComoVendedor());
+        // Los 7 días corren desde la entrega, no desde el acuerdo de hace un mes.
+        assertEquals(AHORA + 7 * DIA, (long) entregada.getCalificableHasta());
+        assertTrue(entregada.puedeCalificar());
     }
 
     // ------------------------------------------------------------------

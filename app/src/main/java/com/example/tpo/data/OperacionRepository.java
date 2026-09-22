@@ -15,18 +15,36 @@ import java.util.List;
  * se entregó, si ya se calificó). Las calificaciones <em>recibidas</em> por una
  * persona, en cambio, son parte de su perfil y están en {@link PerfilRepository}.
  * <p>
- * Hilt decide qué implementación se inyecta ({@code di/RepositoryModule}): hoy
- * {@link OperacionRepositoryMock}, después {@link OperacionRepositoryApi}.
+ * Hilt decide qué implementación se inyecta ({@code di/RepositoryModule}):
+ * {@link OperacionRepositoryApi} contra el backend o {@link OperacionRepositoryMock}.
  * Todas las respuestas llegan por callback en el Main Thread.
  */
 public interface OperacionRepository {
 
     /**
-     * Operaciones concretadas del usuario logueado, más recientes primero, vistas
-     * desde su lado (cada una trae si fue COMPRA o VENTA, la contraparte y si se
-     * puede calificar). Equivale a {@code GET /operaciones?tipo=&desde=&hasta=}.
+     * Historial: operaciones concretadas (con la entrega confirmada) del usuario
+     * logueado, vistas desde su lado (cada una trae si fue COMPRA o VENTA, la
+     * contraparte y si se puede calificar). Equivale a
+     * {@code GET /operaciones?tipo=&desde=&hasta=}.
      */
     void obtenerHistorial(FiltroOperaciones filtro, RepositorioCallback<List<Operacion>> callback);
+
+    /**
+     * Ventas aceptadas del usuario logueado que todavía esperan que el comprador
+     * confirme la entrega. No son parte del historial y no se filtran. Equivale a
+     * {@code GET /operaciones/pendientes}.
+     */
+    void obtenerPendientesDeEntrega(RepositorioCallback<List<Operacion>> callback);
+
+    /**
+     * El comprador confirma que recibió el artículo: la operación queda concretada
+     * y desde ese momento corren los 7 días para calificar. El servidor rechaza al
+     * vendedor, a un tercero y una segunda confirmación. Equivale a
+     * {@code POST /operaciones/{id}/entrega}.
+     *
+     * @return por callback, la operación actualizada (ya {@code ENTREGADA}).
+     */
+    void confirmarEntrega(String operacionId, RepositorioCallback<Operacion> callback);
 
     /**
      * Califica a la contraparte de una operación. El servidor es el que valida
