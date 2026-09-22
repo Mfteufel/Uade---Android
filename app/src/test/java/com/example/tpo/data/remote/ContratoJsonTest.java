@@ -10,7 +10,7 @@ import com.example.tpo.data.remote.dto.ActualizarPerfilRequest;
 import com.example.tpo.data.remote.dto.CalificacionResponse;
 import com.example.tpo.data.remote.dto.OperacionResponse;
 import com.example.tpo.data.remote.dto.PaginaPublicacionesResponse;
-import com.example.tpo.data.remote.dto.PublicacionResponse;
+import com.example.tpo.data.remote.dto.PublicacionResumenResponse;
 import com.example.tpo.data.remote.dto.UsuarioResponse;
 import com.example.tpo.model.Calificacion;
 import com.example.tpo.model.Categoria;
@@ -190,7 +190,7 @@ public class ContratoJsonTest {
                 + "\"estadoArticulo\":\"REACONDICIONADO\",\"zona\":\"PALERMO\","
                 + "\"estadoPublicacion\":\"ACTIVA\",\"vendedorId\":\"2\"}";
 
-        assertNull(gson.fromJson(json, PublicacionResponse.class).aModelo());
+        assertNull(gson.fromJson(json, PublicacionResumenResponse.class).aModelo());
     }
 
     /** {@code GET /operaciones}: una venta de Ana ya entregada, que todavía puede calificar. */

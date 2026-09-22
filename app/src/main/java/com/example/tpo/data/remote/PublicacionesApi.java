@@ -19,15 +19,13 @@ import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 /**
- * Contrato con la API_Rest del TPO para el Punto 5 (Publicar artículo).
+ * Contrato con la API real del TPO para el Punto 5 (Publicar artículo).
  * <p>
- * Todavía no existe un backend real: {@link ApiClient#BASE_URL} apunta a un
- * placeholder. Esta interfaz queda lista para que el día que haya una URL de
- * verdad el único cambio sea esa constante (y, si los nombres de campo no
- * coinciden, los DTOs de {@code data.remote.dto}); ni el ViewModel ni las
- * pantallas del wizard dependen de Retrofit directamente.
+ * Se crea sobre el {@code Retrofit} único de {@code login/NetworkModule} (ver
+ * {@code di/RepositoryModule}), así que comparte URL, timeouts y el interceptor
+ * de token con el resto de la app.
  */
-public interface ApiService {
+public interface PublicacionesApi {
 
     /**
      * Crea una publicación. Es {@code Multipart} porque manda archivos (las

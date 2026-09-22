@@ -16,7 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tpo.R;
 import com.example.tpo.data.FavoritoRepository;
-import com.example.tpo.data.FavoritoRepositoryMock;
+import com.example.tpo.data.FavoritoRepositoryApi;
 import com.example.tpo.data.PerfilRepository;
 import com.example.tpo.data.PublicacionesVistas;
 import com.example.tpo.data.RepositorioCallback;
@@ -69,8 +69,7 @@ public class PerfilVendedorFragment extends Fragment
     @Inject
     PerfilRepository perfilRepositorio;
 
-    // Favoritos es de otro punto y todavía no pasa por Hilt.
-    private final FavoritoRepository favoritoRepositorio = FavoritoRepositoryMock.getInstancia();
+    private FavoritoRepository favoritoRepositorio;
 
     private PublicacionesVistas publicacionesVistas;
 
@@ -80,6 +79,7 @@ public class PerfilVendedorFragment extends Fragment
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         publicacionesVistas = PublicacionesVistas.getInstancia(context);
+        favoritoRepositorio = FavoritoRepositoryApi.getInstancia(context);
     }
 
     // --- Vistas. Son null fuera del rango onCreateView..onDestroyView ---

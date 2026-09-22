@@ -9,6 +9,8 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.tpo.R;
+import com.example.tpo.data.SesionUsuario;
+import com.example.tpo.model.OfertaNegociacion;
 import com.example.tpo.util.FormatoUtils;
 
 import java.util.ArrayList;
@@ -19,17 +21,16 @@ import java.util.List;
  * {@code DiffUtil}: la lista es chica y se reemplaza entera en cada carga de tab.
  * <p>
  * Muestra la misma fila para las dos tabs (Enviadas/Recibidas); lo único que cambia
- * es de quién es "la contraparte": en Enviadas es el vendedor de la publicación, en
- * Recibidas es el autor de la oferta. Ese dato no vive en {@link com.example.tpo.model.Oferta}
- * (no guarda el nombre del vendedor), así que {@code soyComprador} decide de dónde sacarlo.
+ * es el texto ("A" vs "De") delante del nombre de la contraparte, resuelto con
+ * {@link OfertaNegociacion#nombreContraparte}.
  */
 public class OfertaAdapter extends RecyclerView.Adapter<OfertaAdapter.OfertaViewHolder> {
 
     public interface OnOfertaClickListener {
-        void onOfertaClick(FilaOferta fila);
+        void onOfertaClick(OfertaNegociacion oferta);
     }
 
-    private final List<FilaOferta> filas = new ArrayList<>();
+    private final List<OfertaNegociacion> ofertas = new ArrayList<>();
     private final OnOfertaClickListener listener;
     private boolean soyComprador;
 
@@ -37,10 +38,10 @@ public class OfertaAdapter extends RecyclerView.Adapter<OfertaAdapter.OfertaView
         this.listener = listener;
     }
 
-    public void reemplazar(List<FilaOferta> nuevas, boolean soyComprador) {
+    public void reemplazar(List<OfertaNegociacion> nuevas, boolean soyComprador) {
         this.soyComprador = soyComprador;
-        filas.clear();
-        filas.addAll(nuevas);
+        ofertas.clear();
+        ofertas.addAll(nuevas);
         notifyDataSetChanged();
     }
 
@@ -53,12 +54,12 @@ public class OfertaAdapter extends RecyclerView.Adapter<OfertaAdapter.OfertaView
 
     @Override
     public void onBindViewHolder(@NonNull OfertaViewHolder holder, int position) {
-        holder.vincular(filas.get(position), soyComprador);
+        holder.vincular(ofertas.get(position), soyComprador);
     }
 
     @Override
     public int getItemCount() {
-        return filas.size();
+        return ofertas.size();
     }
 
     class OfertaViewHolder extends RecyclerView.ViewHolder {
@@ -76,20 +77,18 @@ public class OfertaAdapter extends RecyclerView.Adapter<OfertaAdapter.OfertaView
             estadoOferta = itemView.findViewById(R.id.estadoOferta);
         }
 
-        void vincular(FilaOferta fila, boolean soyComprador) {
-            tituloPublicacionOferta.setText(fila.getPublicacion().getTitulo());
-            montoOferta.setText(FormatoUtils.precio(fila.getOferta().getMonto()));
+        void vincular(OfertaNegociacion oferta, boolean soyComprador) {
+            tituloPublicacionOferta.setText(oferta.getTituloPublicacion());
+            montoOferta.setText(FormatoUtils.precio(oferta.getPrecio()));
             estadoOferta.setText(estadoOferta.getContext()
-                    .getString(fila.getOferta().getEstado().getEtiqueta()));
+                    .getString(oferta.getEstado().getEtiqueta()));
 
-            String nombreContraparte = soyComprador
-                    ? fila.getPublicacion().getVendedor().getNombre()
-                    : fila.getOferta().getAutorNombre();
+            String idUsuario = SesionUsuario.getInstancia().getUsuarioId();
             contraparteOferta.setText(contraparteOferta.getContext().getString(
                     soyComprador ? R.string.item_oferta_a : R.string.item_oferta_de,
-                    nombreContraparte));
+                    oferta.nombreContraparte(idUsuario)));
 
-            itemView.setOnClickListener(v -> listener.onOfertaClick(fila));
+            itemView.setOnClickListener(v -> listener.onOfertaClick(oferta));
         }
     }
 }

@@ -11,7 +11,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
@@ -22,16 +21,18 @@ import androidx.navigation.Navigation;
 
 import com.example.tpo.R;
 import com.example.tpo.data.FavoritoRepository;
-import com.example.tpo.data.FavoritoRepositoryMock;
-import com.example.tpo.data.OfertasPublicacion;
-import com.example.tpo.data.PreguntasPublicacion;
+import com.example.tpo.data.FavoritoRepositoryApi;
+import com.example.tpo.data.OfertasRepository;
+import com.example.tpo.data.PreguntaRepository;
+import com.example.tpo.data.PreguntaRepositoryApi;
 import com.example.tpo.data.PublicacionRepository;
-import com.example.tpo.data.PublicacionRepositoryMock;
+import com.example.tpo.data.PublicacionRepositoryApi;
+import com.example.tpo.data.PublicacionesVistas;
 import com.example.tpo.data.RepositorioCallback;
 import com.example.tpo.data.SesionUsuario;
 import com.example.tpo.model.EstadoOferta;
 import com.example.tpo.model.EstadoPublicacion;
-import com.example.tpo.model.Oferta;
+import com.example.tpo.model.OfertaNegociacion;
 import com.example.tpo.model.Pregunta;
 import com.example.tpo.model.Publicacion;
 import com.example.tpo.model.Vendedor;
@@ -39,6 +40,7 @@ import com.example.tpo.ui.VendedorUi;
 import com.example.tpo.ui.perfil.PerfilVendedorFragment;
 import com.example.tpo.util.ConectividadUtils;
 import com.example.tpo.util.FormatoUtils;
+import com.example.tpo.util.ImagenRemota;
 import com.example.tpo.util.MapaUtils;
 import com.example.tpo.util.TextoUtils;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -49,7 +51,12 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import javax.inject.Inject;
+
+import dagger.hilt.android.AndroidEntryPoint;
 
 /**
  * Detalle de publicación — Punto 4 del TPO.
@@ -68,6 +75,7 @@ import java.util.List;
  * rol se decide comparando el id del vendedor contra el del usuario logueado
  * (no el nombre, que puede repetirse entre personas distintas).
  */
+@AndroidEntryPoint
 public class DetalleFragment extends Fragment {
 
     private static final String ARG_PUBLICACION_ID = "publicacionId";
@@ -77,18 +85,17 @@ public class DetalleFragment extends Fragment {
     /** La oferta tiene que llegar al menos a esta fracción del precio publicado. */
     private static final double PROPORCION_MINIMA_OFERTA = 0.5;
 
-    private final PublicacionRepository repositorio = PublicacionRepositoryMock.getInstancia();
-    private final FavoritoRepository favoritoRepositorio = FavoritoRepositoryMock.getInstancia();
+    private PublicacionRepository repositorio;
+    private FavoritoRepository favoritoRepositorio;
+
+    /** Lo inyecta Hilt: manda y lee ofertas contra el backend real (Punto 7). */
+    @Inject
+    OfertasRepository ofertasRepository;
+
     private String publicacionId;
 
-    /**
-     * Las dos necesitan un {@code Context} para Room, que todavía no existe cuando se
-     * inicializan los campos del Fragment; por eso se obtienen recién en {@link #onAttach},
-     * que es el primer momento del ciclo de vida en el que hay uno disponible (mismo patrón
-     * que {@code MisPublicacionesFragment.onAttach()}, Punto 5).
-     */
-    private PreguntasPublicacion preguntasPublicacion;
-    private OfertasPublicacion ofertasPublicacion;
+    private PreguntaRepository preguntaRepository;
+    private PublicacionesVistas publicacionesVistas;
 
     /** Última publicación cargada. La usan el ítem de menú y los diálogos, que viven fuera del callback. */
     @Nullable
@@ -144,8 +151,10 @@ public class DetalleFragment extends Fragment {
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
-        preguntasPublicacion = PreguntasPublicacion.getInstancia(context);
-        ofertasPublicacion = OfertasPublicacion.getInstancia(context);
+        preguntaRepository = PreguntaRepositoryApi.getInstancia(context);
+        publicacionesVistas = PublicacionesVistas.getInstancia(context);
+        repositorio = PublicacionRepositoryApi.getInstancia(context);
+        favoritoRepositorio = FavoritoRepositoryApi.getInstancia(context);
     }
 
     @Override
@@ -315,6 +324,10 @@ public class DetalleFragment extends Fragment {
 
     private void cargarPublicacion() {
         mostrarCarga();
+        if (!ConectividadUtils.hayConexion(requireContext())) {
+            mostrarPublicacionSinConexion();
+            return;
+        }
         repositorio.obtenerPublicacion(publicacionId, new RepositorioCallback<Publicacion>() {
             @Override
             public void onExito(Publicacion resultado) {
@@ -330,6 +343,27 @@ public class DetalleFragment extends Fragment {
                     return;
                 }
                 mostrarError(mensaje);
+            }
+        });
+    }
+
+    private void mostrarPublicacionSinConexion() {
+        publicacionesVistas.obtenerVista(publicacionId, new RepositorioCallback<Publicacion>() {
+            @Override
+            public void onExito(Publicacion resultado) {
+                if (scrollContenido == null) {
+                    return;
+                }
+                mostrarPublicacion(resultado);
+                mostrarSnackbar(getString(R.string.detalle_mostrando_sin_conexion));
+            }
+
+            @Override
+            public void onError(String mensaje) {
+                if (scrollContenido == null) {
+                    return;
+                }
+                mostrarError(getString(R.string.detalle_sin_conexion_sin_cache));
             }
         });
     }
@@ -360,7 +394,7 @@ public class DetalleFragment extends Fragment {
     private void mostrarPublicacion(Publicacion publicacion) {
         publicacionCargada = publicacion;
 
-        mostrarGaleria(publicacion.getCantidadFotos());
+        mostrarGaleria(publicacion);
 
         tituloDetalle.setText(publicacion.getTitulo());
         precioDetalle.setText(FormatoUtils.precio(publicacion.getPrecio()));
@@ -396,17 +430,24 @@ public class DetalleFragment extends Fragment {
     }
 
     /**
-     * Llena la galería con un placeholder por foto (sin swipe, ver
-     * dimens/detalle_foto_tamano) y arma el contador ("2 de 3"), con una
-     * contentDescription distinta por foto para TalkBack.
+     * Llena la galería: una foto real por URL si la publicación las tiene
+     * (backend real), o un placeholder por {@code cantidadFotos} si no (catálogo
+     * de prueba, sin fotos reales) — sin swipe, ver dimens/detalle_foto_tamano.
+     * Arma también el contador ("2 de 3"), con una contentDescription distinta
+     * por foto para TalkBack.
      */
-    private void mostrarGaleria(int cantidadFotos) {
+    private void mostrarGaleria(Publicacion publicacion) {
         grupoFotos.removeAllViews();
-        cantidadFotosGaleria = Math.max(cantidadFotos, 1);
+        List<String> fotos = publicacion.getFotos();
+        boolean hayFotosReales = !fotos.isEmpty();
+        cantidadFotosGaleria = hayFotosReales
+                ? fotos.size()
+                : Math.max(publicacion.getCantidadFotos(), 1);
         LayoutInflater inflater = LayoutInflater.from(requireContext());
         for (int i = 0; i < cantidadFotosGaleria; i++) {
             ImageView foto = (ImageView) inflater.inflate(R.layout.item_foto_detalle, grupoFotos, false);
             foto.setContentDescription(getString(R.string.detalle_foto_numero, i + 1, cantidadFotosGaleria));
+            ImagenRemota.cargarEn(foto, hayFotosReales ? fotos.get(i) : null, R.drawable.ic_imagen);
             grupoFotos.addView(foto);
         }
         scrollFotos.scrollTo(0, 0);
@@ -464,12 +505,12 @@ public class DetalleFragment extends Fragment {
             // lo ve del otro lado, en "Gestionar publicación".
             bloqueMisInteracciones.setVisibility(View.GONE);
             // Es su propia dirección: la ve siempre, no depende de ninguna oferta.
-            mostrarPuntoEntrega(publicacion, true);
+            mostrarPuntoEntrega(publicacion.getDireccionEntrega(), true);
             return;
         }
 
         actualizarIconoGuardar();
-        mostrarMisInteracciones(publicacion);
+        mostrarInteracciones(publicacion);
         if (activa) {
             textoRolAviso.setVisibility(View.GONE);
             // Preguntar y ofertar requieren conexión.
@@ -494,65 +535,91 @@ public class DetalleFragment extends Fragment {
     }
 
     // ------------------------------------------------------------------
-    // Lo que el interesado ya le envió al vendedor
+    // Preguntas (públicas) y mi oferta (privada)
     // ------------------------------------------------------------------
 
     /**
-     * Muestra las preguntas y la oferta vigente que el usuario logueado ya le
-     * mandó al vendedor sobre esta publicación. Si no mandó nada, el bloque
-     * entero queda oculto. No se llama para el propio vendedor: sus
+     * Muestra las preguntas de la publicación (públicas: las hizo quien las
+     * hizo, cualquiera que mira la publicación las ve, junto con la respuesta
+     * del vendedor si ya la contestó — mismo criterio que cualquier
+     * marketplace) y la oferta vigente que el usuario logueado le mandó al
+     * vendedor (esa sí es privada). No se llama para el propio vendedor: sus
      * preguntas/ofertas recibidas se ven desde "Gestionar publicación", no acá.
      * <p>
-     * Las dos consultas están anidadas (la de oferta arranca en el
-     * {@code onExito} de la de preguntas) y no en paralelo: son lecturas locales
-     * de Room sobre datasets chicos, así que el costo de encadenarlas es
-     * despreciable, y anidarlas evita coordinar dos callbacks independientes
-     * para saber cuándo terminaron los dos.
+     * Las dos consultas van contra el backend real y están anidadas (la de
+     * oferta arranca en el {@code onExito} de la de preguntas): son lecturas
+     * chicas y anidarlas evita coordinar dos callbacks independientes para
+     * saber cuándo terminaron los dos. Las ofertas salen de
+     * {@code GET /ofertas/enviadas} (todas las del usuario, se filtra por esta
+     * publicación) — mismo criterio de filtrado client-side que ya usa
+     * {@code OfertasRepositoryRemoto} para separar enviadas/recibidas.
      */
-    private void mostrarMisInteracciones(Publicacion publicacion) {
-        String idUsuario = SesionUsuario.getInstancia().getIdUsuario();
-        preguntasPublicacion.delUsuario(publicacion.getId(), idUsuario,
+    private void mostrarInteracciones(Publicacion publicacion) {
+        preguntaRepository.deLaPublicacion(publicacion.getId(),
                 new RepositorioCallback<List<Pregunta>>() {
                     @Override
-                    public void onExito(List<Pregunta> misPreguntas) {
+                    public void onExito(List<Pregunta> preguntas) {
                         if (grupoMisInteracciones == null) {
                             return; // la vista ya se destruyó
                         }
-                        ofertasPublicacion.delUsuario(publicacion.getId(), idUsuario,
-                                new RepositorioCallback<Oferta>() {
-                                    @Override
-                                    public void onExito(Oferta miOferta) {
-                                        if (grupoMisInteracciones == null) {
-                                            return;
-                                        }
-                                        pintarMisInteracciones(publicacion, misPreguntas, miOferta);
-                                    }
-
-                                    @Override
-                                    public void onError(String mensaje) {
-                                        // No hay nada que romper: si falla, el bloque de "lo
-                                        // mío" simplemente no se completa con la oferta.
-                                    }
-                                });
+                        cargarMiOferta(publicacion, preguntas);
                     }
 
                     @Override
                     public void onError(String mensaje) {
+                        // No hay nada que romper: si falla, el bloque simplemente
+                        // no se completa con las preguntas.
+                        cargarMiOferta(publicacion, new ArrayList<>());
                     }
                 });
     }
 
-    private void pintarMisInteracciones(Publicacion publicacion, List<Pregunta> misPreguntas,
-                                        @Nullable Oferta miOferta) {
+    private void cargarMiOferta(Publicacion publicacion, List<Pregunta> preguntas) {
+        if (grupoMisInteracciones == null) {
+            return;
+        }
+        ofertasRepository.enviadas(new RepositorioCallback<List<OfertaNegociacion>>() {
+            @Override
+            public void onExito(List<OfertaNegociacion> todas) {
+                if (grupoMisInteracciones == null) {
+                    return;
+                }
+                pintarInteracciones(publicacion, preguntas, ultimaOfertaDe(todas, publicacion.getId()));
+            }
+
+            @Override
+            public void onError(String mensaje) {
+                // Ídem: sin oferta propia, no rompe el resto del bloque.
+                if (grupoMisInteracciones != null) {
+                    pintarInteracciones(publicacion, preguntas, null);
+                }
+            }
+        });
+    }
+
+    /** La más reciente entre las ofertas del usuario logueado sobre esta publicación, si hay alguna. */
+    @Nullable
+    private static OfertaNegociacion ultimaOfertaDe(List<OfertaNegociacion> ofertas, String publicacionId) {
+        for (OfertaNegociacion oferta : ofertas) {
+            // enviadas() ya viene ordenada "más recientes primero" (docs/ofertas-api.md).
+            if (oferta.getPublicacionId().equals(publicacionId)) {
+                return oferta;
+            }
+        }
+        return null;
+    }
+
+    private void pintarInteracciones(Publicacion publicacion, List<Pregunta> preguntas,
+                                     @Nullable OfertaNegociacion miOferta) {
         grupoMisInteracciones.removeAllViews();
         LayoutInflater inflater = LayoutInflater.from(requireContext());
+        String idUsuario = SesionUsuario.getInstancia().getIdUsuario();
 
-        if (!misPreguntas.isEmpty()) {
+        if (!preguntas.isEmpty()) {
             grupoMisInteracciones.addView(
-                    inflarEncabezado(inflater, R.string.detalle_mis_preguntas_titulo));
-            for (Pregunta pregunta : misPreguntas) {
-                grupoMisInteracciones.addView(inflarFilaInteraccion(
-                        inflater, R.drawable.ic_preguntar, pregunta.getTexto(), pregunta.getFecha()));
+                    inflarEncabezado(inflater, R.string.detalle_preguntas_titulo));
+            for (Pregunta pregunta : preguntas) {
+                grupoMisInteracciones.addView(inflarFilaPregunta(inflater, pregunta, idUsuario));
             }
         }
         if (miOferta != null) {
@@ -562,20 +629,24 @@ public class DetalleFragment extends Fragment {
             // antigüedad para que se note en pantalla por qué se desbloqueó (o no)
             // el punto de entrega, sin tener que ir hasta "Mis ofertas".
             String antiguedadYEstado = getString(R.string.detalle_mi_oferta_estado,
-                    FormatoUtils.antiguedad(requireContext(), miOferta.getFecha()),
+                    FormatoUtils.antiguedad(requireContext(), miOferta.getFechaCreacion()),
                     getString(miOferta.getEstado().getEtiqueta()));
             View filaOferta = inflater.inflate(R.layout.item_interaccion, grupoMisInteracciones, false);
             ((ImageView) filaOferta.findViewById(R.id.iconoInteraccion)).setImageResource(R.drawable.ic_ofertar);
             ((TextView) filaOferta.findViewById(R.id.textoInteraccion))
-                    .setText(FormatoUtils.precio(miOferta.getMonto()));
+                    .setText(FormatoUtils.precio(miOferta.getPrecio()));
             ((TextView) filaOferta.findViewById(R.id.autorInteraccion)).setText(antiguedadYEstado);
             grupoMisInteracciones.addView(filaOferta);
         }
 
-        boolean hayAlgoQueMostrar = !misPreguntas.isEmpty() || miOferta != null;
+        boolean hayAlgoQueMostrar = !preguntas.isEmpty() || miOferta != null;
         bloqueMisInteracciones.setVisibility(hayAlgoQueMostrar ? View.VISIBLE : View.GONE);
 
-        mostrarPuntoEntrega(publicacion, puedeVerPuntoDeEntrega(miOferta));
+        // Antes de tener una oferta ACEPTADA no hay ninguna dirección que mostrar
+        // ni siquiera bloqueada: el backend no la manda (routers/ofertas.py) hasta
+        // ese momento, así que no hay forma de anticipar si existe una cargada.
+        String direccion = puedeVerPuntoDeEntrega(miOferta) ? miOferta.getDireccionEntrega() : null;
+        mostrarPuntoEntrega(direccion, direccion != null);
     }
 
     private View inflarEncabezado(LayoutInflater inflater, @StringRes int texto) {
@@ -585,17 +656,34 @@ public class DetalleFragment extends Fragment {
         return encabezado;
     }
 
-    /** Fila de {@code item_interaccion.xml} para "lo mío": sin nombre de autor, solo la antigüedad. */
-    private View inflarFilaInteraccion(LayoutInflater inflater,
-                                       @DrawableRes int icono,
-                                       String texto,
-                                       long fecha) {
-        View fila = inflater.inflate(R.layout.item_interaccion, grupoMisInteracciones, false);
-        ((ImageView) fila.findViewById(R.id.iconoInteraccion)).setImageResource(icono);
-        ((TextView) fila.findViewById(R.id.textoInteraccion)).setText(texto);
-        ((TextView) fila.findViewById(R.id.autorInteraccion))
-                .setText(FormatoUtils.antiguedad(requireContext(), fecha));
-        return fila;
+    /**
+     * Fila de una pregunta pública: autor (o "Vos" si es la del usuario
+     * logueado) y antigüedad, igual que ya se arma en
+     * {@code item_zona_y_fecha}. Si el vendedor ya la contestó, se agrega una
+     * segunda fila indentada con la respuesta, mismo layout con otro ícono.
+     */
+    private View inflarFilaPregunta(LayoutInflater inflater, Pregunta pregunta, String idUsuario) {
+        boolean esMia = pregunta.getAutorId().equals(idUsuario);
+        String autor = esMia ? getString(R.string.detalle_pregunta_autor_vos) : pregunta.getAutorNombre();
+        String autorYFecha = getString(R.string.item_zona_y_fecha, autor,
+                FormatoUtils.antiguedad(requireContext(), pregunta.getFecha()));
+
+        View grupo = inflater.inflate(R.layout.item_pregunta_publica, grupoMisInteracciones, false);
+        ((TextView) grupo.findViewById(R.id.textoInteraccion)).setText(pregunta.getTexto());
+        ((TextView) grupo.findViewById(R.id.autorInteraccion)).setText(autorYFecha);
+
+        View filaRespuesta = grupo.findViewById(R.id.filaRespuestaPregunta);
+        if (pregunta.tieneRespuesta()) {
+            ((TextView) grupo.findViewById(R.id.textoRespuestaPregunta)).setText(pregunta.getRespuesta());
+            ((TextView) grupo.findViewById(R.id.autorRespuestaPregunta)).setText(
+                    getString(R.string.item_zona_y_fecha,
+                            getString(R.string.detalle_pregunta_autor_vendedor),
+                            FormatoUtils.antiguedad(requireContext(), pregunta.getRespuestaFecha())));
+            filaRespuesta.setVisibility(View.VISIBLE);
+        } else {
+            filaRespuesta.setVisibility(View.GONE);
+        }
+        return grupo;
     }
 
     // ------------------------------------------------------------------
@@ -603,18 +691,19 @@ public class DetalleFragment extends Fragment {
     // ------------------------------------------------------------------
 
     /**
-     * Pinta el bloque de punto de entrega. Si la publicación no tiene
-     * dirección cargada todavía, el bloque entero queda oculto: no tiene sentido
-     * mostrar ni siquiera el aviso de "bloqueada" si no hay ninguna dirección
-     * esperando del otro lado.
-     * Si sí hay dirección, se ve o el aviso de bloqueado o la dirección real
-     * con su botón, nunca los dos juntos.
+     * Pinta el bloque de punto de entrega a partir de la dirección que le pasa
+     * cada caller (el dueño la tiene siempre disponible en su propia
+     * publicación; el interesado recién la recibe del backend cuando su oferta
+     * queda {@code ACEPTADA}, ver {@link #pintarInteracciones}). Si no hay
+     * dirección, el bloque entero queda oculto: no tiene sentido mostrar ni
+     * siquiera el aviso de "bloqueada" si no hay ninguna esperando del otro
+     * lado — y para el interesado sin oferta aceptada tampoco hay forma de
+     * saber si existe, porque el backend no la manda hasta ese momento.
      */
-    private void mostrarPuntoEntrega(Publicacion publicacion, boolean desbloqueado) {
+    private void mostrarPuntoEntrega(@Nullable String direccion, boolean desbloqueado) {
         if (bloquePuntoEntrega == null) {
             return; // la vista ya se destruyó
         }
-        String direccion = publicacion.getDireccionEntrega();
         if (!MapaUtils.tieneDireccion(direccion)) {
             bloquePuntoEntrega.setVisibility(View.GONE);
             return;
@@ -644,7 +733,7 @@ public class DetalleFragment extends Fragment {
      * ya sea porque el vendedor aceptó su oferta original o porque él aceptó
      * una contraoferta del vendedor.
      */
-    private boolean puedeVerPuntoDeEntrega(@Nullable Oferta oferta) {
+    private boolean puedeVerPuntoDeEntrega(@Nullable OfertaNegociacion oferta) {
         return oferta != null && oferta.getEstado() == EstadoOferta.ACEPTADA;
     }
 
@@ -746,48 +835,26 @@ public class DetalleFragment extends Fragment {
         dialogo.show();
     }
 
+    /**
+     * A diferencia de la versión anterior (Room), no hay pre-chequeo local de "ya
+     * ofertaste": el backend real ya valida una sola oferta PENDIENTE por
+     * publicación y devuelve 409 con el mensaje si se repite (ver
+     * {@code docs/ofertas-api.md}) — se muestra directo, en {@link #registrarOferta}.
+     */
     private void mostrarDialogoOferta(Publicacion publicacion) {
-        // Si ya había una oferta hecha, se avisa: mandar una nueva la reemplaza. Se pide
-        // primero y se arma el diálogo recién en el callback: mostrarlo antes y completar
-        // el aviso después dejaría ver el diálogo "saltar" apenas se abre.
-        ofertasPublicacion.delUsuario(publicacion.getId(), SesionUsuario.getInstancia().getIdUsuario(),
-                new RepositorioCallback<Oferta>() {
-                    @Override
-                    public void onExito(Oferta ofertaVigente) {
-                        if (barraAcciones == null) {
-                            return; // la vista ya se destruyó
-                        }
-                        armarYMostrarDialogoOferta(publicacion, ofertaVigente);
-                    }
-
-                    @Override
-                    public void onError(String mensaje) {
-                        if (barraAcciones == null) {
-                            return;
-                        }
-                        // No bloquea la acción principal: se muestra el diálogo igual, solo
-                        // que sin el aviso de "ya ofertaste".
-                        armarYMostrarDialogoOferta(publicacion, null);
-                    }
-                });
+        armarYMostrarDialogoOferta(publicacion);
     }
 
-    private void armarYMostrarDialogoOferta(Publicacion publicacion, @Nullable Oferta ofertaVigente) {
+    private void armarYMostrarDialogoOferta(Publicacion publicacion) {
         View contenido = LayoutInflater.from(requireContext())
                 .inflate(R.layout.dialogo_oferta, null, false);
         TextView precioPedido = contenido.findViewById(R.id.textoPrecioPedido);
-        TextView textoOfertaVigente = contenido.findViewById(R.id.textoOfertaVigente);
         TextInputLayout input = contenido.findViewById(R.id.inputOferta);
         TextInputEditText campo = contenido.findViewById(R.id.campoOferta);
+        TextInputEditText campoMensaje = contenido.findViewById(R.id.campoMensajeOferta);
 
         precioPedido.setText(getString(R.string.detalle_oferta_ayuda,
                 FormatoUtils.precio(publicacion.getPrecio())));
-
-        if (ofertaVigente != null) {
-            textoOfertaVigente.setText(getString(
-                    R.string.detalle_oferta_vigente, FormatoUtils.precio(ofertaVigente.getMonto())));
-            textoOfertaVigente.setVisibility(View.VISIBLE);
-        }
 
         double minimo = publicacion.getPrecio() * PROPORCION_MINIMA_OFERTA;
 
@@ -830,9 +897,8 @@ public class DetalleFragment extends Fragment {
                     input.setError(null);
                     dialogo.dismiss();
 
-                    registrarOferta(publicacion, monto);
-                    mostrarSnackbar(getString(R.string.detalle_oferta_enviada,
-                            FormatoUtils.precio(monto), publicacion.getVendedor().getNombre()));
+                    String mensaje = leerTexto(campoMensaje);
+                    registrarOferta(publicacion, monto, mensaje.isEmpty() ? null : mensaje);
                 }));
 
         dialogoActivo = dialogo;
@@ -845,22 +911,18 @@ public class DetalleFragment extends Fragment {
         return contenido == null ? "" : contenido.toString().trim();
     }
 
-    /** Guarda la pregunta en Room y refresca "lo que ya le enviaste" de la pantalla. */
+    /** Manda la pregunta al backend real y refresca el bloque de preguntas de la pantalla. */
     private void registrarPregunta(String texto) {
         if (publicacionCargada == null) {
             return; // no debería pasar: el diálogo solo se abre con una publicación cargada
         }
-        SesionUsuario sesion = SesionUsuario.getInstancia();
-        Pregunta pregunta = new Pregunta(
-                publicacionCargada.getId(), sesion.getIdUsuario(), sesion.getNombre(),
-                texto, System.currentTimeMillis());
-        preguntasPublicacion.agregar(pregunta, new RepositorioCallback<Void>() {
+        preguntaRepository.crear(publicacionCargada.getId(), texto, new RepositorioCallback<Pregunta>() {
             @Override
-            public void onExito(Void resultado) {
+            public void onExito(Pregunta resultado) {
                 if (grupoMisInteracciones == null) {
                     return;
                 }
-                mostrarMisInteracciones(publicacionCargada);
+                mostrarInteracciones(publicacionCargada);
             }
 
             @Override
@@ -873,32 +935,21 @@ public class DetalleFragment extends Fragment {
         });
     }
 
-    /**
-     * Guarda la oferta en Room (reemplazando la anterior del usuario, si tenía
-     * una — ver {@link OfertasPublicacion#guardar}) y refresca "lo que ya le
-     * enviaste".
-     */
-    private void registrarOferta(Publicacion publicacion, double monto) {
-        SesionUsuario sesion = SesionUsuario.getInstancia();
-        Oferta oferta = ofertasPublicacion.crearOferta(
-                publicacion, sesion.getIdUsuario(), sesion.getNombre(), monto);
-        ofertasPublicacion.guardar(oferta, new RepositorioCallback<Void>() {
-            @Override
-            public void onExito(Void resultado) {
-                if (grupoMisInteracciones == null) {
-                    return;
-                }
-                mostrarMisInteracciones(publicacion);
-            }
+    /** Manda la oferta al backend real (Punto 7: {@code POST /ofertas}). */
+    private void registrarOferta(Publicacion publicacion, double monto, @Nullable String mensaje) {
+        ofertasRepository.crear(publicacion.getId(), monto, mensaje,
+                new RepositorioCallback<OfertaNegociacion>() {
+                    @Override
+                    public void onExito(OfertaNegociacion resultado) {
+                        mostrarSnackbar(getString(R.string.detalle_oferta_enviada,
+                                FormatoUtils.precio(monto), publicacion.getVendedor().getNombre()));
+                    }
 
-            @Override
-            public void onError(String mensaje) {
-                if (barraAcciones == null) {
-                    return;
-                }
-                mostrarSnackbar(mensaje);
-            }
-        });
+                    @Override
+                    public void onError(String mensajeError) {
+                        mostrarSnackbar(mensajeError);
+                    }
+                });
     }
 
     // ------------------------------------------------------------------

@@ -10,11 +10,10 @@ import com.example.tpo.model.Vendedor;
 import com.example.tpo.model.Zona;
 import com.google.gson.annotations.SerializedName;
 
-/**
- * JSON de una publicación del listado {@code GET /publicaciones}. Los enums
- * llegan con el nombre de la constante ("COMO_NUEVO", "PALERMO").
- */
-public class PublicacionResponse {
+import java.util.Collections;
+import java.util.List;
+
+public class PublicacionResumenResponse {
 
     @SerializedName("id")
     public String id;
@@ -40,7 +39,6 @@ public class PublicacionResponse {
     @SerializedName("estadoPublicacion")
     public String estadoPublicacion;
 
-    /** Epoch en milisegundos. */
     @SerializedName("fechaPublicacion")
     public long fechaPublicacion;
 
@@ -53,13 +51,37 @@ public class PublicacionResponse {
     @SerializedName("fotoPrincipalUrl")
     public String fotoPrincipalUrl;
 
+    /** Sin galería propia: se aproxima con 1 si hay foto principal, 0 si no. */
+    protected int cantidadFotos() {
+        return fotoPrincipalUrl != null ? 1 : 0;
+    }
+
     /**
-     * Pasa al modelo del Home, o devuelve null si algún enum no es uno que la app
-     * conozca: la tarjeta del listado necesita estado y zona para pintarse, y es
-     * mejor no mostrar esa publicación que inventarle un valor.
-     * <p>
-     * El listado no trae la reputación del vendedor, así que el {@link Vendedor}
-     * va solo con id y nombre; el perfil público la muestra aparte.
+     * El resumen del listado nunca trae dirección (no existe ese campo en
+     * {@code PublicacionResumen} del backend); {@link PublicacionDetalleResponse}
+     * la sobreescribe con el valor real que sí puede venir en el detalle.
+     */
+    @Nullable
+    protected String direccionEntrega() {
+        return null;
+    }
+
+    /**
+     * El resumen del listado no trae la lista completa, solo la principal;
+     * {@link PublicacionDetalleResponse} la sobreescribe con {@code fotos} de
+     * verdad (para la galería del Detalle).
+     */
+    protected List<String> fotos() {
+        return fotoPrincipalUrl != null
+                ? Collections.singletonList(fotoPrincipalUrl)
+                : Collections.emptyList();
+    }
+
+    /**
+     * {@code null} si algún campo obligatorio o algún valor de enum no coincide
+     * con lo que la app conoce (por ejemplo, el backend agrega una categoría
+     * nueva antes de que la app se actualice): así una publicación rara no
+     * tira la página entera abajo, solo se descarta esa tarjeta.
      */
     @Nullable
     public Publicacion aModelo() {
@@ -71,12 +93,13 @@ public class PublicacionResponse {
                 || zonaModelo == null || estadoPublicacionModelo == null) {
             return null;
         }
+        Vendedor vendedor = new Vendedor(vendedorId, nombreVendedor, 0.0, 0, 0L);
         Publicacion publicacion = new Publicacion(id, titulo, descripcion, precio,
-                estadoModelo, categoriaModelo, zonaModelo, fechaPublicacion,
-                new Vendedor(vendedorId, nombreVendedor, 0, 0, 0),
-                fotoPrincipalUrl == null ? 0 : 1,
-                null);
+                estadoModelo, categoriaModelo, zonaModelo, fechaPublicacion, vendedor,
+                cantidadFotos(), direccionEntrega());
         publicacion.setEstadoPublicacion(estadoPublicacionModelo);
+        publicacion.setFotoPrincipalUrl(fotoPrincipalUrl);
+        publicacion.setFotos(fotos());
         return publicacion;
     }
 

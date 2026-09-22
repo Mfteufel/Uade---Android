@@ -128,7 +128,7 @@ public class LoginFragment extends Fragment {
                     return;
                 }
                 if (response.isSuccessful() && response.body() != null) {
-                    SesionLocal.actualizar(response.body());
+                    SesionLocal.actualizar(requireContext(), response.body());
                     irAlHome();
                 } else if (response.code() == 401) {
                     tokenManager.clearToken();
@@ -175,7 +175,7 @@ public class LoginFragment extends Fragment {
                 }
                 if (response.isSuccessful() && response.body() != null) {
                     tokenManager.saveToken(response.body().getToken());
-                    SesionLocal.actualizar(response.body().getUsuario());
+                    SesionLocal.actualizar(requireContext(), response.body().getUsuario());
                     Biometria.ofrecerActivar(LoginFragment.this, tokenManager, LoginFragment.this::irAlHome);
                     return;
                 }

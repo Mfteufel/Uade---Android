@@ -2,13 +2,19 @@ package com.example.tpo.di;
 
 import android.content.Context;
 
+import com.example.tpo.data.MisPublicacionesRepository;
+import com.example.tpo.data.MisPublicacionesRepositoryApi;
+import com.example.tpo.data.OfertasRepository;
+import com.example.tpo.data.OfertasRepositoryRemoto;
 import com.example.tpo.data.OperacionRepository;
 import com.example.tpo.data.OperacionRepositoryApi;
 import com.example.tpo.data.OperacionRepositoryMock;
 import com.example.tpo.data.PerfilRepository;
 import com.example.tpo.data.PerfilRepositoryApi;
 import com.example.tpo.data.PerfilRepositoryMock;
+import com.example.tpo.data.remote.OfertasApi;
 import com.example.tpo.data.remote.OperacionApi;
+import com.example.tpo.data.remote.PublicacionesApi;
 import com.example.tpo.data.remote.UsuarioApi;
 
 import javax.inject.Singleton;
@@ -69,5 +75,38 @@ public class RepositoryModule {
     @Singleton
     public OperacionApi provideOperacionApi(Retrofit retrofit) {
         return retrofit.create(OperacionApi.class);
+    }
+
+    /**
+     * Sin flag {@code USAR_API}: a diferencia de Perfil y Operaciones, el backend
+     * de publicaciones (Punto 5) ya está levantado desde el día uno.
+     */
+    @Provides
+    @Singleton
+    public MisPublicacionesRepository provideMisPublicacionesRepository(
+            @ApplicationContext Context context, PublicacionesApi api) {
+        return new MisPublicacionesRepositoryApi(context, api);
+    }
+
+    @Provides
+    @Singleton
+    public PublicacionesApi providePublicacionesApi(Retrofit retrofit) {
+        return retrofit.create(PublicacionesApi.class);
+    }
+
+    /**
+     * Sin flag: el backend de ofertas (Punto 7, versión 0.4.0) ya está
+     * levantado, no hay capa mock.
+     */
+    @Provides
+    @Singleton
+    public OfertasRepository provideOfertasRepository(OfertasApi api) {
+        return new OfertasRepositoryRemoto(api);
+    }
+
+    @Provides
+    @Singleton
+    public OfertasApi provideOfertasApi(Retrofit retrofit) {
+        return retrofit.create(OfertasApi.class);
     }
 }
