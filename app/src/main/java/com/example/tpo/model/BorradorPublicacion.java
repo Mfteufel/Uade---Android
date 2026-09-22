@@ -40,7 +40,7 @@ public class BorradorPublicacion {
      * Dirección exacta del punto de entrega, en texto libre (dirección o
      * coordenadas pegadas de Google Maps) — Punto 8. Se le muestra al
      * comprador recién cuando el vendedor acepta su oferta (ver
-     * {@code OfertasPublicacion}/{@code MapaUtils}); acá solo se captura y
+     * {@code OfertasRepository}/{@code MapaUtils}); acá solo se captura y
      * se guarda, la regla de cuándo mostrarla vive en el Detalle.
      */
     @Nullable

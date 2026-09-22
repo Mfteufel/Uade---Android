@@ -9,6 +9,7 @@ from routers.auth import router as router_auth
 from routers.busquedas import router as router_busquedas
 from routers.favoritos import router as router_favoritos
 from routers.ofertas import router as router_ofertas
+from routers.preguntas import router as router_preguntas
 from routers.publicaciones import CARPETA_FOTOS, router as router_publicaciones
 from routers.usuarios import router as router_usuarios
 
@@ -23,6 +24,7 @@ app.include_router(router_usuarios)
 app.include_router(router_favoritos)
 app.include_router(router_busquedas)
 app.include_router(router_ofertas)
+app.include_router(router_preguntas)
 app.mount("/fotos", StaticFiles(directory=CARPETA_FOTOS), name="fotos")
 app.mount("/estatico", StaticFiles(directory=Path(__file__).resolve().parent / "estatico"), name="estatico")
 

@@ -7,18 +7,15 @@ import com.example.tpo.model.OfertaNegociacion;
 import java.util.List;
 
 /**
- * Negociación de ofertas — "Mis ofertas" (Punto 7), tal cual el contrato de
- * {@code docs/ofertas-api.md}.
+ * Negociación de ofertas — "Mis ofertas" (Punto 7) y también "ofertar"/"mi
+ * oferta"/"ofertas recibidas" del Detalle de publicación (Punto 4), tal cual
+ * el contrato de {@code docs/ofertas-api.md}.
  * <p>
- * Dos implementaciones detrás de esta interfaz, elegidas en un solo lugar
- * ({@code di/RepositoryModule}): {@link OfertasRepositoryMock} (datos falsos,
- * mientras no existe el backend) y {@link OfertasRepositoryRemoto} (Retrofit,
- * Fase 4).
- * <p>
- * A propósito no tiene nada que ver con {@code OfertasPublicacion} (Room), que
- * sigue siendo lo que usa el botón "ofertar" del Detalle de publicación (Punto
- * 4, pantalla de otro compañero): son dos sistemas de ofertas que conviven sin
- * pisarse hasta que se decida migrar el Detalle a este contrato.
+ * Única implementación: {@link OfertasRepositoryRemoto} (Retrofit), provista
+ * sin flag por {@code di/RepositoryModule} porque el backend de ofertas ya
+ * existe desde el día uno. El Detalle usaba antes {@code OfertasPublicacion}
+ * (Room, ya eliminada) para "mi oferta" y "ofertas recibidas"; ahora los dos
+ * puntos comparten este mismo contrato.
  */
 public interface OfertasRepository {
 

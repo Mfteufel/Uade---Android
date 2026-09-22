@@ -10,7 +10,6 @@ import androidx.lifecycle.MutableLiveData;
 import com.example.tpo.data.BorradorRepository;
 import com.example.tpo.data.BorradorRepositoryLocal;
 import com.example.tpo.data.MisPublicacionesRepository;
-import com.example.tpo.data.PublicacionRepositoryMock;
 import com.example.tpo.data.RepositorioCallback;
 import com.example.tpo.di.PublicarEntryPoint;
 import com.example.tpo.model.BorradorPublicacion;
@@ -126,11 +125,9 @@ public class PublicarArticuloViewModel extends AndroidViewModel {
             public void onExito(MiPublicacion resultado) {
                 publicando.setValue(false);
                 borradorRepository.borrar();
-                // "Mis publicaciones" (Room) y el catálogo de Home (mock en memoria)
-                // son dos fuentes de datos separadas mientras no hay backend: sin
-                // este paso, lo recién publicado nunca aparecía en Home. Ver
-                // PublicacionRepositoryMock#agregarPublicacionDelUsuario.
-                PublicacionRepositoryMock.getInstancia().agregarPublicacionDelUsuario(actual);
+                // Home y "Mis publicaciones" ya leen del backend real: la
+                // publicación recién creada aparece sola en el próximo fetch,
+                // no hace falta sincronizar ningún catálogo en memoria.
                 callback.onExito(resultado);
             }
 

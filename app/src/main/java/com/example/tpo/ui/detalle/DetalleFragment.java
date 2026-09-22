@@ -23,9 +23,9 @@ import androidx.navigation.Navigation;
 import com.example.tpo.R;
 import com.example.tpo.data.FavoritoRepository;
 import com.example.tpo.data.FavoritoRepositoryApi;
-import com.example.tpo.data.OfertasPublicacion;
 import com.example.tpo.data.OfertasRepository;
-import com.example.tpo.data.PreguntasPublicacion;
+import com.example.tpo.data.PreguntaRepository;
+import com.example.tpo.data.PreguntaRepositoryApi;
 import com.example.tpo.data.PublicacionRepository;
 import com.example.tpo.data.PublicacionRepositoryApi;
 import com.example.tpo.data.PublicacionesVistas;
@@ -33,7 +33,6 @@ import com.example.tpo.data.RepositorioCallback;
 import com.example.tpo.data.SesionUsuario;
 import com.example.tpo.model.EstadoOferta;
 import com.example.tpo.model.EstadoPublicacion;
-import com.example.tpo.model.Oferta;
 import com.example.tpo.model.OfertaNegociacion;
 import com.example.tpo.model.Pregunta;
 import com.example.tpo.model.Publicacion;
@@ -52,6 +51,7 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -94,8 +94,7 @@ public class DetalleFragment extends Fragment {
 
     private String publicacionId;
 
-    private PreguntasPublicacion preguntasPublicacion;
-    private OfertasPublicacion ofertasPublicacion;
+    private PreguntaRepository preguntaRepository;
     private PublicacionesVistas publicacionesVistas;
 
     /** Última publicación cargada. La usan el ítem de menú y los diálogos, que viven fuera del callback. */
@@ -152,8 +151,7 @@ public class DetalleFragment extends Fragment {
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
-        preguntasPublicacion = PreguntasPublicacion.getInstancia(context);
-        ofertasPublicacion = OfertasPublicacion.getInstancia(context);
+        preguntaRepository = PreguntaRepositoryApi.getInstancia(context);
         publicacionesVistas = PublicacionesVistas.getInstancia(context);
         repositorio = PublicacionRepositoryApi.getInstancia(context);
         favoritoRepositorio = FavoritoRepositoryApi.getInstancia(context);
@@ -500,7 +498,7 @@ public class DetalleFragment extends Fragment {
             // lo ve del otro lado, en "Gestionar publicación".
             bloqueMisInteracciones.setVisibility(View.GONE);
             // Es su propia dirección: la ve siempre, no depende de ninguna oferta.
-            mostrarPuntoEntrega(publicacion, true);
+            mostrarPuntoEntrega(publicacion.getDireccionEntrega(), true);
             return;
         }
 
@@ -539,47 +537,80 @@ public class DetalleFragment extends Fragment {
      * entero queda oculto. No se llama para el propio vendedor: sus
      * preguntas/ofertas recibidas se ven desde "Gestionar publicación", no acá.
      * <p>
-     * Las dos consultas están anidadas (la de oferta arranca en el
-     * {@code onExito} de la de preguntas) y no en paralelo: son lecturas locales
-     * de Room sobre datasets chicos, así que el costo de encadenarlas es
-     * despreciable, y anidarlas evita coordinar dos callbacks independientes
-     * para saber cuándo terminaron los dos.
+     * Las dos consultas van contra el backend real y están anidadas (la de
+     * oferta arranca en el {@code onExito} de la de preguntas), mismo criterio
+     * que antes de migrar de Room: evita coordinar dos callbacks independientes
+     * para saber cuándo terminaron los dos. El listado de preguntas es público
+     * por publicación ({@code GET /publicaciones/{id}/preguntas}, se filtra
+     * "las mías" del lado del cliente) y las ofertas salen de
+     * {@code GET /ofertas/enviadas} (todas las del usuario, se filtra por esta
+     * publicación) — mismo criterio de filtrado client-side que ya usa
+     * {@code OfertasRepositoryRemoto} para separar enviadas/recibidas.
      */
     private void mostrarMisInteracciones(Publicacion publicacion) {
         String idUsuario = SesionUsuario.getInstancia().getIdUsuario();
-        preguntasPublicacion.delUsuario(publicacion.getId(), idUsuario,
+        preguntaRepository.deLaPublicacion(publicacion.getId(),
                 new RepositorioCallback<List<Pregunta>>() {
                     @Override
-                    public void onExito(List<Pregunta> misPreguntas) {
+                    public void onExito(List<Pregunta> todas) {
                         if (grupoMisInteracciones == null) {
                             return; // la vista ya se destruyó
                         }
-                        ofertasPublicacion.delUsuario(publicacion.getId(), idUsuario,
-                                new RepositorioCallback<Oferta>() {
-                                    @Override
-                                    public void onExito(Oferta miOferta) {
-                                        if (grupoMisInteracciones == null) {
-                                            return;
-                                        }
-                                        pintarMisInteracciones(publicacion, misPreguntas, miOferta);
-                                    }
-
-                                    @Override
-                                    public void onError(String mensaje) {
-                                        // No hay nada que romper: si falla, el bloque de "lo
-                                        // mío" simplemente no se completa con la oferta.
-                                    }
-                                });
+                        List<Pregunta> misPreguntas = new ArrayList<>();
+                        for (Pregunta pregunta : todas) {
+                            if (pregunta.getAutorId().equals(idUsuario)) {
+                                misPreguntas.add(pregunta);
+                            }
+                        }
+                        cargarMiOferta(publicacion, misPreguntas);
                     }
 
                     @Override
                     public void onError(String mensaje) {
+                        // No hay nada que romper: si falla, el bloque de "lo mío"
+                        // simplemente no se completa con las preguntas.
+                        cargarMiOferta(publicacion, new ArrayList<>());
                     }
                 });
     }
 
+    private void cargarMiOferta(Publicacion publicacion, List<Pregunta> misPreguntas) {
+        if (grupoMisInteracciones == null) {
+            return;
+        }
+        ofertasRepository.enviadas(new RepositorioCallback<List<OfertaNegociacion>>() {
+            @Override
+            public void onExito(List<OfertaNegociacion> todas) {
+                if (grupoMisInteracciones == null) {
+                    return;
+                }
+                pintarMisInteracciones(publicacion, misPreguntas, ultimaOfertaDe(todas, publicacion.getId()));
+            }
+
+            @Override
+            public void onError(String mensaje) {
+                // Ídem: sin oferta propia, no rompe el resto del bloque.
+                if (grupoMisInteracciones != null) {
+                    pintarMisInteracciones(publicacion, misPreguntas, null);
+                }
+            }
+        });
+    }
+
+    /** La más reciente entre las ofertas del usuario logueado sobre esta publicación, si hay alguna. */
+    @Nullable
+    private static OfertaNegociacion ultimaOfertaDe(List<OfertaNegociacion> ofertas, String publicacionId) {
+        for (OfertaNegociacion oferta : ofertas) {
+            // enviadas() ya viene ordenada "más recientes primero" (docs/ofertas-api.md).
+            if (oferta.getPublicacionId().equals(publicacionId)) {
+                return oferta;
+            }
+        }
+        return null;
+    }
+
     private void pintarMisInteracciones(Publicacion publicacion, List<Pregunta> misPreguntas,
-                                        @Nullable Oferta miOferta) {
+                                        @Nullable OfertaNegociacion miOferta) {
         grupoMisInteracciones.removeAllViews();
         LayoutInflater inflater = LayoutInflater.from(requireContext());
 
@@ -598,12 +629,12 @@ public class DetalleFragment extends Fragment {
             // antigüedad para que se note en pantalla por qué se desbloqueó (o no)
             // el punto de entrega, sin tener que ir hasta "Mis ofertas".
             String antiguedadYEstado = getString(R.string.detalle_mi_oferta_estado,
-                    FormatoUtils.antiguedad(requireContext(), miOferta.getFecha()),
+                    FormatoUtils.antiguedad(requireContext(), miOferta.getFechaCreacion()),
                     getString(miOferta.getEstado().getEtiqueta()));
             View filaOferta = inflater.inflate(R.layout.item_interaccion, grupoMisInteracciones, false);
             ((ImageView) filaOferta.findViewById(R.id.iconoInteraccion)).setImageResource(R.drawable.ic_ofertar);
             ((TextView) filaOferta.findViewById(R.id.textoInteraccion))
-                    .setText(FormatoUtils.precio(miOferta.getMonto()));
+                    .setText(FormatoUtils.precio(miOferta.getPrecio()));
             ((TextView) filaOferta.findViewById(R.id.autorInteraccion)).setText(antiguedadYEstado);
             grupoMisInteracciones.addView(filaOferta);
         }
@@ -611,7 +642,11 @@ public class DetalleFragment extends Fragment {
         boolean hayAlgoQueMostrar = !misPreguntas.isEmpty() || miOferta != null;
         bloqueMisInteracciones.setVisibility(hayAlgoQueMostrar ? View.VISIBLE : View.GONE);
 
-        mostrarPuntoEntrega(publicacion, puedeVerPuntoDeEntrega(miOferta));
+        // Antes de tener una oferta ACEPTADA no hay ninguna dirección que mostrar
+        // ni siquiera bloqueada: el backend no la manda (routers/ofertas.py) hasta
+        // ese momento, así que no hay forma de anticipar si existe una cargada.
+        String direccion = puedeVerPuntoDeEntrega(miOferta) ? miOferta.getDireccionEntrega() : null;
+        mostrarPuntoEntrega(direccion, direccion != null);
     }
 
     private View inflarEncabezado(LayoutInflater inflater, @StringRes int texto) {
@@ -639,18 +674,19 @@ public class DetalleFragment extends Fragment {
     // ------------------------------------------------------------------
 
     /**
-     * Pinta el bloque de punto de entrega. Si la publicación no tiene
-     * dirección cargada todavía, el bloque entero queda oculto: no tiene sentido
-     * mostrar ni siquiera el aviso de "bloqueada" si no hay ninguna dirección
-     * esperando del otro lado.
-     * Si sí hay dirección, se ve o el aviso de bloqueado o la dirección real
-     * con su botón, nunca los dos juntos.
+     * Pinta el bloque de punto de entrega a partir de la dirección que le pasa
+     * cada caller (el dueño la tiene siempre disponible en su propia
+     * publicación; el interesado recién la recibe del backend cuando su oferta
+     * queda {@code ACEPTADA}, ver {@link #pintarMisInteracciones}). Si no hay
+     * dirección, el bloque entero queda oculto: no tiene sentido mostrar ni
+     * siquiera el aviso de "bloqueada" si no hay ninguna esperando del otro
+     * lado — y para el interesado sin oferta aceptada tampoco hay forma de
+     * saber si existe, porque el backend no la manda hasta ese momento.
      */
-    private void mostrarPuntoEntrega(Publicacion publicacion, boolean desbloqueado) {
+    private void mostrarPuntoEntrega(@Nullable String direccion, boolean desbloqueado) {
         if (bloquePuntoEntrega == null) {
             return; // la vista ya se destruyó
         }
-        String direccion = publicacion.getDireccionEntrega();
         if (!MapaUtils.tieneDireccion(direccion)) {
             bloquePuntoEntrega.setVisibility(View.GONE);
             return;
@@ -680,7 +716,7 @@ public class DetalleFragment extends Fragment {
      * ya sea porque el vendedor aceptó su oferta original o porque él aceptó
      * una contraoferta del vendedor.
      */
-    private boolean puedeVerPuntoDeEntrega(@Nullable Oferta oferta) {
+    private boolean puedeVerPuntoDeEntrega(@Nullable OfertaNegociacion oferta) {
         return oferta != null && oferta.getEstado() == EstadoOferta.ACEPTADA;
     }
 
@@ -858,18 +894,14 @@ public class DetalleFragment extends Fragment {
         return contenido == null ? "" : contenido.toString().trim();
     }
 
-    /** Guarda la pregunta en Room y refresca "lo que ya le enviaste" de la pantalla. */
+    /** Manda la pregunta al backend real y refresca "lo que ya le enviaste" de la pantalla. */
     private void registrarPregunta(String texto) {
         if (publicacionCargada == null) {
             return; // no debería pasar: el diálogo solo se abre con una publicación cargada
         }
-        SesionUsuario sesion = SesionUsuario.getInstancia();
-        Pregunta pregunta = new Pregunta(
-                publicacionCargada.getId(), sesion.getIdUsuario(), sesion.getNombre(),
-                texto, System.currentTimeMillis());
-        preguntasPublicacion.agregar(pregunta, new RepositorioCallback<Void>() {
+        preguntaRepository.crear(publicacionCargada.getId(), texto, new RepositorioCallback<Pregunta>() {
             @Override
-            public void onExito(Void resultado) {
+            public void onExito(Pregunta resultado) {
                 if (grupoMisInteracciones == null) {
                     return;
                 }
@@ -886,15 +918,7 @@ public class DetalleFragment extends Fragment {
         });
     }
 
-    /**
-     * Manda la oferta al backend real (Punto 7: {@code POST /ofertas}).
-     * <p>
-     * ⚠️ Solo funciona si {@code publicacion.getId()} existe en el servidor: el
-     * Detalle hoy muestra el catálogo de {@code PublicacionRepositoryMock}, así
-     * que salvo publicaciones creadas de verdad por el Punto 5, esto va a dar
-     * {@code 404}. Queda así hasta que el Detalle también consuma publicaciones
-     * reales (fuera de este alcance).
-     */
+    /** Manda la oferta al backend real (Punto 7: {@code POST /ofertas}). */
     private void registrarOferta(Publicacion publicacion, double monto, @Nullable String mensaje) {
         ofertasRepository.crear(publicacion.getId(), monto, mensaje,
                 new RepositorioCallback<OfertaNegociacion>() {

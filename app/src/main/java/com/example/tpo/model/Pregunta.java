@@ -6,10 +6,9 @@ import java.io.Serializable;
  * Una pregunta que un interesado le hizo al vendedor sobre una publicación —
  * acción "preguntar" del Punto 4.
  * <p>
- * Se guarda en memoria en {@link com.example.tpo.data.PreguntasPublicacion};
- * contra la API real sería el resultado de un
- * {@code POST /publicaciones/{id}/preguntas}. Todos los campos son finales:
- * una pregunta enviada no se edita, se manda otra.
+ * La trae y la envía {@link com.example.tpo.data.PreguntaRepositoryApi} contra
+ * el backend real ({@code GET}/{@code POST /publicaciones/{id}/preguntas}).
+ * Todos los campos son finales: una pregunta enviada no se edita, se manda otra.
  */
 public class Pregunta implements Serializable {
 

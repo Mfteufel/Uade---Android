@@ -20,6 +20,10 @@ class PublicacionResumen(BaseModel):
 
 class PublicacionDetalle(PublicacionResumen):
     fotos: List[str] = []
+    # Solo viene completa cuando quien pide el detalle es el dueño de la
+    # publicacion (ver seguridad.usuario_actual_opcional en el router). El
+    # comprador la ve por otro lado: GET /ofertas/{id} una vez ACEPTADA.
+    direccionEntrega: Optional[str] = None
 
 
 class PaginaPublicaciones(BaseModel):

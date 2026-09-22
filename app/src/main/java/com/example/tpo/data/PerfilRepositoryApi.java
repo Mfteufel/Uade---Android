@@ -11,7 +11,7 @@ import com.example.tpo.data.remote.ErrorApi;
 import com.example.tpo.data.remote.UsuarioApi;
 import com.example.tpo.data.remote.dto.ActualizarPerfilRequest;
 import com.example.tpo.data.remote.dto.PaginaPublicacionesResponse;
-import com.example.tpo.data.remote.dto.PublicacionResponse;
+import com.example.tpo.data.remote.dto.PublicacionResumenResponse;
 import com.example.tpo.data.remote.dto.UsuarioResponse;
 import com.example.tpo.model.Calificacion;
 import com.example.tpo.model.EstadoPublicacion;
@@ -202,7 +202,7 @@ public class PerfilRepositoryApi implements PerfilRepository {
         if (respuesta.publicaciones == null) {
             return resultado;
         }
-        for (PublicacionResponse json : respuesta.publicaciones) {
+        for (PublicacionResumenResponse json : respuesta.publicaciones) {
             Publicacion publicacion = json.aModelo();
             if (publicacion != null
                     && publicacion.getEstadoPublicacion() == EstadoPublicacion.ACTIVA) {

@@ -1,5 +1,7 @@
 package com.example.tpo.data.remote.dto;
 
+import androidx.annotation.Nullable;
+
 import com.example.tpo.model.Categoria;
 import com.example.tpo.model.EstadoArticulo;
 import com.example.tpo.model.EstadoPublicacion;
@@ -51,12 +53,49 @@ public class PublicacionResumenResponse {
         return fotoPrincipalUrl != null ? 1 : 0;
     }
 
+    /**
+     * El resumen del listado nunca trae dirección (no existe ese campo en
+     * {@code PublicacionResumen} del backend); {@link PublicacionDetalleResponse}
+     * la sobreescribe con el valor real que sí puede venir en el detalle.
+     */
+    @Nullable
+    protected String direccionEntrega() {
+        return null;
+    }
+
+    /**
+     * {@code null} si algún campo obligatorio o algún valor de enum no coincide
+     * con lo que la app conoce (por ejemplo, el backend agrega una categoría
+     * nueva antes de que la app se actualice): así una publicación rara no
+     * tira la página entera abajo, solo se descarta esa tarjeta.
+     */
+    @Nullable
     public Publicacion aModelo() {
+        Categoria categoriaModelo = enumDe(Categoria.class, categoria);
+        EstadoArticulo estadoModelo = enumDe(EstadoArticulo.class, estadoArticulo);
+        Zona zonaModelo = enumDe(Zona.class, zona);
+        EstadoPublicacion estadoPublicacionModelo = enumDe(EstadoPublicacion.class, estadoPublicacion);
+        if (id == null || categoriaModelo == null || estadoModelo == null
+                || zonaModelo == null || estadoPublicacionModelo == null) {
+            return null;
+        }
         Vendedor vendedor = new Vendedor(vendedorId, nombreVendedor, 0.0, 0, 0L);
         Publicacion publicacion = new Publicacion(id, titulo, descripcion, precio,
-                EstadoArticulo.valueOf(estadoArticulo), Categoria.valueOf(categoria), Zona.valueOf(zona),
-                fechaPublicacion, vendedor, cantidadFotos(), null);
-        publicacion.setEstadoPublicacion(EstadoPublicacion.valueOf(estadoPublicacion));
+                estadoModelo, categoriaModelo, zonaModelo, fechaPublicacion, vendedor,
+                cantidadFotos(), direccionEntrega());
+        publicacion.setEstadoPublicacion(estadoPublicacionModelo);
         return publicacion;
+    }
+
+    @Nullable
+    private static <E extends Enum<E>> E enumDe(Class<E> tipo, @Nullable String nombre) {
+        if (nombre == null) {
+            return null;
+        }
+        try {
+            return Enum.valueOf(tipo, nombre);
+        } catch (IllegalArgumentException excepcion) {
+            return null;
+        }
     }
 }

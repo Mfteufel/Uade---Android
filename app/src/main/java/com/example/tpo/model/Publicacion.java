@@ -63,13 +63,16 @@ public class Publicacion implements Serializable {
     /**
      * Dirección exacta del punto de entrega, en texto libre (puede ser una
      * dirección o directamente coordenadas pegadas de Google Maps) — cargada
-     * por el vendedor al publicar (Punto 5). Solo se le debería mostrar al
-     * comprador cuando tiene una {@link Oferta} en estado {@code ACEPTADA}
-     * para esta publicación (ver {@code OfertasPublicacion}, Punto 7); esta
-     * clase no impone esa regla, solo guarda el dato — la UI que decide
-     * mostrarlo o no vive en el Detalle de Publicación (Punto 8).
+     * por el vendedor al publicar (Punto 5). El backend real solo la manda acá
+     * cuando quien pide el detalle es el propio dueño de la publicación
+     * (ver {@code routers/publicaciones.py}); el comprador la recibe por otro
+     * lado, en su {@code OfertaNegociacion}, recién cuando esa oferta queda
+     * {@code ACEPTADA} — esta clase no impone esa regla, solo guarda el dato
+     * tal como llegó. La UI que decide mostrarlo o no vive en el Detalle de
+     * Publicación (Punto 8).
      * <p>
-     * {@code null} en las publicaciones que todavía no la cargaron.
+     * {@code null} si quien pregunta no es el dueño, o si la publicación
+     * todavía no tiene dirección cargada.
      */
     @Nullable
     private final String direccionEntrega;

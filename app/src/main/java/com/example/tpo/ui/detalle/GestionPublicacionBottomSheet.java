@@ -15,13 +15,14 @@ import androidx.annotation.StringRes;
 import androidx.core.widget.NestedScrollView;
 
 import com.example.tpo.R;
-import com.example.tpo.data.OfertasPublicacion;
-import com.example.tpo.data.PreguntasPublicacion;
+import com.example.tpo.data.OfertasRepository;
+import com.example.tpo.data.PreguntaRepository;
+import com.example.tpo.data.PreguntaRepositoryApi;
 import com.example.tpo.data.PublicacionRepository;
 import com.example.tpo.data.PublicacionRepositoryApi;
 import com.example.tpo.data.RepositorioCallback;
 import com.example.tpo.model.EstadoPublicacion;
-import com.example.tpo.model.Oferta;
+import com.example.tpo.model.OfertaNegociacion;
 import com.example.tpo.model.Pregunta;
 import com.example.tpo.model.Publicacion;
 import com.example.tpo.util.FormatoUtils;
@@ -30,7 +31,12 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.android.material.snackbar.Snackbar;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import javax.inject.Inject;
+
+import dagger.hilt.android.AndroidEntryPoint;
 
 /**
  * Hoja "Gestionar publicación" — acción del vendedor en el Detalle (Punto 4).
@@ -47,6 +53,7 @@ import java.util.List;
  * da el Detalle al recibir el resultado por la Fragment Result API (mismo
  * patrón que {@link com.example.tpo.ui.home.FiltrosBottomSheet}).
  */
+@AndroidEntryPoint
 public class GestionPublicacionBottomSheet extends BottomSheetDialogFragment {
 
     public static final String TAG = "GestionPublicacionBottomSheet";
@@ -61,8 +68,11 @@ public class GestionPublicacionBottomSheet extends BottomSheetDialogFragment {
     private PublicacionRepository repositorio;
     private String publicacionId;
 
-    private PreguntasPublicacion preguntasPublicacion;
-    private OfertasPublicacion ofertasPublicacion;
+    private PreguntaRepository preguntaRepository;
+
+    /** Lo inyecta Hilt: lee las ofertas recibidas contra el backend real (Punto 7). */
+    @Inject
+    OfertasRepository ofertasRepository;
 
     /** Estado con el que se mostró la publicación la última vez: decide qué botones se ven. */
     @Nullable
@@ -105,8 +115,7 @@ public class GestionPublicacionBottomSheet extends BottomSheetDialogFragment {
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
-        preguntasPublicacion = PreguntasPublicacion.getInstancia(context);
-        ofertasPublicacion = OfertasPublicacion.getInstancia(context);
+        preguntaRepository = PreguntaRepositoryApi.getInstancia(context);
         repositorio = PublicacionRepositoryApi.getInstancia(context);
     }
 
@@ -262,7 +271,7 @@ public class GestionPublicacionBottomSheet extends BottomSheetDialogFragment {
     }
 
     private void mostrarPreguntasRecibidas() {
-        preguntasPublicacion.deLaPublicacion(publicacionId, new RepositorioCallback<List<Pregunta>>() {
+        preguntaRepository.deLaPublicacion(publicacionId, new RepositorioCallback<List<Pregunta>>() {
             @Override
             public void onExito(List<Pregunta> preguntas) {
                 if (grupoPreguntasGestion == null) {
@@ -299,14 +308,27 @@ public class GestionPublicacionBottomSheet extends BottomSheetDialogFragment {
         }
     }
 
+    /**
+     * Ofertas recibidas de esta publicación puntual. El backend no tiene un
+     * endpoint "por publicación": {@code GET /ofertas/recibidas} trae todas
+     * las que le hicieron al vendedor logueado (sobre cualquiera de sus
+     * publicaciones) y acá se filtra por {@code publicacionId}, mismo
+     * criterio que ya usa {@code DetalleFragment} para "mi oferta".
+     */
     private void mostrarOfertasRecibidas() {
-        ofertasPublicacion.deLaPublicacion(publicacionId, new RepositorioCallback<List<Oferta>>() {
+        ofertasRepository.recibidas(new RepositorioCallback<List<OfertaNegociacion>>() {
             @Override
-            public void onExito(List<Oferta> ofertas) {
+            public void onExito(List<OfertaNegociacion> todas) {
                 if (grupoOfertasGestion == null) {
                     return;
                 }
-                pintarOfertasRecibidas(ofertas);
+                List<OfertaNegociacion> deEstaPublicacion = new ArrayList<>();
+                for (OfertaNegociacion oferta : todas) {
+                    if (oferta.getPublicacionId().equals(publicacionId)) {
+                        deEstaPublicacion.add(oferta);
+                    }
+                }
+                pintarOfertasRecibidas(deEstaPublicacion);
             }
 
             @Override
@@ -323,7 +345,7 @@ public class GestionPublicacionBottomSheet extends BottomSheetDialogFragment {
      * (Punto 7), no de esta hoja: reusa {@code item_interaccion.xml}, mismo
      * layout que el bloque de preguntas de al lado.
      */
-    private void pintarOfertasRecibidas(List<Oferta> ofertas) {
+    private void pintarOfertasRecibidas(List<OfertaNegociacion> ofertas) {
         int cantidad = ofertas.size();
         cantidadOfertasGestion.setText(getResources().getQuantityString(
                 R.plurals.gestion_ofertas_cantidad, cantidad, cantidad));
@@ -331,14 +353,14 @@ public class GestionPublicacionBottomSheet extends BottomSheetDialogFragment {
 
         grupoOfertasGestion.removeAllViews();
         LayoutInflater inflater = LayoutInflater.from(requireContext());
-        for (Oferta oferta : ofertas) {
+        for (OfertaNegociacion oferta : ofertas) {
             View fila = inflater.inflate(R.layout.item_interaccion, grupoOfertasGestion, false);
             ((ImageView) fila.findViewById(R.id.iconoInteraccion)).setImageResource(R.drawable.ic_ofertar);
-            ((TextView) fila.findViewById(R.id.textoInteraccion)).setText(FormatoUtils.precio(oferta.getMonto()));
+            ((TextView) fila.findViewById(R.id.textoInteraccion)).setText(FormatoUtils.precio(oferta.getPrecio()));
             ((TextView) fila.findViewById(R.id.autorInteraccion)).setText(getString(
                     R.string.gestion_oferta_autor_fecha_estado,
-                    oferta.getAutorNombre(),
-                    FormatoUtils.antiguedad(requireContext(), oferta.getFecha()),
+                    oferta.getNombreComprador(),
+                    FormatoUtils.antiguedad(requireContext(), oferta.getFechaCreacion()),
                     getString(oferta.getEstado().getEtiqueta())));
 
             grupoOfertasGestion.addView(fila);

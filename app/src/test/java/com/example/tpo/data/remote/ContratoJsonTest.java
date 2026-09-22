@@ -9,7 +9,7 @@ import static org.junit.Assert.assertTrue;
 import com.example.tpo.data.remote.dto.ActualizarPerfilRequest;
 import com.example.tpo.data.remote.dto.OperacionResponse;
 import com.example.tpo.data.remote.dto.PaginaPublicacionesResponse;
-import com.example.tpo.data.remote.dto.PublicacionResponse;
+import com.example.tpo.data.remote.dto.PublicacionResumenResponse;
 import com.example.tpo.data.remote.dto.UsuarioResponse;
 import com.example.tpo.model.Categoria;
 import com.example.tpo.model.EstadoArticulo;
@@ -186,7 +186,7 @@ public class ContratoJsonTest {
                 + "\"estadoArticulo\":\"REACONDICIONADO\",\"zona\":\"PALERMO\","
                 + "\"estadoPublicacion\":\"ACTIVA\",\"vendedorId\":\"2\"}";
 
-        assertNull(gson.fromJson(json, PublicacionResponse.class).aModelo());
+        assertNull(gson.fromJson(json, PublicacionResumenResponse.class).aModelo());
     }
 
     @Test

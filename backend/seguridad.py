@@ -73,3 +73,19 @@ def usuario_actual(credenciales: HTTPAuthorizationCredentials = Depends(esquema_
     if usuario is None:
         raise sin_permiso
     return dict(usuario)
+
+
+def usuario_actual_opcional(credenciales: HTTPAuthorizationCredentials = Depends(esquema_bearer)):
+    """Igual que usuario_actual pero nunca tira 401: devuelve None si no hay
+    token, es invalido, vencio o no corresponde a ningun usuario. Para
+    endpoints que cambian la respuesta segun quien pregunta pero tambien
+    los puede consultar cualquiera (por ejemplo, el detalle de una
+    publicacion)."""
+    if credenciales is None:
+        return None
+    try:
+        carga = jwt.decode(credenciales.credentials, CLAVE_SECRETA, algorithms=[ALGORITMO])
+    except jwt.InvalidTokenError:
+        return None
+    usuario = database.buscar_usuario_por_id(int(carga["sub"]))
+    return dict(usuario) if usuario is not None else None
