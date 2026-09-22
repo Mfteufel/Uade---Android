@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 import com.example.tpo.data.remote.ErrorApi;
 import com.example.tpo.data.remote.UsuarioApi;
 import com.example.tpo.data.remote.dto.ActualizarPerfilRequest;
+import com.example.tpo.data.remote.dto.CalificacionResponse;
 import com.example.tpo.data.remote.dto.PaginaPublicacionesResponse;
 import com.example.tpo.data.remote.dto.PublicacionResumenResponse;
 import com.example.tpo.data.remote.dto.UsuarioResponse;
@@ -21,7 +22,6 @@ import com.example.tpo.util.ImagenUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -39,8 +39,8 @@ import retrofit2.Response;
  * mismos modelos y los mismos mensajes de error por {@link RepositorioCallback}
  * que con {@link PerfilRepositoryMock}.
  * <p>
- * El backend todavía no tiene foto de perfil ni calificaciones recibidas: para
- * esas dos cosas se responde localmente, sin pedir nada al servidor.
+ * El backend todavía no tiene foto de perfil: para eso se responde localmente,
+ * sin pedir nada al servidor.
  * <p>
  * No construye Retrofit: recibe {@link UsuarioApi} ya creada desde el único
  * {@code Retrofit} de {@code NetworkModule}, que agrega el token JWT.
@@ -139,15 +139,17 @@ public class PerfilRepositoryApi implements PerfilRepository {
         });
     }
 
-    /**
-     * El backend todavía no guarda calificaciones (llegan con el Punto 9): la
-     * lista vacía es lo que corresponde mostrar, y coincide con la reputación en
-     * cero que manda el perfil.
-     */
     @Override
     public void obtenerCalificacionesRecibidas(String usuarioId,
                                                RepositorioCallback<List<Calificacion>> callback) {
-        handlerPrincipal.post(() -> callback.onExito(Collections.emptyList()));
+        api.obtenerCalificacionesRecibidas(usuarioId).enqueue(
+                adaptar(callback, "No pudimos cargar las calificaciones", lista -> {
+                    List<Calificacion> calificaciones = new ArrayList<>();
+                    for (CalificacionResponse json : lista) {
+                        calificaciones.add(json.aModelo());
+                    }
+                    return calificaciones;
+                }));
     }
 
     // ---------------------------------------------------------------------

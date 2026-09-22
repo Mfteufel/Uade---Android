@@ -53,6 +53,35 @@ public class OperacionRepositoryMock implements OperacionRepository {
     }
 
     @Override
+    public void obtenerPendientesDeEntrega(RepositorioCallback<List<Operacion>> callback) {
+        handlerPrincipal.postDelayed(() -> {
+            if (SIMULAR_ERROR) {
+                callback.onError("No pudimos cargar las entregas pendientes");
+                return;
+            }
+            callback.onExito(base.pendientesDeEntrega(idLogueado(), System.currentTimeMillis()));
+        }, DEMORA_SIMULADA_MS);
+    }
+
+    @Override
+    public void confirmarEntrega(String operacionId, RepositorioCallback<Operacion> callback) {
+        handlerPrincipal.postDelayed(() -> {
+            if (SIMULAR_ERROR) {
+                callback.onError("No pudimos confirmar la entrega");
+                return;
+            }
+            String error = base.validarEntrega(operacionId, idLogueado());
+            if (error != null) {
+                // Equivale a los 403/404/409 de la API, con su "detail".
+                callback.onError(error);
+                return;
+            }
+            callback.onExito(base.confirmarEntrega(operacionId, idLogueado(),
+                    System.currentTimeMillis()));
+        }, DEMORA_SIMULADA_MS);
+    }
+
+    @Override
     public void calificar(String operacionId, int estrellas, @Nullable String comentario,
                           RepositorioCallback<Operacion> callback) {
         handlerPrincipal.postDelayed(() -> {

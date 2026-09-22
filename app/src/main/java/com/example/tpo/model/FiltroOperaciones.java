@@ -61,7 +61,11 @@ public class FiltroOperaciones implements Serializable {
         if (tipo != null && operacion.getTipo() != tipo) {
             return false;
         }
-        long fecha = operacion.getFechaReferencia();
+        Long fecha = operacion.getFechaReferencia();
+        if (fecha == null) {
+            // Sin fecha conocida no se puede ubicar en un rango: solo entra sin filtro de fechas.
+            return !tieneRangoFechas();
+        }
         if (desde != null && fecha < desde) {
             return false;
         }

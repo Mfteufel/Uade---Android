@@ -4,10 +4,14 @@
 
     De arriba hacia abajo:
       1. Toolbar con flecha para volver al perfil.
-      2. Filtros: tipo (Todas / Compras / Ventas, selección única) y rango de
-         fechas (chip que abre el calendario; la cruz lo borra).
-      3. La lista, con sus estados de carga, vacío y error superpuestos (el
-         Fragment muestra uno solo por vez, igual que el resto de la app).
+      2. Pendientes de entrega: ventas aceptadas que el comprador todavía no
+         confirmó que recibió. No son parte del historial y los filtros no las
+         afectan; el bloque se oculta si no hay ninguna.
+      3. Historial: filtros de tipo (Todas / Compras / Ventas, selección única)
+         y de rango de fechas (chip que abre el calendario; la cruz lo borra).
+      4. La lista de operaciones concretadas, con sus estados de carga, vacío y
+         error superpuestos (el Fragment muestra uno solo por vez, igual que el
+         resto de la app).
 -->
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -30,7 +34,40 @@
             app:navigationIcon="@drawable/ic_flecha_atras"
             app:title="@string/historial_titulo" />
 
-        <!-- ============ Filtros ============ -->
+        <!-- ============ Pendientes de entrega ============ -->
+        <LinearLayout
+            android:id="@+id/bloquePendientesEntrega"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="@dimen/espaciado_pantalla"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/historial_titulo_pendientes"
+                android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/listaPendientesEntrega"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                tools:itemCount="1"
+                tools:listitem="@layout/item_operacion" />
+        </LinearLayout>
+
+        <!-- ============ Historial: filtros ============ -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/espaciado_mediano"
+            android:paddingHorizontal="@dimen/espaciado_pantalla"
+            android:text="@string/historial_titulo_concretadas"
+            android:textAppearance="?attr/textAppearanceTitleSmall" />
+
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

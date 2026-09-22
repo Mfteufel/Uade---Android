@@ -7,14 +7,17 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.example.tpo.data.remote.dto.ActualizarPerfilRequest;
+import com.example.tpo.data.remote.dto.CalificacionResponse;
 import com.example.tpo.data.remote.dto.OperacionResponse;
 import com.example.tpo.data.remote.dto.PaginaPublicacionesResponse;
 import com.example.tpo.data.remote.dto.PublicacionResumenResponse;
 import com.example.tpo.data.remote.dto.UsuarioResponse;
+import com.example.tpo.model.Calificacion;
 import com.example.tpo.model.Categoria;
 import com.example.tpo.model.EstadoArticulo;
 import com.example.tpo.model.EstadoOperacion;
 import com.example.tpo.model.EstadoPublicacion;
+import com.example.tpo.model.FiltroOperaciones;
 import com.example.tpo.model.Operacion;
 import com.example.tpo.model.Publicacion;
 import com.example.tpo.model.Reputacion;
@@ -31,7 +34,8 @@ import okhttp3.ResponseBody;
 import retrofit2.Response;
 
 /**
- * Fija cómo lee la app los JSON de {@code docs/contrato-api-perfil-historial.md}.
+ * Fija cómo lee la app los JSON reales del backend: perfil, publicaciones,
+ * operaciones y calificaciones (copiados de respuestas del servidor).
  * <p>
  * Si el backend cambia un nombre de campo, este test es el que avisa qué DTO hay
  * que ajustar, sin tener que probarlo a mano en el emulador. Usa el mismo Gson
@@ -189,26 +193,136 @@ public class ContratoJsonTest {
         assertNull(gson.fromJson(json, PublicacionResumenResponse.class).aModelo());
     }
 
+    /** {@code GET /operaciones}: una venta de Ana ya entregada, que todavía puede calificar. */
     @Test
-    public void operacionVistaPorElComprador() {
-        String json = "{\"id\": 12, \"publicacion_id\": 4, \"articulo\": \"Teclado mecánico\","
-                + " \"monto_final\": 45000, \"fecha_operacion\": 1726000000000,"
-                + " \"fecha_entrega\": 1726200000000, \"estado\": \"ENTREGADA\", \"tipo\": \"COMPRA\","
-                + " \"comprador\": {\"id\": 1, \"nombre\": \"Walter\"},"
-                + " \"vendedor\": {\"id\": 3, \"nombre\": \"Sofía M.\"},"
-                + " \"mi_calificacion\": null, \"puede_calificar\": true,"
-                + " \"calificable_hasta\": 1726804800000}";
+    public void operacionEntregadaComoLaDevuelveElBackend() {
+        String json = "{\"id\":\"7\",\"publicacionId\":\"6\",\"articulo\":\"Lámpara de pie\","
+                + "\"montoFinal\":38000.0,\"fechaEntrega\":1789785304654,\"estado\":\"ENTREGADA\","
+                + "\"tipo\":\"VENTA\",\"comprador\":{\"id\":\"4\",\"nombre\":\"Carla\"},"
+                + "\"vendedor\":{\"id\":\"2\",\"nombre\":\"Ana\"},\"miCalificacion\":null,"
+                + "\"puedeCalificar\":true,\"calificableHasta\":1790390104654}";
 
         Operacion operacion = gson.fromJson(json, OperacionResponse.class).aModelo();
 
-        assertEquals("12", operacion.getId());
-        assertEquals(TipoOperacion.COMPRA, operacion.getTipo());
+        assertEquals("7", operacion.getId());
+        assertEquals("6", operacion.getPublicacionId());
+        assertEquals("Lámpara de pie", operacion.getTituloArticulo());
+        assertEquals(38000, operacion.getMontoFinal(), 0.001);
+        assertEquals(TipoOperacion.VENTA, operacion.getTipo());
         assertEquals(EstadoOperacion.ENTREGADA, operacion.getEstado());
-        assertEquals("Sofía M.", operacion.getContraparte().getNombre());
-        assertEquals(45000, operacion.getMontoFinal(), 0.001);
+        assertEquals("Carla", operacion.getContraparte().getNombre());
+        assertEquals(1789785304654L, (long) operacion.getFechaReferencia());
         assertTrue(operacion.puedeCalificar());
         assertFalse(operacion.yaCalifique());
-        assertEquals(1726804800000L, (long) operacion.getCalificableHasta());
+        assertFalse(operacion.puedeConfirmarEntrega());
+        assertEquals(1790390104654L, (long) operacion.getCalificableHasta());
+        // El backend no guarda la fecha de aceptación.
+        assertNull(operacion.getFechaOperacion());
+    }
+
+    /** Venta aceptada sin entrega confirmada: sin fecha, sin calificar, la confirma el comprador. */
+    @Test
+    public void operacionPendienteDeEntrega() {
+        Operacion compra = gson.fromJson(pendienteDeEntrega("COMPRA"), OperacionResponse.class).aModelo();
+        Operacion venta = gson.fromJson(pendienteDeEntrega("VENTA"), OperacionResponse.class).aModelo();
+
+        assertEquals(EstadoOperacion.PENDIENTE_ENTREGA, compra.getEstado());
+        assertTrue(compra.estaPendienteDeEntrega());
+        assertNull(compra.getFechaEntrega());
+        assertNull(compra.getFechaReferencia());
+        assertNull(compra.getCalificableHasta());
+        assertFalse(compra.puedeCalificar());
+        assertTrue(compra.puedeConfirmarEntrega());
+        // El vendedor no puede marcar la entrega por su cuenta.
+        assertFalse(venta.puedeConfirmarEntrega());
+    }
+
+    @Test
+    public void operacionYaCalificadaTraeMiCalificacion() {
+        String json = "{\"id\":\"6\",\"publicacionId\":\"7\",\"articulo\":\"Microondas BGH\","
+                + "\"montoFinal\":85500.0,\"fechaEntrega\":1789871704654,\"estado\":\"ENTREGADA\","
+                + "\"tipo\":\"COMPRA\",\"comprador\":{\"id\":\"2\",\"nombre\":\"Ana\"},"
+                + "\"vendedor\":{\"id\":\"3\",\"nombre\":\"Bruno\"},"
+                + "\"miCalificacion\":{\"id\":\"1\",\"operacionId\":\"6\","
+                + "\"autor\":{\"id\":\"2\",\"nombre\":\"Ana\"},\"calificadoId\":\"3\","
+                + "\"articulo\":\"Microondas BGH\",\"estrellas\":4,"
+                + "\"comentario\":\"Buena predisposicion para coordinar\",\"fecha\":1789958104654},"
+                + "\"puedeCalificar\":false,\"calificableHasta\":1790476504654}";
+
+        Operacion operacion = gson.fromJson(json, OperacionResponse.class).aModelo();
+
+        assertTrue(operacion.yaCalifique());
+        assertFalse(operacion.puedeCalificar());
+        Calificacion mia = operacion.getMiCalificacion();
+        assertNotNull(mia);
+        assertEquals("1", mia.getId());
+        assertEquals("6", mia.getOperacionId());
+        assertEquals("Ana", mia.getAutor().getNombre());
+        assertEquals("3", mia.getCalificadoId());
+        assertEquals(4, mia.getEstrellas());
+        assertEquals("Buena predisposicion para coordinar", mia.getComentario());
+        assertEquals(1789958104654L, mia.getFecha());
+    }
+
+    /** {@code GET /usuarios/4/calificaciones}: lo que muestra la pestaña del perfil público. */
+    @Test
+    public void calificacionesRecibidasComoLasDevuelveElBackend() {
+        String json = "[{\"id\":\"3\",\"operacionId\":\"10\",\"autor\":{\"id\":\"2\","
+                + "\"nombre\":\"Ana\"},\"calificadoId\":\"4\",\"articulo\":\"Bicicleta rodado 26\","
+                + "\"estrellas\":5,\"comentario\":null,\"fecha\":1790044527289}]";
+
+        CalificacionResponse[] lista = gson.fromJson(json, CalificacionResponse[].class);
+        Calificacion calificacion = lista[0].aModelo();
+
+        assertEquals(1, lista.length);
+        assertEquals("Ana", calificacion.getAutor().getNombre());
+        assertEquals("4", calificacion.getCalificadoId());
+        assertEquals("Bicicleta rodado 26", calificacion.getTituloArticulo());
+        assertEquals(5, calificacion.getEstrellas());
+        assertFalse(calificacion.tieneComentario());
+    }
+
+    /** Sin {@code cantidadCalificaciones} la pantalla mostraría "sin calificaciones" aunque las haya. */
+    @Test
+    public void laReputacionRealTraeLaCantidadDeCalificaciones() {
+        String json = "{\"id\":\"2\",\"nombre\":\"Ana\",\"email\":\"ana@ronda.com\","
+                + "\"telefono\":null,\"zona\":\"PALERMO\",\"fechaAlta\":1789862004400,"
+                + "\"reputacion\":{\"promedioEstrellas\":4.5,\"cantidadCalificaciones\":2,"
+                + "\"operacionesComoComprador\":3,\"operacionesComoVendedor\":1}}";
+
+        Reputacion reputacion = gson.fromJson(json, UsuarioResponse.class).aModelo().getReputacion();
+
+        assertTrue(reputacion.tieneCalificaciones());
+        assertEquals(2, reputacion.getCantidadCalificaciones());
+        assertEquals(4.5, reputacion.getPromedioEstrellas(), 0.001);
+        assertEquals(3, reputacion.getOperacionesComoComprador());
+        assertEquals(1, reputacion.getOperacionesComoVendedor());
+    }
+
+    @Test
+    public void unaOperacionSinFechaSoloEntraSinFiltroDeFechas() {
+        Operacion pendiente = gson.fromJson(pendienteDeEntrega("COMPRA"), OperacionResponse.class).aModelo();
+        FiltroOperaciones sinFechas = new FiltroOperaciones();
+        FiltroOperaciones conFechas = new FiltroOperaciones();
+        conFechas.setRangoFechas(0L, Long.MAX_VALUE);
+
+        assertTrue(sinFechas.incluye(pendiente));
+        assertFalse(conFechas.incluye(pendiente));
+    }
+
+    @Test
+    public void losRechazosDelHistorialLleganConSuMensaje() {
+        Response<Object> vendedor = Response.error(403,
+                cuerpo("{\"detail\":\"Solo el comprador puede confirmar la entrega\"}"));
+        Response<Object> vencida = Response.error(409,
+                cuerpo("{\"detail\":\"Vencio el plazo para calificar (7 dias desde la entrega)\"}"));
+        Response<Object> inexistente = Response.error(404, cuerpo("{\"detail\":\"La operacion no existe\"}"));
+
+        assertEquals("Solo el comprador puede confirmar la entrega",
+                ErrorApi.mensaje(vendedor, "por defecto"));
+        assertEquals("Vencio el plazo para calificar (7 dias desde la entrega)",
+                ErrorApi.mensaje(vencida, "por defecto"));
+        assertEquals("La operacion no existe", ErrorApi.mensaje(inexistente, "por defecto"));
     }
 
     @Test
@@ -233,6 +347,15 @@ public class ContratoJsonTest {
     private static Usuario usuarioAna() {
         return new Usuario("2", "Ana", "ana@ronda.com", null, Zona.PALERMO, 1789862004400L,
                 new Reputacion(0, 0, 0, 0), null, 0);
+    }
+
+    /** Forma real de la venta "Juego de ollas" de los datos de prueba, vista por comprador o vendedor. */
+    private static String pendienteDeEntrega(String tipo) {
+        return "{\"id\":\"9\",\"publicacionId\":\"8\",\"articulo\":\"Juego de ollas\","
+                + "\"montoFinal\":70200.0,\"fechaEntrega\":null,\"estado\":\"PENDIENTE_ENTREGA\","
+                + "\"tipo\":\"" + tipo + "\",\"comprador\":{\"id\":\"2\",\"nombre\":\"Ana\"},"
+                + "\"vendedor\":{\"id\":\"4\",\"nombre\":\"Carla\"},\"miCalificacion\":null,"
+                + "\"puedeCalificar\":false,\"calificableHasta\":null}";
     }
 
     private static ResponseBody cuerpo(String json) {
