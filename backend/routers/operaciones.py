@@ -1,10 +1,12 @@
+import hmac
 import sqlite3
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 import database
 import seguridad
+from models.entrega import CodigoEntrega, Entrega
 from models.operacion import CalificacionNueva, Operacion
 
 router = APIRouter(prefix="/operaciones", tags=["Operaciones"])
@@ -90,12 +92,43 @@ def listar_pendientes(usuario: dict = Depends(seguridad.usuario_actual)):
     return [a_json(fila, usuario["id"], ahora) for fila in filas]
 
 
-# la entrega la confirma solo el comprador: es quien sabe que recibio el articulo
+# los datos de la entrega los ven las dos partes, pero el enlace al QR es solo del vendedor:
+# si el comprador lo tuviera podria confirmar sin haber recibido nada
+@router.get("/{operacion_id}/entrega", response_model=Entrega)
+def ver_entrega(request: Request, operacion_id: int,
+                usuario: dict = Depends(seguridad.usuario_actual)):
+    fila = operacion_propia(operacion_id, usuario)
+    soy_comprador = fila["comprador_id"] == usuario["id"]
+    pendiente = fila["fecha_entrega"] is None
+    enlace = None
+    if pendiente and not soy_comprador:
+        enlace = str(request.base_url) + "entregas/" + fila["codigo_entrega"]
+    return {
+        "operacionId": str(fila["id"]),
+        "articulo": fila["titulo"],
+        "montoFinal": fila["precio"],
+        "tipo": "COMPRA" if soy_comprador else "VENTA",
+        "contraparte": resumen(fila["vendedor_id"] if soy_comprador else fila["comprador_id"]),
+        "estado": "PENDIENTE_ENTREGA" if pendiente else "ENTREGADA",
+        "fechaEntrega": fila["fecha_entrega"],
+        "enlaceQr": enlace,
+    }
+
+
+# la entrega la confirma solo el comprador, y con el codigo del QR que le muestra el vendedor
 @router.post("/{operacion_id}/entrega", response_model=Operacion)
-def confirmar_entrega(operacion_id: int, usuario: dict = Depends(seguridad.usuario_actual)):
+def confirmar_entrega(operacion_id: int, datos: CodigoEntrega,
+                      usuario: dict = Depends(seguridad.usuario_actual)):
     fila = operacion_propia(operacion_id, usuario)
     if fila["comprador_id"] != usuario["id"]:
         raise error(403, "Solo el comprador puede confirmar la entrega")
+    if fila["fecha_entrega"] is not None:
+        raise error(409, "La entrega ya estaba confirmada")
+    # se compara en bytes: un QR cualquiera puede traer letras que no son ASCII
+    esperado = (fila["codigo_entrega"] or "").encode()
+    recibido = datos.codigo.strip().encode()
+    if not esperado or not hmac.compare_digest(esperado, recibido):
+        raise error(400, "Codigo invalido")
     ahora = database.ahora_en_milisegundos()
     if not database.confirmar_entrega(fila["id"], ahora):
         raise error(409, "La entrega ya estaba confirmada")

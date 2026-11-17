@@ -75,8 +75,12 @@ class OperacionesTest(unittest.TestCase):
         database.confirmar_entrega(int(operacion_id), hace_dias(dias))
         return operacion_id
 
+    # manda el codigo de esa venta, como si el comprador escaneara el QR del vendedor
     def confirmar(self, operacion_id, sesion_usuario):
-        return cliente.post("/operaciones/" + operacion_id + "/entrega", headers=sesion_usuario)
+        oferta = database.buscar_oferta(int(operacion_id))
+        codigo = (oferta["codigo_entrega"] if oferta else None) or "sin-codigo"
+        return cliente.post("/operaciones/" + operacion_id + "/entrega",
+                            json={"codigo": codigo}, headers=sesion_usuario)
 
     def historial(self, sesion_usuario, **filtros):
         respuesta = cliente.get("/operaciones", params=filtros, headers=sesion_usuario)

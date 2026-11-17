@@ -66,8 +66,10 @@ Es el mismo en todas las respuestas.
   pasó y sigue `PENDIENTE`, queda `VENCIDA`.
 - Un comprador puede tener una sola oferta `PENDIENTE` por publicación.
 - No se puede ofertar sobre una publicación propia ni sobre una que no esté `ACTIVA`.
-- Al aceptar: la publicación pasa a `VENDIDA` y las demás ofertas `PENDIENTE`
-  de esa publicación quedan `RECHAZADA`.
+- Al aceptar: la publicación pasa a `PENDIENTE_ENTREGA` y las demás ofertas
+  `PENDIENTE` de esa publicación quedan `RECHAZADA`. Pasa a `VENDIDA` cuando el
+  comprador confirma la entrega escaneando el QR de esa venta
+  (`POST /operaciones/{id}/entrega`).
 - Solo el comprador y el vendedor de una oferta pueden verla o responderla.
 - `direccionEntrega` es la que cargó el vendedor al publicar (campo
   `direccionEntrega` de `POST /publicaciones`). Si la publicación no tiene

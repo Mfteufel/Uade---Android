@@ -36,7 +36,7 @@ public class OperacionAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         /** Se tocó "Calificar" en una operación calificable. */
         void onCalificarClick(Operacion operacion);
 
-        /** El comprador tocó "Confirmar entrega" en una operación pendiente de entrega. */
+        /** Se tocó el botón de una operación pendiente de entrega: abrir el panel de la entrega. */
         void onConfirmarEntregaClick(Operacion operacion);
 
         /** Se tocó la contraparte: abrir su perfil público. */
@@ -138,7 +138,7 @@ public class OperacionAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
         private final TextView fecha;
         private final View contenedorPendienteEntrega;
         private final TextView textoPendienteEntrega;
-        private final View botonConfirmarEntrega;
+        private final TextView botonConfirmarEntrega;
         private final View contenedorCalificable;
         private final TextView plazo;
         private final View botonCalificar;
@@ -186,7 +186,10 @@ public class OperacionAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
             contenedorPendienteEntrega.setVisibility(pendiente ? View.VISIBLE : View.GONE);
             textoPendienteEntrega.setText(puedoConfirmar
                     ? R.string.historial_ya_recibiste : R.string.historial_esperando_entrega);
-            botonConfirmarEntrega.setVisibility(puedoConfirmar ? View.VISIBLE : View.GONE);
+            // El botón abre el panel de la entrega para los dos: el comprador
+            // escanea el QR ahí y el vendedor lo consigue para imprimir.
+            botonConfirmarEntrega.setText(puedoConfirmar
+                    ? R.string.historial_confirmar_entrega : R.string.entrega_ver_qr);
             botonConfirmarEntrega.setOnClickListener(v -> listener.onConfirmarEntregaClick(operacion));
 
             // Qué mostrar lo decidió el servidor; acá solo se refleja.

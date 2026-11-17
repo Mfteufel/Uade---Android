@@ -1,4 +1,5 @@
 import os
+import secrets
 import sqlite3
 import unicodedata
 from datetime import datetime, timezone
@@ -55,7 +56,8 @@ CREATE TABLE IF NOT EXISTS ofertas (
     turno          TEXT NOT NULL DEFAULT 'VENDEDOR',
     fecha_creacion INTEGER NOT NULL,
     vence_en       INTEGER NOT NULL,
-    fecha_entrega  INTEGER
+    fecha_entrega  INTEGER,
+    codigo_entrega TEXT
 );
 
 CREATE TABLE IF NOT EXISTS calificaciones (
@@ -154,11 +156,21 @@ def inicializar():
         columnas = [fila["name"] for fila in conexion.execute("PRAGMA table_info(ofertas)")]
         if "fecha_entrega" not in columnas:
             conexion.execute("ALTER TABLE ofertas ADD COLUMN fecha_entrega INTEGER")
+        if "codigo_entrega" not in columnas:
+            conexion.execute("ALTER TABLE ofertas ADD COLUMN codigo_entrega TEXT")
+        # una venta aceptada sin entregar ya no figura como vendida: eso pasa al escanear el QR
+        conexion.execute(
+            "UPDATE publicaciones SET estado_publicacion = 'PENDIENTE_ENTREGA'"
+            " WHERE estado_publicacion = 'VENDIDA' AND id IN ("
+            "SELECT publicacion_id FROM ofertas"
+            " WHERE estado = 'ACEPTADA' AND fecha_entrega IS NULL)"
+        )
         columnas = [fila["name"] for fila in conexion.execute("PRAGMA table_info(preguntas)")]
         if "respuesta" not in columnas:
             conexion.execute("ALTER TABLE preguntas ADD COLUMN respuesta TEXT")
         if "respuesta_en" not in columnas:
             conexion.execute("ALTER TABLE preguntas ADD COLUMN respuesta_en INTEGER")
+    completar_codigos_de_entrega()
 
 
 def buscar_usuario_por_email(email):
@@ -531,6 +543,13 @@ def buscar_oferta(oferta_id):
         ).fetchone()
 
 
+def buscar_oferta_por_codigo(codigo):
+    with conectar() as conexion:
+        return conexion.execute(
+            OFERTA_CON_PUBLICACION + " WHERE o.codigo_entrega = ?", (codigo,)
+        ).fetchone()
+
+
 def ofertas_enviadas(comprador_id):
     with conectar() as conexion:
         return conexion.execute(
@@ -570,17 +589,39 @@ def rechazar_oferta(oferta_id):
         conexion.execute("UPDATE ofertas SET estado = 'RECHAZADA' WHERE id = ?", (oferta_id,))
 
 
-# los tres cambios van en la misma transaccion: o se hacen todos o ninguno
+# es lo que va adentro del QR: largo y al azar para que no se pueda adivinar
+def nuevo_codigo_de_entrega():
+    return secrets.token_urlsafe(16)
+
+
+# ventas aceptadas que no tienen codigo: las anteriores a este cambio y las de prueba
+def completar_codigos_de_entrega():
+    with conectar() as conexion:
+        filas = conexion.execute(
+            "SELECT id FROM ofertas WHERE estado = 'ACEPTADA' AND codigo_entrega IS NULL"
+        ).fetchall()
+        for fila in filas:
+            conexion.execute(
+                "UPDATE ofertas SET codigo_entrega = ? WHERE id = ?",
+                (nuevo_codigo_de_entrega(), fila["id"]),
+            )
+
+
+# los tres cambios van en la misma transaccion: o se hacen todos o ninguno.
+# La publicacion no queda vendida todavia: espera a que el comprador escanee el QR
 def aceptar_oferta(oferta_id, publicacion_id):
     with conectar() as conexion:
-        conexion.execute("UPDATE ofertas SET estado = 'ACEPTADA' WHERE id = ?", (oferta_id,))
+        conexion.execute(
+            "UPDATE ofertas SET estado = 'ACEPTADA', codigo_entrega = ? WHERE id = ?",
+            (nuevo_codigo_de_entrega(), oferta_id),
+        )
         conexion.execute(
             "UPDATE ofertas SET estado = 'RECHAZADA'"
             " WHERE publicacion_id = ? AND estado = 'PENDIENTE'",
             (publicacion_id,),
         )
         conexion.execute(
-            "UPDATE publicaciones SET estado_publicacion = 'VENDIDA' WHERE id = ?",
+            "UPDATE publicaciones SET estado_publicacion = 'PENDIENTE_ENTREGA' WHERE id = ?",
             (publicacion_id,),
         )
 
@@ -632,7 +673,8 @@ def pendientes_de_entrega(usuario_id):
         ).fetchall()
 
 
-# el AND fecha_entrega IS NULL evita que dos confirmaciones simultaneas pisen la fecha
+# el AND fecha_entrega IS NULL evita que dos confirmaciones simultaneas pisen la fecha.
+# Recien aca la publicacion queda vendida, en la misma transaccion que la entrega
 def confirmar_entrega(oferta_id, fecha_entrega):
     with conectar() as conexion:
         cursor = conexion.execute(
@@ -640,7 +682,14 @@ def confirmar_entrega(oferta_id, fecha_entrega):
             " WHERE id = ? AND estado = 'ACEPTADA' AND fecha_entrega IS NULL",
             (fecha_entrega, oferta_id),
         )
-        return cursor.rowcount > 0
+        confirmada = cursor.rowcount > 0
+        if confirmada:
+            conexion.execute(
+                "UPDATE publicaciones SET estado_publicacion = 'VENDIDA'"
+                " WHERE id = (SELECT publicacion_id FROM ofertas WHERE id = ?)",
+                (oferta_id,),
+            )
+        return confirmada
 
 
 CALIFICACION_CON_ARTICULO = (

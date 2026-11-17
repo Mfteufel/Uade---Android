@@ -65,6 +65,12 @@ dependencies {
     implementation(libs.swiperefreshlayout)
     // Desbloqueo por huella/cara/PIN del dispositivo (Punto 1).
     implementation(libs.biometric)
+    // CameraX + ML Kit: leer con la cámara el QR que confirma la entrega (Punto 12).
+    implementation(libs.camera.core)
+    implementation(libs.camera.camera2)
+    implementation(libs.camera.lifecycle)
+    implementation(libs.camera.view)
+    implementation(libs.mlkit.barcode)
     // Hilt: inyeccion de dependencias (TokenManager, NetworkModule, RondaApp)
     implementation(libs.hilt.android)
     annotationProcessor(libs.hilt.compiler)

@@ -133,6 +133,46 @@
             android:id="@+id/action_historial_to_perfilPublico"
             app:destination="@id/perfilVendedorFragment" />
 
+        <!-- Punto 12: el botón de una operación pendiente abre el panel de la entrega. -->
+        <action
+            android:id="@+id/action_historial_to_entrega"
+            app:destination="@id/entregaFragment" />
+
+    </fragment>
+
+    <!-- Punto 12 - Cierre de la operación con QR: panel de la entrega y escáner. -->
+    <fragment
+        android:id="@+id/entregaFragment"
+        android:name="com.example.tpo.login.EntregaFragment"
+        android:label="@string/entrega_titulo"
+        tools:layout="@layout/fragment_entrega">
+        <argument
+            android:name="operacionId"
+            app:argType="string" />
+
+        <action
+            android:id="@+id/action_entrega_to_escaner"
+            app:destination="@id/escanerQrFragment" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/escanerQrFragment"
+        android:name="com.example.tpo.login.EscanerQrFragment"
+        android:label="@string/entrega_escanear"
+        tools:layout="@layout/fragment_escaner_qr">
+        <argument
+            android:name="operacionId"
+            app:argType="string" />
+
+        <!-- popUpTo + inclusive: al confirmarse se vuelve a un historial recién cargado
+             y el panel y el escáner salen de la pila, así "atrás" no vuelve a ellos. -->
+        <action
+            android:id="@+id/action_escaner_to_historial"
+            app:destination="@id/historialFragment"
+            app:popUpTo="@id/historialFragment"
+            app:popUpToInclusive="true" />
+
     </fragment>
 
     <!-- Punto 1 - Login. Primera pantalla de la app. -->

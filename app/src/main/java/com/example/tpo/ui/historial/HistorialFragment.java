@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.tpo.R;
 import com.example.tpo.data.OperacionRepository;
 import com.example.tpo.data.RepositorioCallback;
+import com.example.tpo.login.EntregaFragment;
 import com.example.tpo.model.FiltroOperaciones;
 import com.example.tpo.model.Operacion;
 import com.example.tpo.model.TipoOperacion;
@@ -29,7 +30,6 @@ import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.datepicker.CalendarConstraints;
 import com.google.android.material.datepicker.DateValidatorPointBackward;
 import com.google.android.material.datepicker.MaterialDatePicker;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -323,39 +323,16 @@ public class HistorialFragment extends Fragment implements OperacionAdapter.List
         CalificarBottomSheet.nueva(operacion).show(getChildFragmentManager(), TAG_CALIFICAR);
     }
 
-    /** Se pide confirmación: una vez registrada, la entrega no se puede deshacer. */
+    /**
+     * Abre el panel de la entrega. El comprador escanea ahí el QR del vendedor,
+     * y el vendedor consigue ese QR para imprimir.
+     */
     @Override
     public void onConfirmarEntregaClick(Operacion operacion) {
-        new MaterialAlertDialogBuilder(requireContext())
-                .setTitle(R.string.historial_confirmar_entrega_titulo)
-                .setMessage(R.string.historial_confirmar_entrega_mensaje)
-                .setNegativeButton(R.string.dialogo_cancelar, null)
-                .setPositiveButton(R.string.historial_confirmar_entrega,
-                        (dialogo, boton) -> confirmarEntrega(operacion))
-                .show();
-    }
-
-    /** Si sale bien se recarga todo: la operación deja las pendientes y pasa al historial. */
-    private void confirmarEntrega(Operacion operacion) {
-        repositorio.confirmarEntrega(operacion.getId(), new RepositorioCallback<Operacion>() {
-            @Override
-            public void onExito(Operacion actualizada) {
-                if (lista == null) {
-                    return; // la vista ya se destruyó
-                }
-                Snackbar.make(requireView(), R.string.historial_entrega_confirmada,
-                        Snackbar.LENGTH_SHORT).show();
-                cargarTodo();
-            }
-
-            @Override
-            public void onError(String mensaje) {
-                if (lista == null) {
-                    return;
-                }
-                Snackbar.make(requireView(), mensaje, Snackbar.LENGTH_LONG).show();
-            }
-        });
+        Bundle argumentos = new Bundle();
+        argumentos.putString(EntregaFragment.ARG_OPERACION_ID, operacion.getId());
+        Navigation.findNavController(requireView())
+                .navigate(R.id.action_historial_to_entrega, argumentos);
     }
 
     @Override

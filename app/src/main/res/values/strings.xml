@@ -209,6 +209,7 @@
     <!-- ===================== Estado de la publicación (Nuevo != EstadoArticulo, ver EstadoPublicacion) ===================== -->
     <string name="estado_publicacion_activa">Activa</string>
     <string name="estado_publicacion_pausada">Pausada</string>
+    <string name="estado_publicacion_pendiente_entrega">Pendiente - esperando entrega</string>
     <string name="estado_publicacion_vendida">Vendida</string>
 
     <!-- ===================== Galería del Detalle ===================== -->
@@ -463,4 +464,27 @@
     <string name="detalle_oferta_neg_monto_invalido">El monto tiene que ser mayor a cero</string>
     <string name="detalle_oferta_neg_error">No pudimos cargar esta oferta</string>
     <string name="detalle_oferta_neg_sin_direccion">El vendedor no cargó una dirección</string>
+
+    <!-- Punto 12: cierre de la operación con QR -->
+    <string name="entrega_titulo">Entrega</string>
+    <string name="entrega_confirmada">Entrega confirmada</string>
+    <string name="entrega_vendedor">Vendedor: %1$s</string>
+    <string name="entrega_comprador">Comprador: %1$s</string>
+    <string name="entrega_ayuda_comprador">Cuando tengas el artículo en la mano, escaneá el código QR que te muestra el vendedor.</string>
+    <string name="entrega_ayuda_vendedor">Imprimí el código QR y llevalo a la entrega. La venta se cierra cuando el comprador lo escanea.</string>
+    <string name="entrega_escanear">Escanear QR</string>
+    <string name="entrega_ver_qr">Ver QR</string>
+    <string name="entrega_ver_qr_imprimir">Ver QR para imprimir</string>
+    <string name="entrega_no_encontrada">No encontramos esa operación</string>
+    <string name="escaner_ayuda">Apuntá la cámara al código QR del vendedor</string>
+    <string name="escaner_verificando">Verificando el código…</string>
+    <string name="escaner_sin_permiso">Se necesita el permiso de cámara para escanear el QR</string>
+    <string name="escaner_confirmada_titulo">Operación confirmada</string>
+    <string name="escaner_confirmada_mensaje">La entrega quedó registrada. La publicación pasó a vendida y la operación ya figura en el historial de los dos.</string>
+    <string name="escaner_ya_confirmada_mensaje">Esta entrega ya estaba confirmada.</string>
+    <string name="escaner_invalido_titulo">Código inválido</string>
+    <string name="escaner_invalido_mensaje">Ese QR no es el de esta compra. Pedile al vendedor el código de esta venta y probá de nuevo.</string>
+    <string name="escaner_error_titulo">No se pudo confirmar</string>
+    <string name="escaner_volver">Volver al historial</string>
+    <string name="escaner_reintentar">Escanear de nuevo</string>
 </resources>

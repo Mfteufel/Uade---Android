@@ -59,4 +59,10 @@ public class NetworkModule {
     public AuthApi provideAuthApi(Retrofit retrofit) {
         return retrofit.create(AuthApi.class);
     }
+
+    @Provides
+    @Singleton
+    public EntregaApi provideEntregaApi(Retrofit retrofit) {
+        return retrofit.create(EntregaApi.class);
+    }
 }

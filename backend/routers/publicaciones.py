@@ -187,6 +187,10 @@ def editar(request: Request, publicacion_id: int, datos: EdicionPublicacion):
 def cambiar_estado(publicacion_id: int, datos: CambioEstado):
     if datos.estadoPublicacion not in ESTADOS_PUBLICACION:
         raise error(400, "Estado de publicacion invalido")
+    # con una venta acordada el estado lo maneja la entrega, no el vendedor a mano
+    actual = database.buscar_publicacion(publicacion_id)
+    if actual is not None and actual["estado_publicacion"] == "PENDIENTE_ENTREGA":
+        raise error(409, "La publicacion tiene una venta esperando la entrega")
     if not database.cambiar_estado_publicacion(publicacion_id, datos.estadoPublicacion):
         raise error(404, "La publicacion no existe")
     return Response(status_code=status.HTTP_204_NO_CONTENT)

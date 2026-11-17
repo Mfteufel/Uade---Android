@@ -21,6 +21,8 @@ public enum EstadoPublicacion {
 
     ACTIVA(R.string.estado_publicacion_activa),
     PAUSADA(R.string.estado_publicacion_pausada),
+    // se aceptó una oferta y falta que el comprador confirme la entrega con el QR
+    PENDIENTE_ENTREGA(R.string.estado_publicacion_pendiente_entrega),
     VENDIDA(R.string.estado_publicacion_vendida);
 
     @StringRes

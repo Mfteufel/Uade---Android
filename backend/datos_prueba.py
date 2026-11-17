@@ -115,7 +115,8 @@ def cargar_ofertas(ids):
             estado, turno, ahora - horas * hora,
         )
         if estado == "ACEPTADA":
-            database.cambiar_estado_publicacion(publicacion["id"], "VENDIDA")
+            database.cambiar_estado_publicacion(publicacion["id"], "PENDIENTE_ENTREGA")
+    database.completar_codigos_de_entrega()
 
 
 def cargar_operaciones(ids):
@@ -136,7 +137,7 @@ def cargar_operaciones(ids):
             publicacion["precio"] * porcentaje / 100, None, creada + 6 * hora,
             fecha_creacion=creada,
         )
-        # misma transaccion que cuando el vendedor acepta: la publicacion queda vendida
+        # misma transaccion que cuando el vendedor acepta: la publicacion espera la entrega
         database.aceptar_oferta(oferta_id, publicacion["id"])
         if dias is None:
             continue
