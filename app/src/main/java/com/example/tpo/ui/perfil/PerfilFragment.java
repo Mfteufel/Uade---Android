@@ -1,5 +1,6 @@
 package com.example.tpo.ui.perfil;
 
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -26,6 +27,7 @@ import com.example.tpo.data.SesionUsuario;
 import com.example.tpo.login.TokenManager;
 import com.example.tpo.model.Usuario;
 import com.example.tpo.model.Zona;
+import com.example.tpo.service.PollingService;
 import com.example.tpo.util.FormatoUtils;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
@@ -324,6 +326,7 @@ public class PerfilFragment extends Fragment {
      * el botón "atrás" volvería a mostrar Home/Perfil de la sesión ya cerrada.
      */
     private void cerrarSesion() {
+        requireContext().stopService(new Intent(requireContext(), PollingService.class));
         tokenManager.clearToken();
         SesionUsuario.getInstancia().limpiar();
         Navigation.findNavController(requireView()).navigate(

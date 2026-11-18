@@ -1,10 +1,14 @@
 package com.example.tpo.ui.home;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -17,10 +21,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.content.res.AppCompatResources;
+import androidx.core.content.ContextCompat;
 import androidx.core.os.BundleCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
@@ -44,6 +52,7 @@ import com.example.tpo.model.EstadoArticulo;
 import com.example.tpo.model.FiltroPublicaciones;
 import com.example.tpo.model.OrdenPublicaciones;
 import com.example.tpo.model.Publicacion;
+import com.example.tpo.service.PollingService;
 import com.example.tpo.ui.ChipsUtils;
 import com.example.tpo.util.ConectividadUtils;
 import com.example.tpo.util.FormatoUtils;
@@ -159,6 +168,8 @@ public class HomeFragment extends Fragment implements
     /** true mientras lo que se ve en pantalla es el cache offline, no una respuesta real. */
     private boolean mostrandoDatosSinConexion = false;
 
+    private ActivityResultLauncher<String> notifPermissionLauncher;
+
     private final ConnectivityManager.NetworkCallback callbackConectividad = new ConnectivityManager.NetworkCallback() {
         @Override
         public void onAvailable(@NonNull Network network) {
@@ -213,6 +224,19 @@ public class HomeFragment extends Fragment implements
                 filtro = guardado;
             }
         }
+
+        notifPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                isGranted -> {
+                    if (Boolean.TRUE.equals(isGranted)) {
+                        iniciarPolling();
+                    } else {
+                        Toast.makeText(requireContext(),
+                                "Se necesita el permiso de notificaciones para avisarte de preguntas y ofertas",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
     }
 
     @Nullable
@@ -262,6 +286,25 @@ public class HomeFragment extends Fragment implements
         actualizarIndicadorNovedadBusquedas();
         recargarDesdeCero();
         registrarCallbackConectividad();
+        pedirPermisoNotificaciones();
+    }
+
+    private void pedirPermisoNotificaciones() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS)
+                    == PackageManager.PERMISSION_GRANTED) {
+                iniciarPolling();
+            } else {
+                notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+            }
+        } else {
+            iniciarPolling();
+        }
+    }
+
+    private void iniciarPolling() {
+        ContextCompat.startForegroundService(requireContext(),
+                new Intent(requireContext(), PollingService.class));
     }
 
     @Override

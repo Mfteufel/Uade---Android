@@ -18,6 +18,13 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
 
+    <!-- Permiso para ejecutar servicios en primer plano (Punto 11). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- Requerido a partir de API 34 para servicios en primer plano de tipo dataSync (Punto 11). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!-- Permiso en runtime para mostrar notificaciones a partir de API 33 (Punto 11). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:name=".login.RondaApp"
         android:allowBackup="true"
@@ -38,6 +45,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".service.PollingService"
+            android:foregroundServiceType="dataSync"
+            android:exported="false" />
     </application>
 
 </manifest>
