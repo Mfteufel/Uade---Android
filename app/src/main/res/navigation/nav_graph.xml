@@ -173,7 +173,25 @@
         android:id="@+id/misOfertasFragment"
         android:name="com.example.tpo.ui.misofertas.MisOfertasFragment"
         android:label="@string/mis_ofertas_titulo"
-        tools:layout="@layout/fragment_mis_ofertas" />
+        tools:layout="@layout/fragment_mis_ofertas">
+
+        <!--
+            Punto 11: al tocar un aviso de oferta, MainActivity abre esta pantalla en la tab que
+            corresponde al rol ("VENDEDOR" = Recibidas, "COMPRADOR" = Enviadas) y con la hoja de
+            esa oferta abierta. Desde el menú del Home no se mandan: quedan en null.
+        -->
+        <argument
+            android:name="ofertaId"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="rol"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+
+    </fragment>
 
     <fragment
         android:id="@+id/codigoFragment"

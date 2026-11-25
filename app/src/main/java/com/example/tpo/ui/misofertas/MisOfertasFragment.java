@@ -50,6 +50,16 @@ public class MisOfertasFragment extends Fragment implements OfertaAdapter.OnOfer
     private static final int TAB_ENVIADAS = 0;
     private static final int TAB_RECIBIDAS = 1;
 
+    /**
+     * Punto 11: argumentos que manda {@code MainActivity} al tocar un aviso de oferta. Los dos
+     * son opcionales (desde el menú del Home no llegan) y se borran apenas se usan, para que
+     * volver atrás o rotar no reabra la hoja.
+     */
+    public static final String ARG_OFERTA_ID = "ofertaId";
+    public static final String ARG_ROL = "rol";
+    public static final String ROL_VENDEDOR = "VENDEDOR";
+    public static final String ROL_COMPRADOR = "COMPRADOR";
+
     private static final String RESULTADO_OFERTA = DetalleOfertaBottomSheet.RESULTADO_OFERTA;
 
     /** Lo inyecta Hilt: la pantalla no sabe si del otro lado hay datos falsos o Retrofit. */
@@ -100,6 +110,20 @@ public class MisOfertasFragment extends Fragment implements OfertaAdapter.OnOfer
         listaMisOfertas.setLayoutManager(new LinearLayoutManager(requireContext()));
         listaMisOfertas.setAdapter(adapter);
 
+        // Si viene de un aviso, la tab es la del rol: el vendedor recibió la oferta, el comprador
+        // la envió. Se marca ANTES de registrar el listener para que no dispare una carga
+        // extra: la única es la del final de este método.
+        Bundle argumentos = getArguments();
+        String ofertaDelAviso = argumentos != null ? argumentos.getString(ARG_OFERTA_ID) : null;
+        String rolDelAviso = argumentos != null ? argumentos.getString(ARG_ROL) : null;
+        if (rolDelAviso != null) {
+            tabActual = ROL_VENDEDOR.equalsIgnoreCase(rolDelAviso.trim()) ? TAB_RECIBIDAS : TAB_ENVIADAS;
+        }
+        TabLayout.Tab tabInicial = tabs.getTabAt(tabActual);
+        if (tabInicial != null) {
+            tabInicial.select();
+        }
+
         tabs.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
@@ -126,6 +150,16 @@ public class MisOfertasFragment extends Fragment implements OfertaAdapter.OnOfer
                 });
 
         cargarTabActual();
+
+        // Punto 11: el aviso abre la oferta directamente, igual que tocar su fila.
+        if (ofertaDelAviso != null) {
+            argumentos.remove(ARG_OFERTA_ID);
+            argumentos.remove(ARG_ROL);
+            DetalleOfertaBottomSheet.nuevaInstancia(ofertaDelAviso)
+                    .show(getParentFragmentManager(), DetalleOfertaBottomSheet.TAG);
+        } else if (argumentos != null) {
+            argumentos.remove(ARG_ROL);
+        }
     }
 
     @Override

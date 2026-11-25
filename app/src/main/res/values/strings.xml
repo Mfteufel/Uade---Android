@@ -437,6 +437,10 @@
     <string name="mis_ofertas_titulo">Mis ofertas</string>
     <string name="mis_ofertas_tab_enviadas">Enviadas</string>
     <string name="mis_ofertas_tab_recibidas">Recibidas</string>
+
+    <!-- ===================== Punto 11: permiso de notificaciones ===================== -->
+    <string name="notif_permiso_negado">Sin el permiso de notificaciones no te avisamos de preguntas y ofertas</string>
+    <string name="notif_permiso_ajustes">Ajustes</string>
     <string name="mis_ofertas_vacio_enviadas">Todavía no ofertaste en ninguna publicación</string>
     <string name="mis_ofertas_vacio_recibidas">Todavía no recibiste ofertas</string>
     <string name="mis_ofertas_recargar">Recargar</string>

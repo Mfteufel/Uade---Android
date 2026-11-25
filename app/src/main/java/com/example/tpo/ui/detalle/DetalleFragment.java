@@ -83,7 +83,7 @@ import dagger.hilt.android.AndroidEntryPoint;
 @AndroidEntryPoint
 public class DetalleFragment extends Fragment {
 
-    private static final String ARG_PUBLICACION_ID = "publicacionId";
+    public static final String ARG_PUBLICACION_ID = "publicacionId";
 
     /** Mínimo de caracteres para que una pregunta tenga algo de contexto. */
     private static final int LARGO_MINIMO_PREGUNTA = 10;

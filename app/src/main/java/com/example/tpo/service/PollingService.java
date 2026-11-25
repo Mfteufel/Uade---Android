@@ -172,10 +172,10 @@ public class PollingService extends Service {
         }
 
         Intent intent = new Intent(this, MainActivity.class);
-        intent.putExtra("tipo", n.getTipo());
-        intent.putExtra("publicacionId", n.getPublicacionId());
-        intent.putExtra("ofertaId", n.getOfertaId());
-        intent.putExtra("rol", n.getRol());
+        intent.putExtra(Novedad.EXTRA_TIPO, n.getTipo());
+        intent.putExtra(Novedad.EXTRA_PUBLICACION_ID, n.getPublicacionId());
+        intent.putExtra(Novedad.EXTRA_OFERTA_ID, n.getOfertaId());
+        intent.putExtra(Novedad.EXTRA_ROL, n.getRol());
         intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
 
         PendingIntent pendingIntent = PendingIntent.getActivity(

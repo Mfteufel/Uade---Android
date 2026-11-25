@@ -8,6 +8,14 @@ package com.example.tpo.model;
  */
 public class Novedad {
 
+    // Claves de los extras del Intent de la notificación: las escribe PollingService al
+    // armarla y las lee MainActivity al tocarla. Se definen una vez para que no se
+    // desincronicen entre los dos archivos.
+    public static final String EXTRA_TIPO = "tipo";
+    public static final String EXTRA_PUBLICACION_ID = "publicacionId";
+    public static final String EXTRA_OFERTA_ID = "ofertaId";
+    public static final String EXTRA_ROL = "rol";
+
     private String id;
     private String tipo;
     private String titulo;

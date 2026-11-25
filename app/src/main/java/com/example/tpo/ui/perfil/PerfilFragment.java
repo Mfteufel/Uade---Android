@@ -16,6 +16,7 @@ import androidx.activity.result.PickVisualMediaRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.NavOptions;
 import androidx.navigation.Navigation;
@@ -327,6 +328,9 @@ public class PerfilFragment extends Fragment {
      */
     private void cerrarSesion() {
         requireContext().stopService(new Intent(requireContext(), PollingService.class));
+        // Los avisos que quedaron en la barra son de esta sesión: el próximo usuario que entre
+        // en este dispositivo no tiene que ver ni poder tocar los del anterior.
+        NotificationManagerCompat.from(requireContext()).cancelAll();
         tokenManager.clearToken();
         SesionUsuario.getInstancia().limpiar();
         Navigation.findNavController(requireView()).navigate(
