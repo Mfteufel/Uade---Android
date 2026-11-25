@@ -2,6 +2,7 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
+import avisos
 import database
 import seguridad
 from models.pregunta import Pregunta, PreguntaNueva, RespuestaNueva
@@ -54,6 +55,7 @@ def preguntar(publicacion_id: int, datos: PreguntaNueva,
         raise error(409, "La publicacion ya no esta activa")
 
     pregunta_id = database.crear_pregunta(publicacion_id, usuario["id"], texto)
+    avisos.pregunta_nueva(publicacion, usuario)
     for fila in database.preguntas_de(publicacion_id):
         if fila["id"] == pregunta_id:
             return a_json(fila)
@@ -77,4 +79,5 @@ def responder(publicacion_id: int, pregunta_id: int, datos: RespuestaNueva,
         raise error(404, "La pregunta no existe")
 
     database.responder_pregunta(pregunta_id, texto)
+    avisos.pregunta_respondida(publicacion, pregunta)
     return a_json(database.buscar_pregunta(pregunta_id))

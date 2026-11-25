@@ -2,6 +2,7 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
+import avisos
 import database
 import seguridad
 from models.oferta import CambioEstadoOferta, Contraoferta, Oferta, OfertaNueva
@@ -91,7 +92,9 @@ def ofertar(request: Request, datos: OfertaNueva,
         publicacion["id"], usuario["id"], publicacion["vendedor_id"],
         datos.precio, mensaje, nuevo_vencimiento(),
     )
-    return a_json(request, database.buscar_oferta(oferta_id))
+    oferta = database.buscar_oferta(oferta_id)
+    avisos.oferta_recibida(oferta)
+    return a_json(request, oferta)
 
 
 @router.get("/enviadas", response_model=List[Oferta])
@@ -125,11 +128,22 @@ def responder(request: Request, oferta_id: int, datos: CambioEstadoOferta,
         raise error(400, "El estado tiene que ser ACEPTADA o RECHAZADA")
     database.vencer_ofertas()
     fila = oferta_para_responder(oferta_id, usuario)
+    desplazadas = []
     if datos.estado == "ACEPTADA":
+        # hay que leerlas antes: aceptar_oferta deja RECHAZADAS a las demas pendientes
+        desplazadas = database.ofertas_pendientes_de_publicacion(
+            fila["publicacion_id"], fila["id"])
         database.aceptar_oferta(fila["id"], fila["publicacion_id"])
     else:
         database.rechazar_oferta(fila["id"])
-    return a_json(request, database.buscar_oferta(oferta_id))
+    oferta = database.buscar_oferta(oferta_id)
+    if datos.estado == "ACEPTADA":
+        avisos.oferta_aceptada(oferta, usuario)
+        for otra in desplazadas:
+            avisos.oferta_rechazada_por_otra_venta(otra)
+    else:
+        avisos.oferta_rechazada(oferta, usuario)
+    return a_json(request, oferta)
 
 
 @router.patch("/{oferta_id}/precio", response_model=Oferta)
@@ -141,4 +155,6 @@ def contraofertar(request: Request, oferta_id: int, datos: Contraoferta,
     fila = oferta_para_responder(oferta_id, usuario)
     turno = "COMPRADOR" if fila["turno"] == "VENDEDOR" else "VENDEDOR"
     database.contraofertar(fila["id"], datos.precio, turno, nuevo_vencimiento())
-    return a_json(request, database.buscar_oferta(oferta_id))
+    oferta = database.buscar_oferta(oferta_id)
+    avisos.contraoferta(oferta, usuario)
+    return a_json(request, oferta)

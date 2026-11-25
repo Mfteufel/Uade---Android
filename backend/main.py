@@ -8,6 +8,7 @@ import datos_prueba
 from routers.auth import router as router_auth
 from routers.busquedas import router as router_busquedas
 from routers.favoritos import router as router_favoritos
+from routers.novedades import router as router_novedades
 from routers.ofertas import router as router_ofertas
 from routers.operaciones import router as router_operaciones
 from routers.preguntas import router as router_preguntas
@@ -27,6 +28,7 @@ app.include_router(router_busquedas)
 app.include_router(router_ofertas)
 app.include_router(router_operaciones)
 app.include_router(router_preguntas)
+app.include_router(router_novedades)
 app.mount("/fotos", StaticFiles(directory=CARPETA_FOTOS), name="fotos")
 app.mount("/estatico", StaticFiles(directory=Path(__file__).resolve().parent / "estatico"), name="estatico")
 
