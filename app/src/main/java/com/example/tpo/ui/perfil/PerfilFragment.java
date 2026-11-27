@@ -1,5 +1,6 @@
 package com.example.tpo.ui.perfil;
 
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -15,6 +16,7 @@ import androidx.activity.result.PickVisualMediaRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.NavOptions;
 import androidx.navigation.Navigation;
@@ -26,6 +28,7 @@ import com.example.tpo.data.SesionUsuario;
 import com.example.tpo.login.TokenManager;
 import com.example.tpo.model.Usuario;
 import com.example.tpo.model.Zona;
+import com.example.tpo.service.PollingService;
 import com.example.tpo.util.FormatoUtils;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
@@ -324,6 +327,10 @@ public class PerfilFragment extends Fragment {
      * el botón "atrás" volvería a mostrar Home/Perfil de la sesión ya cerrada.
      */
     private void cerrarSesion() {
+        requireContext().stopService(new Intent(requireContext(), PollingService.class));
+        // Los avisos que quedaron en la barra son de esta sesión: el próximo usuario que entre
+        // en este dispositivo no tiene que ver ni poder tocar los del anterior.
+        NotificationManagerCompat.from(requireContext()).cancelAll();
         tokenManager.clearToken();
         SesionUsuario.getInstancia().limpiar();
         Navigation.findNavController(requireView()).navigate(

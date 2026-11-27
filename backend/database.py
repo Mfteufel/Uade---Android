@@ -102,6 +102,21 @@ CREATE TABLE IF NOT EXISTS preguntas (
 );
 
 CREATE INDEX IF NOT EXISTS indice_preguntas_publicacion ON preguntas (publicacion_id);
+
+CREATE TABLE IF NOT EXISTS novedades (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    usuario_id     TEXT NOT NULL,
+    tipo           TEXT NOT NULL,
+    titulo         TEXT NOT NULL,
+    cuerpo         TEXT NOT NULL,
+    publicacion_id INTEGER,
+    oferta_id      INTEGER,
+    rol            TEXT,
+    creado_en      INTEGER NOT NULL,
+    entregada      INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS indice_novedades_usuario ON novedades (usuario_id, entregada);
 """
 
 ORDENES = {
@@ -701,3 +716,51 @@ def reputacion_de(usuario_id):
             "  AND fecha_entrega IS NOT NULL AND vendedor_id = ?) AS como_vendedor",
             (usuario_id, usuario_id, usuario_id, str(usuario_id)),
         ).fetchone()
+
+
+# Punto 11: avisos para quien no esta mirando la app. El destinatario es un texto,
+# igual que vendedor_id, porque asi se guarda el dueño de una publicacion.
+def crear_novedad(usuario_id, tipo, titulo, cuerpo, publicacion_id=None, oferta_id=None, rol=None):
+    with conectar() as conexion:
+        cursor = conexion.execute(
+            "INSERT INTO novedades (usuario_id, tipo, titulo, cuerpo, publicacion_id,"
+            " oferta_id, rol, creado_en) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (str(usuario_id), tipo, titulo, cuerpo, publicacion_id, oferta_id, rol,
+             ahora_en_milisegundos()),
+        )
+        return cursor.lastrowid
+
+
+# "desde" es el ultimo id que la app ya mostro; sin el, devuelve todo lo que todavia no recibio
+def novedades_sin_entregar(usuario_id, desde=None):
+    consulta = "SELECT * FROM novedades WHERE usuario_id = ? AND entregada = 0"
+    parametros = [str(usuario_id)]
+    if desde is not None:
+        consulta += " AND id > ?"
+        parametros.append(desde)
+    with conectar() as conexion:
+        return conexion.execute(consulta + " ORDER BY id", parametros).fetchall()
+
+
+def marcar_novedades_entregadas(ids):
+    if not ids:
+        return
+    with conectar() as conexion:
+        conexion.executemany(
+            "UPDATE novedades SET entregada = 1 WHERE id = ?", [(i,) for i in ids]
+        )
+
+
+def contar_novedades():
+    with conectar() as conexion:
+        return conexion.execute("SELECT COUNT(*) FROM novedades").fetchone()[0]
+
+
+# las ofertas que se rechazan solas cuando el vendedor acepta otra: hay que leerlas antes de aceptar
+def ofertas_pendientes_de_publicacion(publicacion_id, excepto_id):
+    with conectar() as conexion:
+        return conexion.execute(
+            OFERTA_CON_PUBLICACION + " WHERE o.publicacion_id = ? AND o.estado = 'PENDIENTE'"
+            " AND o.id != ?",
+            (publicacion_id, excepto_id),
+        ).fetchall()

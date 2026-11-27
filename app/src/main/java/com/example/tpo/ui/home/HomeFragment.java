@@ -1,13 +1,19 @@
 package com.example.tpo.ui.home;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -18,9 +24,12 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.content.res.AppCompatResources;
+import androidx.core.content.ContextCompat;
 import androidx.core.os.BundleCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
@@ -44,6 +53,7 @@ import com.example.tpo.model.EstadoArticulo;
 import com.example.tpo.model.FiltroPublicaciones;
 import com.example.tpo.model.OrdenPublicaciones;
 import com.example.tpo.model.Publicacion;
+import com.example.tpo.service.PollingService;
 import com.example.tpo.ui.ChipsUtils;
 import com.example.tpo.util.ConectividadUtils;
 import com.example.tpo.util.FormatoUtils;
@@ -159,6 +169,15 @@ public class HomeFragment extends Fragment implements
     /** true mientras lo que se ve en pantalla es el cache offline, no una respuesta real. */
     private boolean mostrandoDatosSinConexion = false;
 
+    private ActivityResultLauncher<String> notifPermissionLauncher;
+
+    /**
+     * true una vez que se le pidió al usuario el permiso de notificaciones en esta ejecución de
+     * la app. Es estático a propósito: el Home se vuelve a crear cada vez que se regresa a él,
+     * y un campo de instancia volvería a preguntar en cada visita.
+     */
+    private static boolean permisoDeNotificacionesYaPedido = false;
+
     private final ConnectivityManager.NetworkCallback callbackConectividad = new ConnectivityManager.NetworkCallback() {
         @Override
         public void onAvailable(@NonNull Network network) {
@@ -213,6 +232,17 @@ public class HomeFragment extends Fragment implements
                 filtro = guardado;
             }
         }
+
+        notifPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                isGranted -> {
+                    if (Boolean.TRUE.equals(isGranted)) {
+                        iniciarPolling();
+                    } else {
+                        avisarPermisoDeNotificacionesNegado();
+                    }
+                }
+        );
     }
 
     @Nullable
@@ -262,6 +292,57 @@ public class HomeFragment extends Fragment implements
         actualizarIndicadorNovedadBusquedas();
         recargarDesdeCero();
         registrarCallbackConectividad();
+        pedirPermisoNotificaciones();
+    }
+
+    /**
+     * Desde Android 13 mostrar notificaciones pide un permiso en runtime. Se pide una sola vez por
+     * ejecución de la app: este método corre cada vez que se crea el Home (al volver de un
+     * Detalle, por ejemplo) y volver a preguntar, o avisar el rechazo, cada vez sería molesto.
+     * Si ya estaba concedido el servicio arranca desde {@link #onResume()}.
+     */
+    private void pedirPermisoNotificaciones() {
+        if (!tienePermisoDeNotificaciones() && !permisoDeNotificacionesYaPedido) {
+            permisoDeNotificacionesYaPedido = true;
+            notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+        }
+    }
+
+    private boolean tienePermisoDeNotificaciones() {
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU
+                || ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS)
+                == PackageManager.PERMISSION_GRANTED;
+    }
+
+    /**
+     * Sin el permiso la app anda igual, solo que no avisa: un Snackbar (no un Toast que se repite)
+     * con el atajo a los ajustes de notificaciones de la app, donde se activa.
+     */
+    private void avisarPermisoDeNotificacionesNegado() {
+        View vista = getView();
+        if (vista == null) {
+            return; // el resultado llega asíncrono: la pantalla ya pudo cerrarse
+        }
+        Snackbar.make(vista, R.string.notif_permiso_negado, Snackbar.LENGTH_LONG)
+                .setAction(R.string.notif_permiso_ajustes, v -> abrirAjustesDeNotificaciones())
+                .show();
+    }
+
+    private void abrirAjustesDeNotificaciones() {
+        Intent intent;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            intent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                    .putExtra(Settings.EXTRA_APP_PACKAGE, requireContext().getPackageName());
+        } else {
+            intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    Uri.fromParts("package", requireContext().getPackageName(), null));
+        }
+        startActivity(intent);
+    }
+
+    private void iniciarPolling() {
+        ContextCompat.startForegroundService(requireContext(),
+                new Intent(requireContext(), PollingService.class));
     }
 
     @Override
@@ -274,6 +355,13 @@ public class HomeFragment extends Fragment implements
             adapter.notifyDataSetChanged();
         }
         actualizarIndicadorNovedadBusquedas();
+
+        // También acá y no solo al crear la vista: si el permiso se activó desde los ajustes
+        // (atajo del Snackbar) el servicio arranca al volver, sin esperar a recrear el Home.
+        // Es seguro repetirlo: PollingService no crea un segundo hilo si ya está corriendo.
+        if (tienePermisoDeNotificaciones()) {
+            iniciarPolling();
+        }
     }
 
     @Override
